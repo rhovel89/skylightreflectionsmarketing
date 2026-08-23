@@ -1,0 +1,4 @@
+const fdmBaseAfeApply=afeApply;
+afeApply=function(original,r){let n=fdmBaseAfeApply(original,r);const dm=r?.decisionMaker;if(dm?.name){if(!n.decisionMaker)n.decisionMaker=dm.name;if(!n.title)n.title=dm.title||'';n.enrichmentData={...(n.enrichmentData||{}),free_decision_maker:{name:dm.name,title:dm.title||'',confidence:dm.confidence||'medium',basis:dm.basis||'',checked_at:new Date().toISOString()}};Object.assign(n,score(n));applyLowHanging(n)}return n};
+const fdmRender=render;render=function(){fdmRender();if(!cloud?.session)return;const conn=document.querySelector('.conn');if(conn){let row=document.getElementById('freeDmStatus');if(!row){row=document.createElement('div');row.className='prov';row.id='freeDmStatus';conn.appendChild(row)}row.innerHTML='<span>Decision Maker</span><b style="color:var(--green)">FREE · WEBSITE</b>'}};
+render();
