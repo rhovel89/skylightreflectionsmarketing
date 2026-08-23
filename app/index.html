@@ -19,9 +19,9 @@ iframe{width:100%;height:100%;border:0;display:none;background:#080b12}
 <iframe id="appFrame" src="/index.html?crm-base=1" title="Lead Intelligence CRM" allow="clipboard-write"></iframe>
 <script>
 (()=>{
- const BUILD='2026-08-23-sales-tools-v1';
+ const BUILD='2026-08-23-manual-lead-editor-v1';
  const frame=document.getElementById('appFrame'),boot=document.getElementById('boot'),status=document.getElementById('bootStatus'),detail=document.getElementById('bootDetail');
- const coreScripts=['cloud.js','real-audit.js','real-search.js','full-enrich.js','priorities-settings.js','google-budget.js','source-import.js','low-hanging-fruit.js','free-mode.js','free-live-market.js','auto-free-enrich.js','best-prospects.js','free-decision-makers.js','quick-wins.js','security-auth.js','production-intelligence.js','lawyers-niche.js','phase15-core.js','phase15-health.js','phase15-ui.js','score-meanings.js','service-focus.js','prospect-service-filters.js','score-meanings-complete.js','prime-need-fix.js','prime-reachability-fix.js','results-visibility-fix.js','score-guide-seo-lab.js','hot-cold-verified-fix.js','gbp-status-seo-lab.js','sales-tools-tabs.js','sales-tools-polish.js'];
+ const coreScripts=['cloud.js','real-audit.js','real-search.js','full-enrich.js','priorities-settings.js','google-budget.js','source-import.js','low-hanging-fruit.js','free-mode.js','free-live-market.js','auto-free-enrich.js','best-prospects.js','free-decision-makers.js','quick-wins.js','security-auth.js','production-intelligence.js','lawyers-niche.js','phase15-core.js','phase15-health.js','phase15-ui.js','score-meanings.js','service-focus.js','prospect-service-filters.js','score-meanings-complete.js','prime-need-fix.js','prime-reachability-fix.js','results-visibility-fix.js','score-guide-seo-lab.js','hot-cold-verified-fix.js','gbp-status-seo-lab.js','sales-tools-tabs.js','sales-tools-polish.js','manual-lead-editor.js'];
  const supabaseSources=['https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js','https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'];
  function loadScript(doc,src,timeout=15000){return new Promise((resolve,reject)=>{const s=doc.createElement('script');let done=false;const t=setTimeout(()=>{if(done)return;done=true;s.remove();reject(new Error('Timed out: '+src))},timeout);s.src=src;s.async=false;s.onload=()=>{if(done)return;done=true;clearTimeout(t);resolve(src)};s.onerror=()=>{if(done)return;done=true;clearTimeout(t);reject(new Error('Failed to load: '+src))};doc.body.appendChild(s)})}
  async function loadFirst(doc,list){let last;for(const src of list){try{return await loadScript(doc,src,18000)}catch(e){last=e}}throw last||new Error('Supabase SDK failed to load')}
@@ -36,7 +36,7 @@ iframe{width:100%;height:100%;border:0;display:none;background:#080b12}
        const file=coreScripts[i];status.textContent=`Loading CRM feature ${i+1} of ${coreScripts.length}: ${file}`;
        try{await loadScript(doc,'/'+file+'?v='+encodeURIComponent(BUILD),18000)}catch(e){failures.push(file);console.error(e)}
      }
-     const critical=['cloud.js','low-hanging-fruit.js','free-live-market.js','production-intelligence.js','prime-need-fix.js','score-guide-seo-lab.js','hot-cold-verified-fix.js','sales-tools-tabs.js'];
+     const critical=['cloud.js','low-hanging-fruit.js','free-live-market.js','production-intelligence.js','prime-need-fix.js','score-guide-seo-lab.js','hot-cold-verified-fix.js','sales-tools-tabs.js','manual-lead-editor.js'];
      const criticalFailed=failures.filter(x=>critical.includes(x));
      if(criticalFailed.length)throw new Error('One or more required CRM modules could not be loaded: '+criticalFailed.join(', '));
      status.innerHTML='<span class="good"><b>CRM loaded.</b></span>';
