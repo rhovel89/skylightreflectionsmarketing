@@ -42,16 +42,43 @@ export default async function Page() {
     s.from('user_roles').select('user_id', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('role', 'super_admin'),
   ])
 
+  const dataChecks = [
+    ['Site settings', siteResult],
+    ['Published businesses', published],
+    ['Active locations', activeLocations],
+    ['Verified businesses', verifiedBusinesses],
+    ['Verified locations', verifiedLocations],
+    ['Pending claims', pendingClaims],
+    ['Pending submissions', pendingSubmissions],
+    ['Pending edits', pendingEdits],
+    ['Pending reports', pendingReports],
+    ['Consumer leads', leads],
+    ['Active sponsorships', activeSponsorships],
+    ['Pending media', pendingMedia],
+    ['Listing events', listingEvents],
+    ['Super Admins', superAdmins],
+  ] as const
+  const queryErrors = dataChecks
+    .filter(([, result]) => Boolean(result.error))
+    .map(([label, result]) => `${label}: ${result.error?.message || 'Unknown data error'}`)
+
   const logoReady = Boolean(siteResult.data?.brand_logo_url)
   const urlReady = /^https:\/\//.test(siteUrl) && !siteUrl.includes('REPLACE_') && !siteUrl.includes('example.com')
   const adminReady = countOf(superAdmins) > 0
   const moderationOpen = countOf(pendingClaims) + countOf(pendingSubmissions) + countOf(pendingEdits) + countOf(pendingReports) + countOf(pendingMedia)
-  const blockers = [!adminReady && 'Create and bootstrap the first Super Admin account.', !urlReady && 'Set NEXT_PUBLIC_SITE_URL to the verified production domain.', !logoReady && 'Upload the final Skylight Reflections Marketing logo in Site Builder.'].filter(Boolean) as string[]
+  const blockers = [
+    !adminReady && 'Create and bootstrap the first Super Admin account.',
+    !urlReady && 'Set NEXT_PUBLIC_SITE_URL to the verified production domain.',
+    !logoReady && 'Upload the final Skylight Reflections Marketing logo in Site Builder.',
+    queryErrors.length > 0 && 'Resolve launch-readiness operational data query errors.',
+  ].filter(Boolean) as string[]
 
   return <>
     <div className="admin-page-head"><div><div className="kpi">Production Control Center</div><h1>Launch Readiness</h1><p className="muted">A live operational checkpoint for the directory. This page reports real configuration and production data; it does not create fake activity to make metrics appear complete.</p></div><span className={`badge ${blockers.length ? 'neutral' : 'verified'}`}>{blockers.length ? `${blockers.length} launch gate${blockers.length === 1 ? '' : 's'}` : 'Core gates ready'}</span></div>
 
-    {blockers.length ? <div className="notice warn"><strong>Remaining launch gates</strong><ol>{blockers.map(x => <li key={x}>{x}</li>)}</ol></div> : <div className="notice success"><strong>Core application launch gates are configured.</strong> Complete the external production-domain and live-browser smoke test before announcing the site.</div>}
+    {blockers.length ? <div className="notice warn"><strong>Remaining launch gates</strong><ol>{blockers.map(x => <li key={x}>{x}</li>)}</ol></div> : <div className="notice success"><strong>Core application launch gates are configured.</strong> Complete the authenticated live-browser smoke test before announcing the site.</div>}
+
+    {queryErrors.length > 0 && <div className="notice warn" style={{ marginTop: 14 }}><strong>Operational data checks returned errors</strong><ul>{queryErrors.map(x => <li key={x}>{x}</li>)}</ul></div>}
 
     <div className="stat-grid" style={{ marginTop: 18 }}>
       <div className="stat">Published Businesses<strong>{countOf(published)}</strong></div>
@@ -71,9 +98,9 @@ export default async function Page() {
     <div className="grid grid-3" style={{ marginTop: 18 }}>
       <div className="card"><div className="kpi">Moderation</div><h3>{moderationOpen} open item{moderationOpen === 1 ? '' : 's'}</h3><div className="info-row"><span>Claims</span><b>{countOf(pendingClaims)}</b></div><div className="info-row"><span>Submissions</span><b>{countOf(pendingSubmissions)}</b></div><div className="info-row"><span>Owner edits</span><b>{countOf(pendingEdits)}</b></div><div className="info-row"><span>Listing reports</span><b>{countOf(pendingReports)}</b></div><div className="info-row"><span>Media</span><b>{countOf(pendingMedia)}</b></div></div>
       <div className="card"><div className="kpi">Monetization</div><h3>{countOf(activeSponsorships)} active sponsorship{countOf(activeSponsorships) === 1 ? '' : 's'}</h3><p className="muted">Paid placement is kept separate from organic relevance, verification, SEO coverage and lead routing.</p><Link className="btn btn-light" href="/admin/sponsorships">Sponsored Placement</Link></div>
-      <div className="card"><div className="kpi">Traffic Measurement</div><h3>{countOf(listingEvents) ? 'Analytics receiving activity' : 'Awaiting real traffic'}</h3><p className="muted">Impressions, profile views, contact clicks and lead submissions begin accumulating from real public traffic after deployment.</p><Link className="btn btn-light" href="/admin/analytics">Listing Analytics</Link></div>
+      <div className="card"><div className="kpi">Traffic Measurement</div><h3>{countOf(listingEvents) ? 'Analytics receiving activity' : 'Awaiting real traffic'}</h3><p className="muted">Impressions, profile views, contact clicks and lead submissions accumulate only from real public traffic.</p><Link className="btn btn-light" href="/admin/analytics">Listing Analytics</Link></div>
     </div>
 
-    <div className="card" style={{ marginTop: 18 }}><div className="kpi">Final External Gate</div><h2>Production deployment + live browser smoke test</h2><p className="muted">After the persistent Vercel project is linked, verify the final domain, environment variables, Supabase Auth redirect URLs, homepage/search/profile flows, account creation, owner claim flow, staff moderation, lead routing, media moderation, analytics capture, robots.txt and sitemap.xml.</p></div>
+    <div className="card" style={{ marginTop: 18 }}><div className="kpi">Final Live Verification</div><h2>Authenticated production smoke test</h2><p className="muted">Persistent Vercel hosting and Git production deployment are configured. Verify homepage/search/profile flows, owner claim/edit/media moderation, staff moderation, lead routing, analytics capture, robots.txt and sitemap.xml before final public launch.</p></div>
   </>
 }
