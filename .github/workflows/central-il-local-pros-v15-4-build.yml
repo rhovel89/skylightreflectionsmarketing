@@ -1,0 +1,35 @@
+name: Central IL Local Pros V15.4 Build Validation
+
+on:
+  push:
+    branches:
+      - central-il-local-pros-v15-4-deploy
+  workflow_dispatch:
+
+jobs:
+  validate-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: central-il-local-pros-v15.4-deploy
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://zbsdbqdvmlatlklwjiuh.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_LBq2AdU6exdOApLzWspZxw_s8P22U1d
+      NEXT_PUBLIC_SITE_URL: https://central-il-local-pros-v154.vercel.app
+    steps:
+      - name: Checkout isolated deployment branch
+        uses: actions/checkout@v4
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: central-il-local-pros-v15.4-deploy/package-lock.json
+      - name: Restore canonical source
+        run: node bootstrap-loader.mjs
+      - name: Install exact dependencies
+        run: npm install --package-lock-only && npm ci
+      - name: TypeScript validation
+        run: npm run typecheck
+      - name: Production Next.js build
+        run: npm run build
