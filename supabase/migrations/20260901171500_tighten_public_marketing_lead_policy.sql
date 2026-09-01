@@ -1,0 +1,2 @@
+drop policy if exists "anon submit marketing lead" on public.marketing_leads;
+create policy "public submit marketing lead safely" on public.marketing_leads for insert to anon,authenticated with check (tenant_id is not null and exists(select 1 from public.tenants t where t.id=marketing_leads.tenant_id) and status='new' and consent_to_contact=true and length(trim(business_name)) between 2 and 200 and length(trim(contact_name)) between 2 and 160 and length(trim(email)) between 3 and 320 and source in('directory_contact','skylight_marketing_review'));
