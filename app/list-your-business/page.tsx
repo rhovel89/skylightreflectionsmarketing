@@ -1,5 +1,1 @@
-import { redirect } from 'next/navigation'
-
-export default function Page(){
-  redirect('/contact?reason=list-business')
-}
+import{permanentRedirect}from'next/navigation';export default function Page(){permanentRedirect('/contact?reason=list-business#submit-business')}
