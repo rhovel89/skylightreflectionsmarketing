@@ -1,0 +1,1 @@
+import{VerticalPage}from'@/components/VerticalPage';export const dynamic='force-dynamic';export default function Page(){return <VerticalPage vertical="legal" title="Attorneys" description="Explore local attorney profiles and legal-service categories. Directory information is not legal advice and does not create an attorney-client relationship."/>}

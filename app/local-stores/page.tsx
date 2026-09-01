@@ -1,0 +1,1 @@
+import{VerticalPage}from'@/components/VerticalPage';export const dynamic='force-dynamic';export default function Page(){return <VerticalPage vertical="retail" title="Local Stores" description="Browse independent and local retail businesses across Central Illinois."/>}

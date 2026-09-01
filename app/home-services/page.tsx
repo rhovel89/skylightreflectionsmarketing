@@ -1,0 +1,1 @@
+import{VerticalPage}from'@/components/VerticalPage';export const dynamic='force-dynamic';export default function Page(){return <VerticalPage vertical="home" title="Home Services" description="Find contractors and home-service professionals throughout Central Illinois."/>}

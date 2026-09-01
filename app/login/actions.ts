@@ -1,0 +1,5 @@
+'use server'
+import{createClient}from'@/lib/supabase/server';import{redirect}from'next/navigation';import{revalidatePath}from'next/cache'
+function safeNext(fd:FormData){const n=String(fd.get('next')||'/account');return n.startsWith('/')&&!n.startsWith('//')?n:'/account'}
+export async function login(fd:FormData){const s=await createClient();const{error}=await s.auth.signInWithPassword({email:String(fd.get('email')||''),password:String(fd.get('password')||'')});if(error)redirect(`/login?error=${encodeURIComponent(error.message)}`);revalidatePath('/','layout');redirect(safeNext(fd))}
+export async function signup(fd:FormData){const s=await createClient();const email=String(fd.get('email')||''),password=String(fd.get('password')||'');const next=safeNext(fd);const{error}=await s.auth.signUp({email,password,options:{emailRedirectTo:`${process.env.NEXT_PUBLIC_SITE_URL||'http://localhost:3000'}/auth/confirm?next=${encodeURIComponent(next)}`}});if(error)redirect(`/login?error=${encodeURIComponent(error.message)}`);redirect('/login?message=Check your email to confirm your account.')}

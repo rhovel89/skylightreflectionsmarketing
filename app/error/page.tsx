@@ -1,0 +1,1 @@
+import Link from'next/link';export default async function Page({searchParams}:{searchParams:Promise<Record<string,string|undefined>>}){const q=await searchParams;return <main className="auth-wrap"><div className="auth-card"><h1>Something went wrong</h1><p>{q.message||'Please try again.'}</p><Link href="/" className="btn btn-primary">Back Home</Link></div></main>}

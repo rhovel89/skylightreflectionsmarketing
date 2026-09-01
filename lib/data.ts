@@ -1,0 +1,42 @@
+import { createClient } from '@/lib/supabase/server'
+import { DEFAULT_BRAND, TENANT_ID, TENANT_SLUG } from '@/lib/constants'
+import type { Business, Category, Location, PublicConfig, SiteSettings } from '@/lib/types'
+
+export async function getPublicConfig(): Promise<PublicConfig> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase.rpc('get_directory_public_config', { p_tenant_slug: TENANT_SLUG })
+    if (error || !data) throw error
+    return data as PublicConfig
+  } catch { return { site: DEFAULT_BRAND } }
+}
+export async function getSite(): Promise<SiteSettings> { const c=await getPublicConfig(); return { ...DEFAULT_BRAND, ...(c.site ?? {}) } }
+export async function getCategories(vertical?: string): Promise<Category[]> {
+  try { const s=await createClient(); let q=s.from('categories').select('id,vertical,slug,name,is_active').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'); if(vertical)q=q.eq('vertical',vertical); const {data}=await q; return (data??[]) as Category[] } catch { return [] }
+}
+export async function getLocations(): Promise<Location[]> {
+  try { const s=await createClient(); const {data}=await s.from('locations').select('id,slug,name,county,state,region,is_active').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'); return (data??[]) as Location[] } catch { return [] }
+}
+export async function getBusinesses(opts:{vertical?:string;city?:string;category?:string;q?:string;limit?:number}={}):Promise<Business[]> {
+  try {
+    const s=await createClient(); const limit=opts.limit??100
+    let query=s.from('businesses').select('id,slug,name,abbr,phone,email,website,description,hours,rating,review_count,verified,featured,claimed,profile_score,status,price_range,menu_url,ordering_url,reservation_url,attributes,address_text,source_name,source_url,primary_location_id,business_categories!inner(categories!inner(vertical,slug,name)),locations!businesses_primary_location_id_fkey(name,slug)').eq('tenant_id',TENANT_ID).eq('status','published').limit(limit)
+    if(opts.vertical) query=query.eq('business_categories.categories.vertical',opts.vertical)
+    if(opts.category) query=query.eq('business_categories.categories.slug',opts.category)
+    if(opts.city) query=query.eq('locations.slug',opts.city)
+    if(opts.q) query=query.ilike('name',`%${opts.q}%`)
+    const {data,error}=await query.order('verified',{ascending:false}).order('profile_score',{ascending:false}).order('name')
+    if(error) return []
+    return (data??[]) as unknown as Business[]
+  } catch { return [] }
+}
+export async function getBusiness(slug:string) {
+  try {
+    const s=await createClient();
+    const {data}=await s.from('businesses').select('*,business_categories(categories(id,vertical,slug,name)),business_locations(*),business_service_areas(locations(id,name,slug,county,state))').eq('tenant_id',TENANT_ID).eq('slug',slug).eq('status','published').maybeSingle()
+    return data
+  } catch { return null }
+}
+export async function getGuide(slug:string) { try { const s=await createClient(); const {data}=await s.from('guides').select('*').eq('tenant_id',TENANT_ID).eq('slug',slug).eq('status','published').maybeSingle(); return data } catch{return null} }
+export async function getGuides(limit=30) { try {const s=await createClient();const {data}=await s.from('guides').select('id,slug,title,type,city,category,summary,published_at').eq('tenant_id',TENANT_ID).eq('status','published').order('published_at',{ascending:false}).limit(limit);return data??[]}catch{return []} }
+export async function getSeoPage(city:string,category?:string) { try { const s=await createClient(); let q=s.from('seo_pages').select('*').eq('tenant_id',TENANT_ID).eq('city',city).eq('reviewed',true); q=category?q.eq('category',category):q.is('category',null); const {data}=await q.maybeSingle(); return data } catch{return null} }

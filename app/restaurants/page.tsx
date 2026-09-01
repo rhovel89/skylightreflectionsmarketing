@@ -1,0 +1,1 @@
+import{VerticalPage}from'@/components/VerticalPage';export const dynamic='force-dynamic';export default function Page(){return <VerticalPage vertical="restaurant" title="Restaurants" description="Discover local restaurants, cuisine categories, menus and dining information."/>}
