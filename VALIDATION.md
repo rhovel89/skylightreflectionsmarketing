@@ -2,6 +2,9 @@
 
 ## Application release gate
 
+Validated runtime-code commit: `fc742354f0e0646f842fe9a61047e53ff2ae3dc4`  
+Validated GitHub Actions run: `33540683323`
+
 - Dependency graph: **LOCKED** — `package-lock.json` committed with lockfileVersion 3.
 - CI dependency installation: **DETERMINISTIC** — `npm ci --no-audit --no-fund`.
 - GitHub Actions repository permission: **READ ONLY** (`contents: read`).
@@ -9,10 +12,11 @@
 - Next.js production build: **PASS**.
 - Production server startup: **PASS**.
 - `/api/health` database connectivity check: **PASS**.
-- Safe public route smoke tests: **PASS** for `/`, `/illinois`, `/guides`, `/robots.txt`, `/sitemap.xml`, and `/login` on the last completed full smoke-tested release candidate.
+- Safe public route smoke tests: **PASS** for `/`, `/illinois`, `/guides`, `/robots.txt`, `/sitemap.xml`, and `/login`.
 - Admin crawler protection: **PASS** — `/admin` sends `X-Robots-Tag: noindex, nofollow, noarchive`.
 - Dynamic public search indexing rule: **PASS** — `/search` remains `noindex, follow`.
 - Local import/build resolution: **PASS** through the production build.
+- Launch Readiness tenant-scoping correction: **PASS** through the same locked-dependency build and runtime smoke gate.
 
 The final read-only / `npm ci` workflow repeats the same build and runtime smoke gate on every push to `central-il-local-pros-v15.5`.
 
