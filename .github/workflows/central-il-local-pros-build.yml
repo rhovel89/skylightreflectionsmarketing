@@ -58,3 +58,27 @@ jobs:
 
           curl --silent --show-error --head http://127.0.0.1:3000/admin | grep -qi '^x-robots-tag: noindex, nofollow, noarchive'
           grep -q "robots:{index:false,follow:true}" app/search/page.tsx
+      - name: Package validated deploy source
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/cilp-deploy
+          rsync -a ./ /tmp/cilp-deploy/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.next' \
+            --exclude 'node_modules' \
+            --exclude '.env*' \
+            --exclude 'CANONICAL_STATUS.json' \
+            --exclude 'VALIDATION.md' \
+            --exclude 'LAUNCH_RUNBOOK.md' \
+            --exclude 'README.md'
+      - name: Upload validated deploy source
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: central-il-local-pros-v15-5-deploy-source
+          path: /tmp/cilp-deploy
+          if-no-files-found: error
+          retention-days: 1
