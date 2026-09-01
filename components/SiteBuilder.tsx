@@ -1,4 +1,4 @@
-import{getSite}from'@/lib/data';import{saveSiteSettings}from'@/app/admin/actions';
+import{getSite}from'@/lib/data';import{saveSiteSettings}from'@/app/admin/site-settings-actions';
 export async function SiteBuilder(){
   const s=await getSite();
   const f=(name:string,label:string,type='text')=><label>{label}<input name={name} type={type} defaultValue={String((s as any)[name]??'')}/></label>;
