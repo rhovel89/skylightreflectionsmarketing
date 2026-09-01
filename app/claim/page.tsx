@@ -1,5 +1,1 @@
-import { redirect } from 'next/navigation'
-
-export default function Page(){
-  redirect('/search')
-}
+import{permanentRedirect}from'next/navigation';export default function Page(){permanentRedirect('/search?claim=1')}
