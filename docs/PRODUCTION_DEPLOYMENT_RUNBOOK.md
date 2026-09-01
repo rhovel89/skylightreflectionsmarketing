@@ -60,3 +60,7 @@ Before considering a release complete:
 ## Directory integrity
 
 Deployment changes must not alter directory trust rules. Never fabricate claimed/verified state, ratings, reviews, leads, transactions, sponsorships, testimonials or operational events. Sponsored placement remains separate from organic relevance.
+
+## Configuration status — 2026-09-01
+
+Vercel Production Branch Tracking was corrected to `central-il-local-pros-v15.5`. Preview remains assigned to all unassigned Git branches and Development remains CLI-only. This is the approved environment model for the project.
