@@ -41,17 +41,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for ROUTE in / /illinois /guides /robots.txt /sitemap.xml /login; do
+          for ROUTE in / /illinois /guides /robots.txt /sitemap.xml /login /search /illinois/chatham; do
             echo "Checking $ROUTE"
             curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors --output /tmp/response "$SITE_URL$ROUTE"
             test -s /tmp/response
           done
 
-      - name: Verify public brand and crawler signals
+      - name: Verify dynamic market discovery and public brand
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors "$SITE_URL/" | grep -q 'Find the Right Local Pro'
+          HOME="$(curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors "$SITE_URL/")"
+          printf '%s' "$HOME" | grep -q 'Find the Right Local Pro'
+          printf '%s' "$HOME" | grep -q '>Chatham<'
+          CHATHAM="$(curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors "$SITE_URL/illinois/chatham")"
+          printf '%s' "$CHATHAM" | grep -q 'Chatham'
+
+      - name: Verify crawler signals
+        shell: bash
+        run: |
+          set -euo pipefail
           ROBOTS="$(curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors "$SITE_URL/robots.txt")"
           printf '%s' "$ROBOTS" | grep -qi 'Disallow: /admin'
           printf '%s' "$ROBOTS" | grep -qi 'Sitemap:'
@@ -62,8 +71,10 @@ jobs:
             exit 1
           fi
 
-      - name: Verify private area crawler protection
+      - name: Verify private and dynamic-search crawler protection
         shell: bash
         run: |
           set -euo pipefail
           curl --silent --show-error --head --retry 6 --retry-delay 10 --retry-all-errors "$SITE_URL/admin" | grep -qi '^x-robots-tag: noindex, nofollow, noarchive'
+          SEARCH="$(curl --fail --silent --show-error --retry 6 --retry-delay 10 --retry-all-errors "$SITE_URL/search?city=chatham")"
+          printf '%s' "$SEARCH" | grep -qi 'noindex'
