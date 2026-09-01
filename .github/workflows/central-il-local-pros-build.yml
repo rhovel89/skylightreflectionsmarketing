@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
@@ -24,15 +24,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Install dependencies
+      - name: Install dependencies and generate lockfile
         run: npm install --no-audit --no-fund
-      - name: Capture generated dependency lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: package-lock
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit generated lockfile if missing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git ls-files --error-unmatch package-lock.json >/dev/null 2>&1; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "Commit dependency lockfile"
+            git push origin HEAD:central-il-local-pros-v15.5
+          fi
       - name: TypeScript check
         run: npm run typecheck
       - name: Next.js production build
