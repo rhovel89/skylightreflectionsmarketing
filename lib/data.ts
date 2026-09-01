@@ -2,56 +2,30 @@ import { createClient } from '@/lib/supabase/server'
 import { DEFAULT_BRAND, TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 import type { Business, Category, Location, PublicConfig, SiteSettings } from '@/lib/types'
 
+const today=()=>new Date().toISOString().slice(0,10)
+async function activeSponsorships(s:any,businessIds:string[]){if(!businessIds.length)return[];const d=today();const{data}=await s.from('sponsorships').select('business_id,market_location_id,category_id,placement,starts_on,ends_on').in('business_id',businessIds).eq('active',true).or(`starts_on.is.null,starts_on.lte.${d}`).or(`ends_on.is.null,ends_on.gte.${d}`);return data??[]}
+
 export async function getPublicConfig(): Promise<PublicConfig> {
-  try {
-    const supabase = await createClient()
-    const { data, error } = await supabase.rpc('get_directory_public_config', { p_tenant_slug: TENANT_SLUG })
-    if (error || !data) throw error
-    return data as PublicConfig
-  } catch { return { site: DEFAULT_BRAND } }
+  try { const supabase=await createClient(); const { data, error }=await supabase.rpc('get_directory_public_config',{p_tenant_slug:TENANT_SLUG}); if(error||!data)throw error; return data as PublicConfig } catch { return { site: DEFAULT_BRAND } }
 }
 export async function getSite(): Promise<SiteSettings> { const c=await getPublicConfig(); return { ...DEFAULT_BRAND, ...(c.site ?? {}) } }
-export async function getCategories(vertical?: string): Promise<Category[]> {
-  try { const s=await createClient(); let q=s.from('categories').select('id,vertical,slug,name,is_active').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'); if(vertical)q=q.eq('vertical',vertical); const {data}=await q; return (data??[]) as Category[] } catch { return [] }
-}
-export async function getLocations(): Promise<Location[]> {
-  try { const s=await createClient(); const {data}=await s.from('locations').select('id,slug,name,county,state,region,is_active').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'); return (data??[]) as Location[] } catch { return [] }
-}
+export async function getCategories(vertical?: string): Promise<Category[]> { try { const s=await createClient(); let q=s.from('categories').select('id,vertical,slug,name,is_active').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'); if(vertical)q=q.eq('vertical',vertical); const {data}=await q; return (data??[]) as Category[] } catch { return [] } }
+export async function getLocations(): Promise<Location[]> { try { const s=await createClient(); const {data}=await s.from('locations').select('id,slug,name,county,state,region,is_active').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'); return (data??[]) as Location[] } catch { return [] } }
 export async function getBusinesses(opts:{vertical?:string;city?:string;category?:string;q?:string;limit?:number}={}):Promise<Business[]> {
   try {
     const s=await createClient(); const limit=opts.limit??100
-    let cityBusinessIds:string[]|undefined
+    let cityBusinessIds:string[]|undefined,cityLocationId:string|undefined,categoryId:string|undefined
     const matchedBranches=new Map<string,{address_text?:string|null;city?:string|null;state?:string|null;postal_code?:string|null;phone?:string|null;is_primary?:boolean|null}>()
-
-    if(opts.city){
-      const {data:loc}=await s.from('locations').select('id').eq('tenant_id',TENANT_ID).eq('slug',opts.city).eq('is_active',true).maybeSingle()
-      if(!loc)return []
-      const {data:branchRows,error:branchError}=await s.from('business_locations').select('business_id,address_text,city,state,postal_code,phone,is_primary').eq('tenant_id',TENANT_ID).eq('location_id',loc.id).eq('is_active',true)
-      if(branchError)return []
-      for(const row of branchRows??[]){if(!matchedBranches.has(row.business_id)||row.is_primary)matchedBranches.set(row.business_id,row)}
-      cityBusinessIds=[...matchedBranches.keys()]
-      if(!cityBusinessIds.length)return []
-    }
-
-    let query=s.from('businesses').select('id,slug,name,abbr,phone,email,website,description,hours,rating,review_count,verified,featured,claimed,profile_score,status,price_range,menu_url,ordering_url,reservation_url,attributes,address_text,source_name,source_url,primary_location_id,business_categories!inner(categories!inner(vertical,slug,name)),locations!businesses_primary_location_id_fkey(name,slug)').eq('tenant_id',TENANT_ID).eq('status','published').limit(limit)
-    if(opts.vertical) query=query.eq('business_categories.categories.vertical',opts.vertical)
-    if(opts.category) query=query.eq('business_categories.categories.slug',opts.category)
-    if(cityBusinessIds) query=query.in('id',cityBusinessIds)
-    if(opts.q?.trim()) query=query.ilike('name',`%${opts.q.trim()}%`)
-    const {data,error}=await query.order('verified',{ascending:false}).order('profile_score',{ascending:false}).order('name')
-    if(error) return []
-    const rows=(data??[]) as unknown as Business[]
-    if(!opts.city)return rows
-    return rows.map(b=>Object.assign({},b,{matched_location:matchedBranches.get(b.id)}))
+    if(opts.city){const{data:loc}=await s.from('locations').select('id').eq('tenant_id',TENANT_ID).eq('slug',opts.city).eq('is_active',true).maybeSingle();if(!loc)return[];cityLocationId=loc.id;const{data:branchRows,error:branchError}=await s.from('business_locations').select('business_id,address_text,city,state,postal_code,phone,is_primary').eq('tenant_id',TENANT_ID).eq('location_id',loc.id).eq('is_active',true);if(branchError)return[];for(const row of branchRows??[]){if(!matchedBranches.has(row.business_id)||row.is_primary)matchedBranches.set(row.business_id,row)}cityBusinessIds=[...matchedBranches.keys()];if(!cityBusinessIds.length)return[]}
+    if(opts.category){const{data:cat}=await s.from('categories').select('id').eq('tenant_id',TENANT_ID).eq('slug',opts.category).eq('is_active',true).maybeSingle();if(!cat)return[];categoryId=cat.id}
+    let query=s.from('businesses').select('id,slug,name,abbr,phone,email,website,description,hours,rating,review_count,verified,claimed,profile_score,status,price_range,menu_url,ordering_url,reservation_url,attributes,address_text,source_name,source_url,primary_location_id,business_categories!inner(categories!inner(vertical,slug,name)),locations!businesses_primary_location_id_fkey(name,slug)').eq('tenant_id',TENANT_ID).eq('status','published').limit(limit)
+    if(opts.vertical)query=query.eq('business_categories.categories.vertical',opts.vertical);if(opts.category)query=query.eq('business_categories.categories.slug',opts.category);if(cityBusinessIds)query=query.in('id',cityBusinessIds);if(opts.q?.trim())query=query.ilike('name',`%${opts.q.trim()}%`)
+    const{data,error}=await query.order('verified',{ascending:false}).order('profile_score',{ascending:false}).order('name');if(error)return[]
+    const rows=(data??[]) as unknown as Business[];const sponsors=await activeSponsorships(s,rows.map(b=>b.id));const sponsored=new Set(sponsors.filter((x:any)=>(!x.market_location_id||(cityLocationId&&x.market_location_id===cityLocationId))&&(!x.category_id||(categoryId&&x.category_id===categoryId))).map((x:any)=>x.business_id))
+    return rows.map(b=>Object.assign({},b,opts.city?{matched_location:matchedBranches.get(b.id),is_sponsored:sponsored.has(b.id)}:{is_sponsored:sponsored.has(b.id)}))
   } catch { return [] }
 }
-export async function getBusiness(slug:string) {
-  try {
-    const s=await createClient();
-    const {data}=await s.from('businesses').select('*,business_categories(categories(id,vertical,slug,name)),business_locations(*),business_service_areas(locations(id,name,slug,county,state))').eq('tenant_id',TENANT_ID).eq('slug',slug).eq('status','published').maybeSingle()
-    return data
-  } catch { return null }
-}
+export async function getBusiness(slug:string) { try { const s=await createClient(); const {data}=await s.from('businesses').select('*,business_categories(categories(id,vertical,slug,name)),business_locations(*),business_service_areas(locations(id,name,slug,county,state))').eq('tenant_id',TENANT_ID).eq('slug',slug).eq('status','published').maybeSingle();if(!data)return null;const sponsors=await activeSponsorships(s,[data.id]);return Object.assign({},data,{is_sponsored:sponsors.length>0}) } catch { return null } }
 export async function getGuide(slug:string) { try { const s=await createClient(); const {data}=await s.from('guides').select('*').eq('tenant_id',TENANT_ID).eq('slug',slug).eq('status','published').maybeSingle(); return data } catch{return null} }
-export async function getGuides(limit=30) { try {const s=await createClient();const {data}=await s.from('guides').select('id,slug,title,type,city,category,summary,published_at').eq('tenant_id',TENANT_ID).eq('status','published').order('published_at',{ascending:false}).limit(limit);return data??[]}catch{return []} }
+export async function getGuides(limit=30) { try {const s=await createClient();const{data}=await s.from('guides').select('id,slug,title,type,city,category,summary,published_at').eq('tenant_id',TENANT_ID).eq('status','published').order('published_at',{ascending:false}).limit(limit);return data??[]}catch{return[]} }
 export async function getSeoPage(city:string,category?:string) { try { const s=await createClient(); let q=s.from('seo_pages').select('*').eq('tenant_id',TENANT_ID).eq('city',city).eq('reviewed',true); q=category?q.eq('category',category):q.is('category',null); const {data}=await q.maybeSingle(); return data } catch{return null} }
