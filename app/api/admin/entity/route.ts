@@ -5,6 +5,7 @@ import { ADMIN_ENTITIES } from '@/lib/admin'
 import { TENANT_ID } from '@/lib/constants'
 
 const ADMIN_ONLY_SECTIONS=new Set(['businesses','branches','content-blocks','coverage','categories','locations','guides','seo','sponsorships','subscriptions'])
+const WORKFLOW_ONLY_SECTIONS=new Set(['claims','edit-requests'])
 async function authorize(section:string){
   const claims=await getClaims(); if(!claims?.sub)return null
   const roles=await getRoles(String(claims.sub));
@@ -17,6 +18,7 @@ async function authorize(section:string){
 export async function PATCH(req:Request){
   const body=await req.json() as {section:string;id:string;changes:Record<string,unknown>};
   const claims=await authorize(body.section); if(!claims)return NextResponse.json({error:'Unauthorized'},{status:401})
+  if(WORKFLOW_ONLY_SECTIONS.has(body.section))return NextResponse.json({error:'This section uses protected moderation actions and cannot be edited through the generic endpoint.'},{status:400})
   const cfg=ADMIN_ENTITIES[body.section]
   if(!cfg||cfg.readOnly)return NextResponse.json({error:'Section is read-only or invalid.'},{status:400})
   const changes=Object.fromEntries(Object.entries(body.changes??{}).filter(([k])=>cfg.editable.includes(k)))
