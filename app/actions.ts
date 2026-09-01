@@ -1,8 +1,31 @@
 'use server'
-import{createClient}from'@/lib/supabase/server';import{TENANT_ID}from'@/lib/constants';import{requireUser}from'@/lib/auth';import{revalidatePath}from'next/cache';import{redirect}from'next/navigation'
-function s(fd:FormData,k:string){return String(fd.get(k)||'').trim()}
-export async function submitQuote(fd:FormData){const c=await createClient();const consent=fd.get('consent')==='on';const{error}=await c.rpc('submit_directory_lead',{p_tenant_id:TENANT_ID,p_business_id:s(fd,'business_id')||null,p_service:s(fd,'service'),p_city:s(fd,'city'),p_consumer_name:s(fd,'name'),p_phone:s(fd,'phone'),p_email:s(fd,'email'),p_message:s(fd,'message')||null,p_timeline:s(fd,'timeline')||null,p_consent_to_contact:consent});if(error)redirect('/contact?error=quote');redirect('/contact?sent=quote')}
-export async function submitClaim(fd:FormData){const c=await createClient();const{error}=await c.rpc('submit_business_claim',{p_business_id:s(fd,'business_id'),p_claimant_name:s(fd,'name'),p_claimant_role:s(fd,'role'),p_email:s(fd,'email'),p_phone:s(fd,'phone')||null});if(error)redirect(`/business/${s(fd,'slug')}?claim=error`);redirect(`/business/${s(fd,'slug')}?claim=sent`)}
-export async function submitListingReport(fd:FormData){const c=await createClient();await c.rpc('submit_listing_report',{p_business_id:s(fd,'business_id'),p_report_type:s(fd,'report_type'),p_details:s(fd,'details'),p_reporter_name:s(fd,'name')||null,p_reporter_email:s(fd,'email')||null});redirect(`/business/${s(fd,'slug')}?report=sent`)}
-export async function toggleSavedBusiness(fd:FormData){const claims=await requireUser('/account/saved');const c=await createClient();const business=s(fd,'business_id');const{data}=await c.from('saved_businesses').select('business_id').eq('user_id',claims.sub).eq('business_id',business).maybeSingle();if(data)await c.from('saved_businesses').delete().eq('user_id',claims.sub).eq('business_id',business);else await c.from('saved_businesses').insert({user_id:claims.sub,business_id:business});revalidatePath(`/business/${s(fd,'slug')}`);revalidatePath('/account/saved')}
-export async function updateConsumerProfile(fd:FormData){const claims=await requireUser('/account/settings');const c=await createClient();await c.from('consumer_profiles').upsert({user_id:claims.sub,tenant_id:TENANT_ID,display_name:s(fd,'display_name')||null,phone:s(fd,'phone')||null,home_city:s(fd,'home_city')||null,notification_preferences:{quote_updates:fd.get('quote_updates')==='on',directory_updates:fd.get('directory_updates')==='on'},updated_at:new Date().toISOString()});revalidatePath('/account/settings')}
+import { revalidatePath } from 'next/cache'
+import { createClient } from '@/lib/supabase/server'
+import { TENANT_ID } from '@/lib/constants'
+import { requireUser } from '@/lib/auth'
+
+export type ActionState = { ok:boolean; message:string }
+const text=(fd:FormData,key:string)=>String(fd.get(key)??'').trim()
+
+export async function submitLead(_:ActionState, fd:FormData):Promise<ActionState>{
+  try { const s=await createClient(); const business=text(fd,'business_id')||null; const {error}=await s.rpc('submit_directory_lead',{p_tenant_id:TENANT_ID,p_business_id:business,p_service:text(fd,'service'),p_city:text(fd,'city'),p_consumer_name:text(fd,'name'),p_phone:text(fd,'phone'),p_email:text(fd,'email'),p_message:text(fd,'message')||null,p_timeline:text(fd,'timeline')||null,p_consent_to_contact:fd.get('consent')==='on'}); if(error) return {ok:false,message:error.message}; return {ok:true,message:'Your request was received and is being matched with local businesses.'} } catch(e){return {ok:false,message:e instanceof Error?e.message:'Unable to submit request.'}}
+}
+export async function submitClaim(_:ActionState, fd:FormData):Promise<ActionState>{
+  try {const s=await createClient();const {error}=await s.rpc('submit_business_claim',{p_business_id:text(fd,'business_id'),p_claimant_name:text(fd,'name'),p_claimant_role:text(fd,'role'),p_email:text(fd,'email'),p_phone:text(fd,'phone')||null});if(error)return{ok:false,message:error.message};return{ok:true,message:'Claim submitted. Staff will review ownership before access is granted.'}}catch(e){return{ok:false,message:e instanceof Error?e.message:'Unable to submit claim.'}}
+}
+export async function submitListingReport(_:ActionState,fd:FormData):Promise<ActionState>{
+  try{const s=await createClient();const{error}=await s.rpc('submit_listing_report',{p_business_id:text(fd,'business_id'),p_report_type:text(fd,'report_type'),p_details:text(fd,'details'),p_reporter_name:text(fd,'name')||null,p_reporter_email:text(fd,'email')||null});if(error)return{ok:false,message:error.message};return{ok:true,message:'Thanks. Your listing report was sent to staff for review.'}}catch(e){return{ok:false,message:e instanceof Error?e.message:'Unable to submit report.'}}
+}
+export async function toggleSavedBusiness(businessId:string){
+  const claims=await requireUser('/account/saved'); const s=await createClient(); const uid=String(claims.sub)
+  const {data}=await s.from('saved_businesses').select('business_id').eq('user_id',uid).eq('business_id',businessId).maybeSingle()
+  if(data) await s.from('saved_businesses').delete().eq('user_id',uid).eq('business_id',businessId)
+  else await s.from('saved_businesses').insert({user_id:uid,business_id:businessId})
+  revalidatePath('/account'); revalidatePath('/account/saved')
+}
+export async function submitOwnerEdit(fd:FormData){
+  const claims=await requireUser('/business-portal');const s=await createClient(); const businessId=text(fd,'business_id')
+  const proposed={description:text(fd,'description'),phone:text(fd,'phone'),website:text(fd,'website'),hours:text(fd,'hours')}
+  await s.from('business_edit_requests').insert({tenant_id:TENANT_ID,business_id:businessId,requested_by:String(claims.sub),request_type:'profile_update',proposed_changes:proposed,status:'pending'})
+  revalidatePath('/business-portal')
+}
