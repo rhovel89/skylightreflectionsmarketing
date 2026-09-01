@@ -10,10 +10,12 @@ const parts = await Promise.all(names.map(async (name) => {
   if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.status}`);
   return (await response.text()).trim();
 }));
-const files = JSON.parse(zlib.gunzipSync(Buffer.from(parts.join(''), 'base64')).toString('utf8'));
-for (const [file, data] of Object.entries(files)) {
-  const target = path.resolve(process.cwd(), file);
+const payload = JSON.parse(zlib.gunzipSync(Buffer.from(parts.join(''), 'base64')).toString('utf8'));
+if (!Array.isArray(payload.files)) throw new Error('Canonical payload is missing files[]');
+for (const entry of payload.files) {
+  if (!entry || typeof entry.file !== 'string' || typeof entry.data !== 'string') throw new Error('Invalid canonical file entry');
+  const target = path.resolve(process.cwd(), entry.file);
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, data, 'utf8');
+  fs.writeFileSync(target, entry.data, 'utf8');
 }
-console.log(`Restored ${Object.keys(files).length} canonical V15.4 source files.`);
+console.log(`Restored ${payload.files.length} canonical V15.4 source files.`);
