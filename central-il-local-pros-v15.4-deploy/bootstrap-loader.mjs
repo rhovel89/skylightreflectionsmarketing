@@ -11,11 +11,12 @@ const parts = await Promise.all(names.map(async (name) => {
   return (await response.text()).trim();
 }));
 const payload = JSON.parse(zlib.gunzipSync(Buffer.from(parts.join(''), 'base64')).toString('utf8'));
-if (!Array.isArray(payload.files)) throw new Error('Canonical payload is missing files[]');
-for (const entry of payload.files) {
-  if (!entry || typeof entry.file !== 'string' || typeof entry.data !== 'string') throw new Error('Invalid canonical file entry');
-  const target = path.resolve(process.cwd(), entry.file);
+let restored = 0;
+for (const [file, entry] of Object.entries(payload)) {
+  if (!entry || typeof entry !== 'object' || entry.t !== 'u' || typeof entry.d !== 'string') throw new Error(`Invalid canonical entry: ${file}`);
+  const target = path.resolve(process.cwd(), file);
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  fs.writeFileSync(target, entry.data, 'utf8');
+  fs.writeFileSync(target, entry.d, 'utf8');
+  restored += 1;
 }
-console.log(`Restored ${payload.files.length} canonical V15.4 source files.`);
+console.log(`Restored ${restored} canonical V15.4 source files.`);
