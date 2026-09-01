@@ -1,0 +1,33 @@
+name: Central Illinois Local Pros Build
+
+on:
+  push:
+    branches:
+      - central-il-local-pros-v15.5
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://zbsdbqdvmlatlklwjiuh.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_LBq2AdU6exdOApLzWspZxw_s8P22U1d
+      NEXT_PUBLIC_SITE_URL: https://central-il-local-pros.vercel.app
+    steps:
+      - name: Checkout isolated Local Pros branch
+        uses: actions/checkout@v4
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: TypeScript check
+        run: npm run typecheck
+      - name: Next.js production build
+        run: npm run build
