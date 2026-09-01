@@ -30,3 +30,31 @@ jobs:
         run: npm run typecheck
       - name: Next.js production build
         run: npm run build
+      - name: Start production server and smoke test safe routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm start > /tmp/local-pros-next.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+
+          READY=0
+          for i in {1..40}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/api/health | grep -q '"ok":true'; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/local-pros-next.log
+            exit 1
+          fi
+
+          for ROUTE in / /illinois /guides /robots.txt /sitemap.xml /login; do
+            echo "Smoke testing $ROUTE"
+            curl --fail --silent --show-error --output /dev/null "http://127.0.0.1:3000${ROUTE}"
+          done
+
+          curl --silent --show-error --head http://127.0.0.1:3000/admin | grep -qi '^x-robots-tag: noindex, nofollow, noarchive'
+          grep -q "robots:{index:false,follow:true}" app/search/page.tsx
