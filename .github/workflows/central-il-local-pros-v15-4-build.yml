@@ -23,8 +23,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: central-il-local-pros-v15.4-deploy/package-lock.json
       - name: Restore canonical source
         run: node bootstrap-loader.mjs
       - name: Install exact dependencies
