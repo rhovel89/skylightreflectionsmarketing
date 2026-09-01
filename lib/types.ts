@@ -5,7 +5,8 @@ export type SiteSettings = {
   brand_dark_color?: string; brand_charcoal_color?: string; brand_light_color?: string; brand_silver_color?: string;
   consumer_tagline?: string; business_tagline?: string; hero_eyebrow?: string; hero_title?: string;
   hero_subtitle?: string; footer_text?: string; support_email?: string | null; support_phone?: string | null;
-  default_seo_title?: string | null; default_meta_description?: string | null; social_links?: Json; feature_flags?: Json;
+  default_seo_title?: string | null; default_meta_description?: string | null; founding_offer?: string | null;
+  social_links?: Json; feature_flags?: Json; branding_options?: Json;
 }
 export type Plan = { id:string; slug:string; name:string; monthly_price_cents:number; annual_price_cents:number|null; is_active:boolean; features:Json; description?:string|null; badge?:string|null; entitlements?:Json; sort_order?:number }
 export type NavItem = { id:string; menu_key:string; label:string; href:string; sort_order:number; is_visible:boolean; parent_id?:string|null }
