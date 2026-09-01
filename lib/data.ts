@@ -20,14 +20,29 @@ export async function getLocations(): Promise<Location[]> {
 export async function getBusinesses(opts:{vertical?:string;city?:string;category?:string;q?:string;limit?:number}={}):Promise<Business[]> {
   try {
     const s=await createClient(); const limit=opts.limit??100
+    let cityBusinessIds:string[]|undefined
+    const matchedBranches=new Map<string,{address_text?:string|null;city?:string|null;state?:string|null;postal_code?:string|null;phone?:string|null;is_primary?:boolean|null}>()
+
+    if(opts.city){
+      const {data:loc}=await s.from('locations').select('id').eq('tenant_id',TENANT_ID).eq('slug',opts.city).eq('is_active',true).maybeSingle()
+      if(!loc)return []
+      const {data:branchRows,error:branchError}=await s.from('business_locations').select('business_id,address_text,city,state,postal_code,phone,is_primary').eq('tenant_id',TENANT_ID).eq('location_id',loc.id).eq('is_active',true)
+      if(branchError)return []
+      for(const row of branchRows??[]){if(!matchedBranches.has(row.business_id)||row.is_primary)matchedBranches.set(row.business_id,row)}
+      cityBusinessIds=[...matchedBranches.keys()]
+      if(!cityBusinessIds.length)return []
+    }
+
     let query=s.from('businesses').select('id,slug,name,abbr,phone,email,website,description,hours,rating,review_count,verified,featured,claimed,profile_score,status,price_range,menu_url,ordering_url,reservation_url,attributes,address_text,source_name,source_url,primary_location_id,business_categories!inner(categories!inner(vertical,slug,name)),locations!businesses_primary_location_id_fkey(name,slug)').eq('tenant_id',TENANT_ID).eq('status','published').limit(limit)
     if(opts.vertical) query=query.eq('business_categories.categories.vertical',opts.vertical)
     if(opts.category) query=query.eq('business_categories.categories.slug',opts.category)
-    if(opts.city) query=query.eq('locations.slug',opts.city)
-    if(opts.q) query=query.ilike('name',`%${opts.q}%`)
+    if(cityBusinessIds) query=query.in('id',cityBusinessIds)
+    if(opts.q?.trim()) query=query.ilike('name',`%${opts.q.trim()}%`)
     const {data,error}=await query.order('verified',{ascending:false}).order('profile_score',{ascending:false}).order('name')
     if(error) return []
-    return (data??[]) as unknown as Business[]
+    const rows=(data??[]) as unknown as Business[]
+    if(!opts.city)return rows
+    return rows.map(b=>Object.assign({},b,{matched_location:matchedBranches.get(b.id)}))
   } catch { return [] }
 }
 export async function getBusiness(slug:string) {
