@@ -8,5 +8,6 @@ This file records the persistent Git-linked production verification for Central 
 - Live alias under test: `https://central-il-local-pros.vercel.app`
 - Initial Git integration check: 2026-09-01
 - Production-branch/environment cutover check: 2026-09-01
+- Automatic post-cutover Git deployment check: 2026-09-01
 
-This documentation-only push intentionally verifies that the persistent Vercel project now builds the isolated V15.5 Git branch with the configured Supabase public environment variables and treats that branch as Production.
+This documentation-only push verifies that future commits to the isolated V15.5 branch automatically trigger the Vercel project after Production and Preview environment variables were configured and the production branch was switched to `central-il-local-pros-v15.5`.
