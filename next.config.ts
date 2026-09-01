@@ -1,10 +1,18 @@
 import type { NextConfig } from 'next'
 
+const securityHeaders = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'DENY' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+]
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {
     return [
+      { source: '/:path*', headers: securityHeaders },
       {
         source: '/admin/:path*',
         headers: [
@@ -14,11 +22,17 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/account/:path*',
-        headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+          { key: 'Cache-Control', value: 'private, no-store' },
+        ],
       },
       {
         source: '/business-portal/:path*',
-        headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
+        headers: [
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+          { key: 'Cache-Control', value: 'private, no-store' },
+        ],
       },
     ]
   },
