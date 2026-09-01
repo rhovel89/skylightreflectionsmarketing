@@ -24,8 +24,12 @@ export async function toggleSavedBusiness(businessId:string){
   revalidatePath('/account'); revalidatePath('/account/saved')
 }
 export async function submitOwnerEdit(fd:FormData){
-  const claims=await requireUser('/business-portal');const s=await createClient(); const businessId=text(fd,'business_id')
+  const claims=await requireUser('/business-portal'); const s=await createClient(); const uid=String(claims.sub); const businessId=text(fd,'business_id')
+  if(!businessId) throw new Error('A business is required.')
+  const {data:ownership,error:ownershipError}=await s.from('business_owners').select('business_id').eq('user_id',uid).eq('business_id',businessId).maybeSingle()
+  if(ownershipError||!ownership) throw new Error('You are not authorized to edit this business.')
   const proposed={description:text(fd,'description'),phone:text(fd,'phone'),website:text(fd,'website'),hours:text(fd,'hours')}
-  await s.from('business_edit_requests').insert({tenant_id:TENANT_ID,business_id:businessId,requested_by:String(claims.sub),request_type:'profile_update',proposed_changes:proposed,status:'pending'})
-  revalidatePath('/business-portal')
+  const {error}=await s.from('business_edit_requests').insert({tenant_id:TENANT_ID,business_id:businessId,requested_by:uid,request_type:'profile_update',proposed_changes:proposed,status:'pending'})
+  if(error) throw new Error('Unable to submit this change request.')
+  revalidatePath('/business-portal'); revalidatePath('/business-portal/listing'); revalidatePath('/business-portal/requests')
 }
