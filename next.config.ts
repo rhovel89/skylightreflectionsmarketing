@@ -10,11 +10,6 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '6mb',
-    },
-  },
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },
