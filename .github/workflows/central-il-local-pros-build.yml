@@ -58,3 +58,15 @@ jobs:
 
           curl --silent --show-error --head http://127.0.0.1:3000/admin | grep -qi '^x-robots-tag: noindex, nofollow, noarchive'
           grep -q "robots:{index:false,follow:true}" app/search/page.tsx
+      - name: Package validated source for deployment handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: central-il-local-pros-vercel-source
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+          path: |
+            .
+            !.git/**
+            !node_modules/**
+            !.next/**
