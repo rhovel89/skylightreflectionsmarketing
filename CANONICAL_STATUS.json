@@ -1,6 +1,6 @@
 {
   "version": "15.5.0",
-  "stage": "production_live_postlaunch_hardening",
+  "stage": "production_live_growth_operations",
   "checkpoint_date": "2026-09-01",
   "validated_release_code_commit": "d1f1b1cd98891c0adccb2ebc1269c46b970ffdd6",
   "validated_locked_dependency_install": "success",
@@ -12,6 +12,8 @@
   "package_lock_version": 3,
   "deterministic_npm_ci": true,
   "ci_repository_permissions": "contents: read",
+  "production_monitor_workflow": ".github/workflows/central-il-local-pros-production-monitor.yml",
+  "production_monitor_schedule": "every_6_hours",
   "smoke_tested_safe_routes": [
     "/api/health",
     "/",
@@ -25,13 +27,13 @@
   "search_noindex_source_assertion": "success",
   "supabase_project_ref": "zbsdbqdvmlatlklwjiuh",
   "tenant_id": "6673621d-b359-4c17-a984-c8f50d914eb3",
-  "published_businesses": 301,
-  "active_physical_locations": 306,
-  "filled_seo_clusters": 88,
+  "published_businesses": 306,
+  "active_physical_locations": 312,
+  "filled_seo_clusters": 91,
   "open_one_away_clusters": 1,
-  "open_two_away_clusters": 44,
-  "reviewed_auto_index_pages": 100,
-  "published_guides": 53,
+  "open_two_away_clusters": 41,
+  "reviewed_auto_index_pages": 103,
+  "published_guides": 56,
   "auth_users_at_checkpoint": 1,
   "super_admin_roles_at_checkpoint": 1,
   "verified_businesses": 0,
@@ -44,6 +46,7 @@
   "consumer_leads": 0,
   "sponsorship_records": 0,
   "listing_events": 308,
+  "search_events": 3,
   "security_advisor_lints": 1,
   "security_advisor_warning": "auth_leaked_password_protection",
   "security_advisor_warning_blocking_launch": false,
@@ -89,7 +92,7 @@
   "launch_readiness_admin_dashboard": true,
   "launch_readiness_claim_scope_corrected": true,
   "authenticated_rls_recursion_fixed": true,
-  "authenticated_admin_inventory_readback": "301_businesses_306_locations",
+  "authenticated_admin_inventory_readback": "301_businesses_306_locations_at_launch; postlaunch inventory now 306_businesses_312_locations",
   "durable_site_asset_bucket": "site-assets",
   "direct_browser_brand_logo_upload": true,
   "durable_brand_logo_installed": true,
@@ -127,8 +130,25 @@
   "remote_strategy": "isolated branch in rhovel89/skylightreflectionsmarketing; main unchanged",
   "remote_branch": "central-il-local-pros-v15.5",
   "remaining_external_launch_gates": [],
+  "post_launch_growth_batch_1": {
+    "new_canonical_businesses": 5,
+    "new_active_locations": 6,
+    "new_business_prospects": 5,
+    "new_outreach_tasks": 10,
+    "taxonomy_corrections": ["Taproot -> American Restaurants"],
+    "branch_corrections": ["Jeremiah Joe Coffee -> Canal Avenue Drive-Thru"],
+    "clusters_filled": [
+      "Decatur / American Restaurants",
+      "Morris / American Restaurants",
+      "Ottawa / Cafes & Coffee"
+    ],
+    "reviewed_seo_pages_added": 3,
+    "published_guides_added": 3,
+    "pontiac_cafes_gap_kept_open": "Current state tourism listing conflicts with Pontiac's current local directories; no forced third provider."
+  },
   "post_launch_hardening": [
     "Enable Supabase Auth leaked-password protection when available/configured for the project plan",
-    "Continue real-traffic verification of owner claim/edit/media and lead-routing workflows without fabricating production activity"
+    "Continue real-traffic verification of owner claim/edit/media and lead-routing workflows without fabricating production activity",
+    "Use Search Intelligence after representative traffic accumulates before treating zero-result searches as demand signals"
   ]
 }
