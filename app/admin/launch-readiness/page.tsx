@@ -31,7 +31,7 @@ export default async function Page() {
     s.from('business_locations').select('id', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('is_active', true),
     s.from('businesses').select('id', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('verified', true),
     s.from('business_locations').select('id', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('verified', true),
-    s.from('business_claims').select('id', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('status', 'pending'),
+    s.from('business_claims').select('id,businesses!inner(tenant_id)', { count: 'exact', head: true }).eq('businesses.tenant_id', TENANT_ID).eq('status', 'pending'),
     s.from('business_submissions').select('id', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('status', 'pending'),
     s.from('business_edit_requests').select('id', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('status', 'pending'),
     s.from('listing_reports').select('id', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('status', 'pending'),
