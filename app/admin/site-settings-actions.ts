@@ -22,10 +22,33 @@ function managedSiteAssetPath(value:string|null|undefined){
     return path.startsWith(`${TENANT_ID}/branding/`)?path:null;
   }catch{return null}
 }
+function validManagedLogoPath(path:string){
+  const escapedTenant=TENANT_ID.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return new RegExp(`^${escapedTenant}/branding/[0-9a-f-]{36}\\.(png|jpg|webp)$`,'i').test(path);
+}
 function revalidateBranding(){
   revalidatePath('/','layout');
   revalidatePath('/admin/site-builder');
   revalidatePath('/admin/launch-readiness');
+}
+
+export async function activateBrandLogo(path:string){
+  const{claims}=await requireAdmin('/admin/site-builder');
+  if(!validManagedLogoPath(path))throw new Error('Invalid managed logo asset path.');
+  const s=await createClient();
+  const{data:current,error:currentError}=await s.from('site_settings').select('brand_logo_url').eq('tenant_id',TENANT_ID).maybeSingle();
+  if(currentError)throw new Error(currentError.message);
+
+  const{data:publicUrlData}=s.storage.from('site-assets').getPublicUrl(path);
+  const publicUrl=publicUrlData.publicUrl;
+  const{error:updateError}=await s.from('site_settings').update({brand_logo_url:publicUrl,updated_at:new Date().toISOString()}).eq('tenant_id',TENANT_ID);
+  if(updateError)throw new Error(updateError.message);
+
+  const oldPath=managedSiteAssetPath(current?.brand_logo_url);
+  if(oldPath&&oldPath!==path)await s.storage.from('site-assets').remove([oldPath]);
+  await s.from('audit_log').insert({tenant_id:TENANT_ID,actor_user_id:String(claims.sub),action_type:'site_brand_logo_update',action_text:'Updated the durable site brand logo asset.'});
+  revalidateBranding();
+  return{ok:true,publicUrl};
 }
 
 export async function uploadBrandLogo(fd:FormData){
