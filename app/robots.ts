@@ -1,1 +1,1 @@
-import type{MetadataRoute}from'next';export default function robots():MetadataRoute.Robots{return{rules:[{userAgent:'*',allow:'/',disallow:['/admin/','/account/','/business-portal/','/api/']}],sitemap:`${process.env.NEXT_PUBLIC_SITE_URL||'https://example.com'}/sitemap.xml`}}
+import type{MetadataRoute}from'next';import{getSiteUrl}from'@/lib/site-url';export default function robots():MetadataRoute.Robots{const base=getSiteUrl();return{rules:[{userAgent:'*',allow:'/',disallow:['/admin/','/account/','/business-portal/','/api/','/auth/','/login']}],sitemap:`${base}/sitemap.xml`}}
