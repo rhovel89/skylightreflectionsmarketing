@@ -5,7 +5,7 @@ import { ADMIN_ENTITIES } from '@/lib/admin'
 import { TENANT_ID } from '@/lib/constants'
 
 const ADMIN_ONLY_SECTIONS=new Set(['businesses','branches','content-blocks','coverage','categories','locations','guides','seo','sponsorships','subscriptions'])
-const WORKFLOW_ONLY_SECTIONS=new Set(['claims','edit-requests','submissions'])
+const WORKFLOW_ONLY_SECTIONS=new Set(['claims','edit-requests','submissions','reports'])
 async function authorize(section:string){
   const claims=await getClaims(); if(!claims?.sub)return null
   const roles=await getRoles(String(claims.sub));
