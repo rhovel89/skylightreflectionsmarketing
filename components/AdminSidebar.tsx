@@ -1,6 +1,6 @@
 const groups:[string,[string,string][]][]=[
   ['Directory',[
-    ['dashboard','Dashboard'],['businesses','Businesses'],['submissions','Approval Queue'],['claims','Claims'],['leads','Leads'],['reports','Listing Reports']
+    ['dashboard','Dashboard'],['businesses','Businesses'],['submissions','Approval Queue'],['claims','Claims'],['leads','Skylight Lead Marketplace'],['reports','Listing Reports']
   ]],
   ['Markets & Content',[
     ['locations','Markets & Locations'],['categories','Category Manager'],['branches','Locations & Branches'],['coverage','Page Coverage Manager'],['content-blocks','Site Content Blocks'],['media','Business Media'],['guides','Content Hub / Guides'],['seo','SEO Command Center']
@@ -9,7 +9,7 @@ const groups:[string,[string,string][]][]=[
     ['site-builder','Site Builder / Brand & Content'],['pricing','Pricing & Plans'],['revenue','Revenue Operations'],['navigation','Navigation Editor'],['edit-requests','Business Edit Requests'],['subscriptions','Subscription Manager'],['sponsorships','Sponsored Placement']
   ]],
   ['Growth & Intelligence',[
-    ['growth','Acquisition Funnel'],['inventory-expansion','Inventory Expansion'],['routing','Lead Routing'],['prospects','Skylight Sales CRM'],['outreach','Marketing Opportunities'],['marketing-leads','Skylight Leads'],['marketing','Public Marketing Studio'],['search','Search Intelligence'],['analytics','Listing Analytics']
+    ['growth','Acquisition Funnel'],['inventory-expansion','Inventory Expansion'],['routing','Lead Routing'],['prospects','Skylight Sales CRM'],['outreach','Marketing Opportunities'],['marketing-leads','Skylight Leads'],['marketing','Marketing Control Center'],['search','Search Intelligence'],['analytics','Listing Analytics']
   ]],
   ['Administration',[
     ['launch-readiness','Launch Readiness'],['bulk-import','Bulk Import'],['team','Team / Roles'],['audit','Audit Log']
