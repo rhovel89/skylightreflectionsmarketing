@@ -7,13 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl()
   const s = await createClient()
   const [
-    { data: biz },
-    { data: seo },
-    { data: guides },
-    { data: locations },
-    { data: categories },
-    { data: branches },
-    { data: businessCategories },
+    { data: biz }, { data: seo }, { data: guides }, { data: locations }, { data: categories }, { data: branches }, { data: businessCategories },
   ] = await Promise.all([
     s.from('businesses').select('slug,updated_at').eq('tenant_id', TENANT_ID).eq('status', 'published'),
     s.from('seo_pages').select('city,category,updated_at').eq('tenant_id', TENANT_ID).eq('reviewed', true).eq('index_mode', 'auto'),
@@ -27,7 +21,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const citySlug = new Map((locations ?? []).map(x => [String(x.name).toLowerCase(), x.slug]))
   const categorySlug = new Map((categories ?? []).map(x => [String(x.name).toLowerCase(), x.slug]))
   const categoriesByBusiness = new Map<string, Set<string>>()
-
   for (const row of businessCategories ?? []) {
     const businessId = String((row as any).business_id || '')
     const joined = (row as any).categories
@@ -35,8 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const name = String(category?.name || '').trim().toLowerCase()
     if (!businessId || !name) continue
     const set = categoriesByBusiness.get(businessId) ?? new Set<string>()
-    set.add(name)
-    categoriesByBusiness.set(businessId, set)
+    set.add(name); categoriesByBusiness.set(businessId, set)
   }
 
   const cityCoverage = new Map<string, Set<string>>()
@@ -55,6 +47,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ['/legal-services', 'weekly', .85],
     ['/restaurants', 'weekly', .85],
     ['/local-stores', 'weekly', .85],
+    ['/local-services', 'weekly', .85],
+    ['/childcare', 'monthly', .7],
     ['/illinois', 'weekly', .8],
     ['/guides', 'weekly', .8],
     ['/for-businesses', 'monthly', .65],
@@ -68,24 +62,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const seoMap = new Map<string, MetadataRoute.Sitemap[number]>()
   for (const x of seo ?? []) {
-    const rawCity = String((x as any).city || '').trim()
-    const cityKey = rawCity.toLowerCase()
-    const city = citySlug.get(cityKey)
+    const rawCity = String((x as any).city || '').trim(); const cityKey = rawCity.toLowerCase(); const city = citySlug.get(cityKey)
     if (!city || ((cityCoverage.get(cityKey)?.size ?? 0) < 3)) continue
-
-    const rawCategory = String((x as any).category || '').trim()
-    let url = `${base}/illinois/${city}`
-    let priority = .75
+    const rawCategory = String((x as any).category || '').trim(); let url = `${base}/illinois/${city}`; let priority = .75
     if (rawCategory) {
-      const categoryKey = rawCategory.toLowerCase()
-      const category = categorySlug.get(categoryKey)
+      const categoryKey = rawCategory.toLowerCase(); const category = categorySlug.get(categoryKey)
       if (!category || ((categoryCoverage.get(`${cityKey}|${categoryKey}`)?.size ?? 0) < 3)) continue
-      url += `/${category}`
-      priority = .8
+      url += `/${category}`; priority = .8
     }
-
-    const current = seoMap.get(url)
-    const updated = (x as any).updated_at
+    const current = seoMap.get(url); const updated = (x as any).updated_at
     if (!current || (!current.lastModified && updated)) seoMap.set(url, { url, lastModified: updated || undefined, changeFrequency: 'weekly', priority })
   }
 
@@ -97,8 +82,4 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 }
 
-function add(map: Map<string, Set<string>>, key: string, id: string) {
-  const set = map.get(key) ?? new Set<string>()
-  set.add(id)
-  map.set(key, set)
-}
+function add(map: Map<string, Set<string>>, key: string, id: string) { const set = map.get(key) ?? new Set<string>(); set.add(id); map.set(key, set) }

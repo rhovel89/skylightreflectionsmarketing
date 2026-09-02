@@ -9,6 +9,7 @@ export const VERTICALS = [
   { key: 'legal', label: 'Attorneys', href: '/legal-services' },
   { key: 'restaurant', label: 'Restaurants', href: '/restaurants' },
   { key: 'retail', label: 'Local Stores', href: '/local-stores' },
+  { key: 'other', label: 'Local Services', href: '/local-services' },
 ] as const
 export const STAFF_ROLES = ['staff','admin','super_admin'] as const
 export const ADMIN_ROLES = ['admin','super_admin'] as const
@@ -27,6 +28,6 @@ export const DEFAULT_BRAND = {
   business_tagline: 'Get Found by More Local Customers.',
   hero_eyebrow: 'Central Illinois Business Directory',
   hero_title: 'Find the Right Local Pro.',
-  hero_subtitle: 'Find home-service professionals, attorneys, restaurants and local stores across Central Illinois. Compare local profiles and connect directly.',
+  hero_subtitle: 'Find home-service professionals, attorneys, restaurants, local stores and independent local service providers across Central Illinois. Compare local profiles and connect directly.',
   footer_text: 'Powered by Skylight Reflections Marketing',
 }
