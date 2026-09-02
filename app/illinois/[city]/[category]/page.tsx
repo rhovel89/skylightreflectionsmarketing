@@ -39,6 +39,10 @@ function categoryLabel(slug: string, name: string, vertical: string): CategoryLa
   return { singular: `${name.toLowerCase()} provider`, plural: `${name.toLowerCase()} provider` }
 }
 
+function indefiniteArticle(label: string) {
+  return /^[aeiou]/i.test(label) || /^HVAC\b/.test(label) ? 'an' : 'a'
+}
+
 function comparisonAdvice(slug: string, vertical: string, categoryName: string) {
   const specific: Record<string, string> = {
     'cafes-coffee': 'Compare current hours, coffee and food options, seating, accessibility, parking and whether the cafe fits a quick stop, breakfast, meeting or longer work session. Confirm time-sensitive details directly before visiting.',
@@ -153,6 +157,7 @@ export default async function Page({ params }: { params: Promise<{ city: string;
     .slice(0, 3)
 
   const label = categoryLabel(cat.slug, cat.name, cat.vertical)
+  const article = indefiniteArticle(label.singular)
   const officialResource = trustResource(cat.vertical)
   const faq = [
     {
@@ -160,7 +165,7 @@ export default async function Page({ params }: { params: Promise<{ city: string;
       answer: `This page currently includes ${businesses.length} published ${label.plural} profile${businesses.length === 1 ? '' : 's'} connected to an active ${loc.name} location. The count can change as directory inventory is reviewed, added or updated.`,
     },
     {
-      question: `What should I compare when choosing a ${label.singular} in ${loc.name}?`,
+      question: `What should I compare when choosing ${article} ${label.singular} in ${loc.name}?`,
       answer: comparisonAdvice(cat.slug, cat.vertical, cat.name),
     },
     {
