@@ -22,6 +22,7 @@ export async function PATCH(req:Request){
   if(!['business_claims','sponsorships','subscriptions'].includes(cfg.table)) q=q.eq('tenant_id',TENANT_ID)
   const {error}=await q; if(error)return NextResponse.json({error:error.message},{status:400})
   const fields=Object.keys(changes).sort().join(', ')
-  await supabase.from('audit_logs').insert({tenant_id:TENANT_ID,actor_user_id:String(auth.claims.sub),action_type:'admin_entity_update',action_text:`Updated ${body.section} record ${body.id}; fields: ${fields}`})
+  const actionType=body.section==='subscriptions'?'subscription_override':'admin_entity_update'
+  await supabase.from('audit_logs').insert({tenant_id:TENANT_ID,actor_user_id:String(auth.claims.sub),action_type:actionType,action_text:`Updated ${body.section} record ${body.id}; fields: ${fields}`})
   return NextResponse.json({ok:true})
 }
