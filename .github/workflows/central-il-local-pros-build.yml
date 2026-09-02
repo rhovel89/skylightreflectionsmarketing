@@ -13,6 +13,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      requires_deployment: ${{ steps.deploy_scope.outputs.requires_deployment }}
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://zbsdbqdvmlatlklwjiuh.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_LBq2AdU6exdOApLzWspZxw_s8P22U1d
@@ -20,6 +22,20 @@ jobs:
     steps:
       - name: Checkout isolated Local Pros branch
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Detect whether this commit requires a Vercel deployment
+        id: deploy_scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "requires_deployment=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet "${GITHUB_SHA}^" "$GITHUB_SHA" -- . ':(exclude).github/**'; then
+            echo "requires_deployment=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "requires_deployment=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Use Node 22
         uses: actions/setup-node@v4
         with:
@@ -90,8 +106,9 @@ jobs:
     timeout-minutes: 12
     env:
       SITE_URL: https://central-il-local-pros.vercel.app
+      REQUIRES_DEPLOYMENT: ${{ needs.validate.outputs.requires_deployment }}
     steps:
-      - name: Wait for canonical alias to serve this exact commit
+      - name: Verify canonical alias deployment state
         shell: bash
         run: |
           set -euo pipefail
@@ -100,15 +117,27 @@ jobs:
             HEALTH="$(curl --silent --show-error --retry 2 --retry-delay 3 --retry-all-errors "$SITE_URL/api/health" || true)"
             LIVE_SHA="$(jq -r '.deployment_commit // empty' <<<"$HEALTH" 2>/dev/null || true)"
             OK="$(jq -r '.ok // false' <<<"$HEALTH" 2>/dev/null || true)"
-            echo "Attempt $i: live commit=${LIVE_SHA:-unknown} expected=$GITHUB_SHA ok=$OK"
-            if [ "$OK" = "true" ] && [ "$LIVE_SHA" = "$GITHUB_SHA" ]; then
-              MATCHED=1
-              break
+            if [ "$REQUIRES_DEPLOYMENT" = "true" ]; then
+              echo "Attempt $i: live commit=${LIVE_SHA:-unknown} expected=$GITHUB_SHA ok=$OK"
+              if [ "$OK" = "true" ] && [ "$LIVE_SHA" = "$GITHUB_SHA" ]; then
+                MATCHED=1
+                break
+              fi
+            else
+              echo "Attempt $i: workflow-only commit; live application commit=${LIVE_SHA:-unknown} ok=$OK"
+              if [ "$OK" = "true" ] && [ -n "$LIVE_SHA" ]; then
+                MATCHED=1
+                break
+              fi
             fi
             sleep 10
           done
           if [ "$MATCHED" -ne 1 ]; then
-            echo "Canonical production alias never reported the expected Git commit." >&2
+            if [ "$REQUIRES_DEPLOYMENT" = "true" ]; then
+              echo "Canonical production alias never reported the expected Git commit." >&2
+            else
+              echo "Canonical production alias did not report a healthy deployed application commit." >&2
+            fi
             exit 1
           fi
 
