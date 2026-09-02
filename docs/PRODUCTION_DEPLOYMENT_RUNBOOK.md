@@ -28,11 +28,7 @@ Do not make every Git branch a Production deployment. Do not attach the canonica
 
 Vercel Production Branch Tracking is correctly set to `central-il-local-pros-v15.5`. Preview remains available for other branches. The earlier condition where healthy V15.5 builds were created with `target: null` has been corrected.
 
-The current release wave includes the homepage canonical metadata fix committed as:
-
-`2103ad93b626bf917f9971f2ec2d96c5f612324a`
-
-The associated production deployment reached READY and the canonical homepage was verified with a root self-canonical.
+The homepage canonical metadata fix was committed as `2103ad93b626bf917f9971f2ec2d96c5f612324a`, deployed to Production and verified with a root self-canonical.
 
 ## Environment variables
 
@@ -46,7 +42,7 @@ Environment variables and deployment environments are separate concepts.
 
 ## Directory integrity rules
 
-Deployment, SEO and inventory work must preserve directory trust rules.
+Deployment, SEO, acquisition and monetization work must preserve directory trust rules.
 
 Never fabricate:
 
@@ -86,6 +82,7 @@ Search/filter URLs remain `noindex, follow`.
 - Site-wide layout publishes WebSite and Organization structured data, with Skylight Reflections Marketing as the parent organization.
 - City pages and city/category pages use reviewed/index gating and thin-page noindex protection.
 - City/category pages publish BreadcrumbList, unordered ItemList and FAQ structured data where appropriate.
+- Local Guide articles resolve matching city/category records and link directly back to the local directory market; category pages link relevant Local Guides back out, creating reciprocal intent clusters without duplicate pages.
 - Vertical hubs (`/home-services`, `/legal-services`, `/restaurants`, `/local-stores`) have dedicated metadata and structured data.
 - `/illinois` has canonical metadata and an active-location ItemList.
 - `app/sitemap.ts` uses real update timestamps, deduplicates URLs and independently rechecks live provider depth before emitting city/category SEO URLs.
@@ -126,7 +123,7 @@ Use live published inventory as the source of truth when validating market eligi
 
 ## Local Guides benchmark — live verification 2026-09-01
 
-The live database now reports:
+The live database reports:
 
 - **78 published guides**
 - **78 flagship guides at or above 2,000 characters**
@@ -135,6 +132,88 @@ The live database now reports:
 - shortest published guide: **2,206 characters**
 
 This supersedes the older 32-flagship / 43-thin handoff snapshot. Do not add filler simply to increase length. The next editorial work should focus on source quality, freshness, usefulness and intent coverage. Upgrade-before-duplicate remains the anti-cannibalization rule.
+
+## Organic growth → business acquisition → paid revenue architecture
+
+The directory uses a staged business-growth model rather than pay-to-rank:
+
+1. **Organic discovery:** useful indexable city/category pages, business profiles and Local Guides attract local search traffic.
+2. **Free business acquisition:** an existing business can submit a free ownership claim; an unlisted business can submit a free listing for staff review.
+3. **Reviewed owner access:** claims remain separate from verification and are reviewed before owner access is granted.
+4. **Optional business tools:** approved businesses can evaluate paid plan features without changing organic directory relevance.
+5. **Clearly labeled sponsorship:** sponsored placement can be sold separately from organic results and must be represented only by a real active sponsorship record.
+6. **Skylight services:** a business can separately request a marketing visibility review or other Skylight Reflections Marketing services.
+
+### Current plan catalog
+
+The active database plan catalog currently contains:
+
+- Free — $0/month
+- Verified — $19/month or $190/year
+- Featured — $49/month or $490/year
+- Pro — $99/month or $990/year
+
+These plans do not guarantee verification, badges, leads, organic rank or editorial preference. Verification remains an approval workflow. Stripe remains disconnected until it is explicitly enabled and configured; do not represent an inquiry as a paid subscription.
+
+### Acquisition funnel context
+
+`marketing_leads` now retains structured acquisition context when a real business owner submits a request:
+
+- `plan_interest`
+- `context_city`
+- `context_category`
+- `context_business_id`
+- `landing_path`
+
+The public contact workflow validates known plans, active cities/categories and published businesses before persisting that context.
+
+### Privacy-safe growth events
+
+`track_growth_event(...)` records only whitelisted non-PII growth events in `analytics_events`. Public callers cannot supply arbitrary event types or metadata. Successful server-side submissions record submit events only after the corresponding claim, listing submission or marketing lead has actually been created.
+
+Current event families include:
+
+- For Businesses page view
+- free claim/listing CTA intent
+- successful claim/listing submissions
+- paid-plan CTA intent
+- city sponsorship CTA intent
+- business-profile visibility CTA intent
+- marketing-review CTA intent
+- successful marketing lead submissions
+
+Do not create synthetic production events merely to make the dashboard look active.
+
+### Public acquisition entry points
+
+The acquisition layer now includes:
+
+- `/for-businesses` — free claim/listing first, then optional plans
+- pricing cards — selected plan is carried into `/contact`
+- business profiles — free claim remains separate from an optional contextual visibility request
+- city pages — optional city sponsorship request carries real city context
+- `/contact` — validated plan/city/category/business context is preserved on a real submission
+
+### Admin growth intelligence
+
+Private Admin route `/admin/growth` is protected by the shared staff layout and must remain `noindex`. It distinguishes:
+
+- CTA intent from actual submissions
+- actual claims from click events
+- actual marketing requests from plan clicks
+- open outreach tasks from outreach actually marked sent
+- active subscriptions from inquiries
+- active sponsorship records from sponsor interest
+
+Starting acquisition audit:
+
+- **341** researched business prospects in the CRM
+- **257** published/contact-ready prospects in `claim_outreach` across hot/high/medium priority at the latest reconciliation (36 hot, 132 high, 89 medium)
+- **495** open/in-progress outreach tasks
+- **306** open claim-invite tasks
+- the hot/high/medium claim-outreach cohorts already have claim-invite tasks, so do not duplicate them
+- zero claim-invite or marketing-pitch sent timestamps were present at the starting audit; a task is not evidence that outreach was sent
+- zero active sponsorship records at the starting monetization audit
 
 ## Supabase security note
 
@@ -156,11 +235,14 @@ Before considering a release stable, verify:
 8. Pontiac Cafes & Coffee remains noindex until a genuine third provider exists.
 9. `/restaurants` and `/local-stores` resolve normally.
 10. `/contact?reason=list-business` resolves normally.
-11. `/privacy`, `/listing-policy` and `/advertising-disclosure` resolve normally.
-12. `/claim` and `/list-your-business` redirect to their intended workflows.
-13. `/sitemap.xml` and `/robots.txt` return successfully.
-14. Newly unlocked indexable markets appear in the sitemap only after genuine provider depth is met.
-15. No new production runtime-error clusters appear.
+11. A contextual visibility-plan request renders the selected plan and valid market context without changing organic ranking state.
+12. Business profiles expose free claim separately from optional paid visibility.
+13. `/admin/growth` remains staff-protected and noindex.
+14. `/privacy`, `/listing-policy` and `/advertising-disclosure` resolve normally.
+15. `/claim` and `/list-your-business` redirect to their intended workflows.
+16. `/sitemap.xml` and `/robots.txt` return successfully.
+17. Newly unlocked indexable markets appear in the sitemap only after genuine provider depth is met.
+18. No new production runtime-error clusters appear.
 
 ## Verification snapshot — 2026-09-01
 
@@ -168,8 +250,7 @@ Verified during the current audit:
 
 - Production branch tracking: correct (`central-il-local-pros-v15.5`)
 - Production deployment: READY
-- Runtime audit at start of release check: 0 production runtime errors in the prior 24 hours
-- Runtime audit after the release/inventory changes: still 0 production runtime errors
+- Runtime audits before the growth push: 0 production runtime errors
 - `/api/health`: HTTP 200, database healthy, application version 15.5.0
 - Homepage: HTTP 200, `index, follow`, WebSite + Organization schema, explicit root canonical
 - `/illinois/streator/cafes-coffee`: 3 live providers and indexable SEO
@@ -177,8 +258,10 @@ Verified during the current audit:
 - `/illinois/lincoln/boutiques-clothing`: 3 live providers and indexable SEO
 - `/illinois/pontiac/cafes-coffee`: 2 live providers, `noindex, follow`, intentionally absent from indexable sitemap coverage
 - `/illinois/ottawa/delis-sandwiches`: 3 live providers, `index, follow`, self-canonical, BreadcrumbList + ItemList + FAQ schema, included in sitemap
-- `/business/kroger-deli-ottawa-columbus-st`: HTTP 200, self-canonical, LocalBusiness + BreadcrumbList schema, no false claimed/verified/featured badges, no fabricated rating/review block
+- `/business/kroger-deli-ottawa-columbus-st`: HTTP 200, self-canonical, LocalBusiness + BreadcrumbList schema, no false claimed/verified/featured badges, no fabricated rating/review block; free claim and optional contextual visibility are separated
+- `/contact` contextual Featured-plan QA: HTTP 200, valid Ottawa + Delis & Sandwiches context retained in the form, organic-rank disclaimer present
+- `/for-businesses`: HTTP 200, self-canonical; paid pricing cards carry selected plan/source context and explicitly disclaim organic-rank or verification guarantees
 - Sitemap: dynamically includes newly eligible reviewed markets and excludes thin markets through live provider-depth checks
-- Local Guides: 78/78 published guides are now 2,000+ characters; no thin guides remain by the current threshold
+- Local Guides: 78/78 published guides are 2,000+ characters; no thin guides remain by the current threshold
 
-Continue release verification and inventory/editorial expansion from these confirmed baselines rather than reverting to older counts.
+Continue acquisition, release verification and legitimate inventory/editorial expansion from these confirmed baselines rather than reverting to older counts.
