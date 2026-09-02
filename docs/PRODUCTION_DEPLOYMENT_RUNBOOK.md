@@ -124,16 +124,17 @@ The two remaining non-exception 2-provider Lincoln categories were researched ag
 
 Use live published inventory as the source of truth when validating market eligibility. If Admin intelligence disagrees with the live joins, reconcile the intelligence layer before using it to drive inventory expansion.
 
-## Local Guides benchmark
+## Local Guides benchmark — live verification 2026-09-01
 
-Latest guide benchmark from the current release cycle:
+The live database now reports:
 
-- 78 published guides
-- 32 flagship guides at or above 2,000 characters
-- 43 thin guides below 1,500 characters
-- 0 drafts
+- **78 published guides**
+- **78 flagship guides at or above 2,000 characters**
+- **0 thin guides below 1,500 characters**
+- **0 drafts**
+- shortest published guide: **2,206 characters**
 
-Do not bulk-pad thin guides. Upgrade existing URLs individually with useful local information and authoritative/primary sources. Upgrade-before-duplicate remains the anti-cannibalization rule.
+This supersedes the older 32-flagship / 43-thin handoff snapshot. Do not add filler simply to increase length. The next editorial work should focus on source quality, freshness, usefulness and intent coverage. Upgrade-before-duplicate remains the anti-cannibalization rule.
 
 ## Supabase security note
 
@@ -168,6 +169,7 @@ Verified during the current audit:
 - Production branch tracking: correct (`central-il-local-pros-v15.5`)
 - Production deployment: READY
 - Runtime audit at start of release check: 0 production runtime errors in the prior 24 hours
+- Runtime audit after the release/inventory changes: still 0 production runtime errors
 - `/api/health`: HTTP 200, database healthy, application version 15.5.0
 - Homepage: HTTP 200, `index, follow`, WebSite + Organization schema, explicit root canonical
 - `/illinois/streator/cafes-coffee`: 3 live providers and indexable SEO
@@ -177,5 +179,6 @@ Verified during the current audit:
 - `/illinois/ottawa/delis-sandwiches`: 3 live providers, `index, follow`, self-canonical, BreadcrumbList + ItemList + FAQ schema, included in sitemap
 - `/business/kroger-deli-ottawa-columbus-st`: HTTP 200, self-canonical, LocalBusiness + BreadcrumbList schema, no false claimed/verified/featured badges, no fabricated rating/review block
 - Sitemap: dynamically includes newly eligible reviewed markets and excludes thin markets through live provider-depth checks
+- Local Guides: 78/78 published guides are now 2,000+ characters; no thin guides remain by the current threshold
 
 Continue release verification and inventory/editorial expansion from these confirmed baselines rather than reverting to older counts.
