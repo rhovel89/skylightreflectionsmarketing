@@ -22,6 +22,7 @@ function categoryLabel(slug: string, name: string, vertical: string): CategoryLa
     'bakeries-desserts': { singular: 'bakery or dessert shop', plural: 'bakery and dessert shop' },
     'boutiques-clothing': { singular: 'boutique or clothing store', plural: 'boutique and clothing store' },
     'books-records': { singular: 'bookstore or record shop', plural: 'bookstore and record shop' },
+    'gift-shops': { singular: 'gift shop', plural: 'gift shop' },
     'grocery-specialty-foods': { singular: 'grocery or specialty-food store', plural: 'grocery and specialty-food store' },
     'fine-dining': { singular: 'fine-dining restaurant', plural: 'fine-dining restaurant' },
     'family-restaurants': { singular: 'family restaurant', plural: 'family restaurant' },
