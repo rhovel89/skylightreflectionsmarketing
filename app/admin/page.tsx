@@ -7,7 +7,8 @@ const quick=[
   ['/admin/locations','Cities & Markets','Add or edit cities, towns, counties and market hierarchy.'],
   ['/admin/categories','Categories','Manage discovery and SEO categories across all four verticals.'],
   ['/admin/prospects','Skylight Sales CRM','Filter prospects by city, town, market, vertical, stage and priority.'],
-  ['/admin/marketing','Public Marketing Studio','Create branded flyers, social graphics and campaign copy for public promotion.'],
+  ['/admin/leads','Skylight Lead Marketplace','Review, qualify, price and offer eligible home-service leads while protecting consumer details until delivery.'],
+  ['/admin/marketing','Marketing Control Center','Create, save, reuse, schedule and export branded public marketing with QR and Canva-ready workflows.'],
   ['/admin/pricing','Pricing & Plans','Edit plan pricing and customer-facing package details.'],
   ['/admin/revenue','Revenue Operations','Track paid plans, billing health and homepage Featured sponsorships.'],
   ['/admin/site-builder','Brand & Site Content','Manage Skylight branding, public messaging and site settings.'],
@@ -30,7 +31,7 @@ export default async function Page(){
 
   return <>
     <div className="admin-page-head">
-      <div><div className="kpi">Private Skylight Operations</div><h1>Staff / Admin Dashboard</h1><p className="muted">Operate Central Illinois Local Pros from one control plane. Public customers never see SEO diagnostics, security lint results, CRM scores, outreach data or deployment status.</p></div>
+      <div><div className="kpi">Private Skylight Operations</div><h1>Staff / Admin Dashboard</h1><p className="muted">Operate Central Illinois Local Pros from one control plane. Public customers never see SEO diagnostics, security lint results, CRM scores, outreach data, private lead data or deployment status.</p></div>
       <span className="badge neutral">V15.5</span>
     </div>
     <div className="stat-grid">
@@ -41,7 +42,7 @@ export default async function Page(){
       <div className="stat">Active Subscriptions<strong>{results[4].count??0}</strong></div>
       <div className="stat">Homepage Featured<strong>{results[5].count??0}</strong></div>
     </div>
-    <div className="admin-card" style={{marginTop:18}}><div className="kpi">V15.5 Canonical System</div><h2>Everything important should be operable here</h2><p className="muted">Public content, branding, navigation, plans, listings, categories, markets, guides, CRM workflows and marketing assets are managed from protected admin tools.</p></div>
+    <div className="admin-card" style={{marginTop:18}}><div className="kpi">V15.5 Canonical System</div><h2>Everything important should be operable here</h2><p className="muted">Public content, branding, navigation, plans, listings, categories, markets, guides, CRM workflows, lead revenue operations and public marketing assets are managed from protected admin tools.</p></div>
     <div className="section-head admin-quick-head"><div><h2>Common Admin Actions</h2><p className="muted">Jump directly to the areas used most often.</p></div></div>
     <div className="grid grid-4 admin-quick-grid">{quick.map(([href,title,desc])=><Link className="admin-card admin-quick-card" href={href} key={href}><strong>{title}</strong><p className="small muted">{desc}</p><span className="kpi">Open →</span></Link>)}</div>
   </>
