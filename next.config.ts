@@ -7,33 +7,22 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
 ]
 
+const privateHeaders = [
+  { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+  { key: 'Cache-Control', value: 'private, no-store' },
+]
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {
     return [
       { source: '/:path*', headers: securityHeaders },
-      {
-        source: '/admin/:path*',
-        headers: [
-          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
-          { key: 'Cache-Control', value: 'private, no-store' },
-        ],
-      },
-      {
-        source: '/account/:path*',
-        headers: [
-          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
-          { key: 'Cache-Control', value: 'private, no-store' },
-        ],
-      },
-      {
-        source: '/business-portal/:path*',
-        headers: [
-          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
-          { key: 'Cache-Control', value: 'private, no-store' },
-        ],
-      },
+      { source: '/admin/:path*', headers: privateHeaders },
+      { source: '/account/:path*', headers: privateHeaders },
+      { source: '/business-portal/:path*', headers: privateHeaders },
+      { source: '/login', headers: privateHeaders },
+      { source: '/auth/:path*', headers: privateHeaders },
     ]
   },
 }
