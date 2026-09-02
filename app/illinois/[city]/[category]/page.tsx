@@ -9,13 +9,59 @@ import { getSiteUrl } from '@/lib/site-url'
 
 export const dynamic = 'force-dynamic'
 
-function comparisonAdvice(vertical: string, categoryName: string) {
+type CategoryLabel = { singular: string; plural: string }
+
+function categoryLabel(slug: string, name: string, vertical: string): CategoryLabel {
+  const labels: Record<string, CategoryLabel> = {
+    'cafes-coffee': { singular: 'coffee shop or cafe', plural: 'coffee shop and cafe' },
+    'breweries-taprooms': { singular: 'brewery or taproom', plural: 'brewery and taproom' },
+    'bars-pubs': { singular: 'bar or pub', plural: 'bar and pub' },
+    pizza: { singular: 'pizza restaurant', plural: 'pizza restaurant' },
+    antiques: { singular: 'antique store', plural: 'antique store' },
+    'american-restaurants': { singular: 'American restaurant', plural: 'American restaurant' },
+    'bakeries-desserts': { singular: 'bakery or dessert shop', plural: 'bakery and dessert shop' },
+    'boutiques-clothing': { singular: 'boutique or clothing store', plural: 'boutique and clothing store' },
+    'books-records': { singular: 'bookstore or record shop', plural: 'bookstore and record shop' },
+    'grocery-specialty-foods': { singular: 'grocery or specialty-food store', plural: 'grocery and specialty-food store' },
+    'fine-dining': { singular: 'fine-dining restaurant', plural: 'fine-dining restaurant' },
+    'family-restaurants': { singular: 'family restaurant', plural: 'family restaurant' },
+    'mexican-restaurants': { singular: 'Mexican restaurant', plural: 'Mexican restaurant' },
+    'italian-restaurants': { singular: 'Italian restaurant', plural: 'Italian restaurant' },
+    'thai-restaurants': { singular: 'Thai restaurant', plural: 'Thai restaurant' },
+    steakhouses: { singular: 'steakhouse', plural: 'steakhouse' },
+    hvac: { singular: 'HVAC company', plural: 'HVAC company' },
+    plumbing: { singular: 'plumber', plural: 'plumber' },
+    electrical: { singular: 'electrician', plural: 'electrician' },
+    roofing: { singular: 'roofing contractor', plural: 'roofing contractor' },
+  }
+  if (labels[slug]) return labels[slug]
+  if (vertical === 'legal') return { singular: `${name} attorney`, plural: `${name} attorney` }
+  return { singular: `${name.toLowerCase()} provider`, plural: `${name.toLowerCase()} provider` }
+}
+
+function comparisonAdvice(slug: string, vertical: string, categoryName: string) {
+  const specific: Record<string, string> = {
+    'cafes-coffee': 'Compare current hours, coffee and food options, seating, accessibility, parking and whether the cafe fits a quick stop, breakfast, meeting or longer work session. Confirm time-sensitive details directly before visiting.',
+    'breweries-taprooms': 'Compare current tap lists, food service, seating, events, group policies and hours. If alcohol is part of the plan, arrange a safe ride or designated driver before the outing.',
+    'bars-pubs': 'Compare kitchen and bar hours, food and drink options, seating, entertainment or event schedules, parking and the atmosphere you want. If alcohol is part of the plan, arrange safe transportation in advance.',
+    pizza: 'Compare current menus, dine-in and carryout options, delivery area, online ordering, group-size needs, specialty pizzas and dietary options. Confirm current pricing and quoted order times directly with the restaurant.',
+    antiques: 'Compare inventory focus, dealer or booth format, store hours, payment policies, accessibility and pickup options for larger items. Antique inventory changes quickly, so call ahead if you are looking for something specific.',
+    'bakeries-desserts': 'Compare current bakery and dessert selections, preorder requirements, custom-order lead times, hours, dietary options and pickup details. Seasonal and daily inventory can change, so confirm specific items directly.',
+    'boutiques-clothing': 'Compare current inventory, sizing and style focus, store hours, return policies, special-order options and accessibility. Call ahead when you need a specific size, brand or item.',
+    'books-records': 'Compare the store’s current focus, new versus used inventory, special-order options, trade or resale policies, hours and events. Inventory changes frequently, so confirm a specific title or release directly.',
+    'grocery-specialty-foods': 'Compare the products you need, current inventory, store hours, parking, accessibility and specialty or international-food focus. Call ahead for hard-to-find ingredients or seasonal products.',
+    hvac: 'Compare the diagnosis, written scope, repair-versus-replacement reasoning, equipment sizing, efficiency when relevant, warranties, scheduling and total price. Confirm credentials or manufacturer certifications directly when they matter to the job.',
+    plumbing: 'Compare diagnostic or service-call fees, written scope, emergency pricing, parts and fixture allowances, labor warranties, cleanup and permit responsibility when applicable. Ask what is included and excluded before approving work.',
+    electrical: 'Compare the written scope, troubleshooting or service-call fees, permit responsibility, materials, scheduling, warranty terms and who will perform the work. Confirm licensing or insurance directly when applicable to the project.',
+    roofing: 'Compare inspection findings, written scope, materials, tear-off and disposal, flashing and ventilation work, warranties, payment schedule and timing. Confirm insurance, licensing or manufacturer credentials directly when they matter.',
+  }
+  if (specific[slug]) return specific[slug]
   const category = categoryName.toLowerCase()
   if (vertical === 'home') return `When comparing ${category} providers, review the exact scope of work, written estimates, scheduling, warranties, insurance or licensing when applicable, and who will perform the work. Confirm important credentials directly with the provider or issuing organization.`
   if (vertical === 'legal') return `When comparing ${category} attorneys, ask about relevant practice experience, consultation and communication process, fee or retainer structure, conflicts, deadlines and who will work on the matter. Directory information is not legal advice or a prediction of case results.`
-  if (vertical === 'restaurant') return `Compare current menus, hours, reservations or wait-list policies, takeout options, dietary needs, location and group-size needs. Restaurant details can change, so confirm time-sensitive information directly before visiting.`
-  if (vertical === 'retail') return `Compare current inventory, store hours, return policies, special-order options, accessibility and whether the shop fits the type of local shopping trip you are planning. Confirm time-sensitive details directly with the store.`
-  return `Compare published profiles, current contact details, services or products, availability and the factors that matter most for your specific need. Confirm important details directly before making a decision.`
+  if (vertical === 'restaurant') return 'Compare current menus, hours, reservations or wait-list policies, takeout options, dietary needs, location and group-size needs. Restaurant details can change, so confirm time-sensitive information directly before visiting.'
+  if (vertical === 'retail') return 'Compare current inventory, store hours, return policies, special-order options, accessibility and whether the shop fits the type of local shopping trip you are planning. Confirm time-sensitive details directly with the store.'
+  return 'Compare published profiles, current contact details, services or products, availability and the factors that matter most for your specific need. Confirm important details directly before making a decision.'
 }
 
 function schemaBusinessType(vertical: string) {
@@ -88,14 +134,15 @@ export default async function Page({ params }: { params: Promise<{ city: string;
     .filter((g, i, all) => all.findIndex(x => x.id === g.id) === i)
     .slice(0, 3)
 
+  const label = categoryLabel(cat.slug, cat.name, cat.vertical)
   const faq = [
     {
-      question: `How many ${cat.name.toLowerCase()} profiles are published in ${loc.name}?`,
-      answer: `This page currently includes ${businesses.length} published ${cat.name.toLowerCase()} profile${businesses.length === 1 ? '' : 's'} connected to an active ${loc.name} location. The count can change as directory inventory is reviewed, added or updated.`,
+      question: `How many ${label.plural} profiles are published in ${loc.name}?`,
+      answer: `This page currently includes ${businesses.length} published ${label.plural} profile${businesses.length === 1 ? '' : 's'} connected to an active ${loc.name} location. The count can change as directory inventory is reviewed, added or updated.`,
     },
     {
-      question: `What should I compare when choosing ${cat.name.toLowerCase()} in ${loc.name}?`,
-      answer: comparisonAdvice(cat.vertical, cat.name),
+      question: `What should I compare when choosing a ${label.singular} in ${loc.name}?`,
+      answer: comparisonAdvice(cat.slug, cat.vertical, cat.name),
     },
     {
       question: 'Can a business pay to rank higher in the organic directory results?',
