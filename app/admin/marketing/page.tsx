@@ -5,6 +5,7 @@ import { MarketingStudio } from '@/components/MarketingStudio'
 
 export const dynamic = 'force-dynamic'
 
+// Super Admin-only public marketing workspace. Assets are created for review and are never auto-published.
 export default async function Page(){
   await requireSuperAdmin('/admin/marketing')
   const s=await createClient()
