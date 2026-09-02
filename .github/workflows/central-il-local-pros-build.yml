@@ -98,8 +98,8 @@ jobs:
           MATCHED=0
           for i in {1..48}; do
             HEALTH="$(curl --silent --show-error --retry 2 --retry-delay 3 --retry-all-errors "$SITE_URL/api/health" || true)"
-            LIVE_SHA="$(printf '%s' "$HEALTH" | jq -r '.deployment_commit // empty' 2>/dev/null || true)"
-            OK="$(printf '%s' "$HEALTH" | jq -r '.ok // false' 2>/dev/null || true)"
+            LIVE_SHA="$(jq -r '.deployment_commit // empty' <<<"$HEALTH" 2>/dev/null || true)"
+            OK="$(jq -r '.ok // false' <<<"$HEALTH" 2>/dev/null || true)"
             echo "Attempt $i: live commit=${LIVE_SHA:-unknown} expected=$GITHUB_SHA ok=$OK"
             if [ "$OK" = "true" ] && [ "$LIVE_SHA" = "$GITHUB_SHA" ]; then
               MATCHED=1
@@ -117,21 +117,24 @@ jobs:
         run: |
           set -euo pipefail
           HOME="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/")"
-          printf '%s' "$HOME" | grep -q 'Find the Right Local Pro'
-          printf '%s' "$HOME" | grep -q '>Chatham<'
+          grep -q 'Find the Right Local Pro' <<<"$HOME"
+          grep -q '>Chatham<' <<<"$HOME"
           CHATHAM="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/illinois/chatham")"
-          printf '%s' "$CHATHAM" | grep -q 'Chatham'
+          grep -q 'Chatham' <<<"$CHATHAM"
 
       - name: Verify live crawler and privacy controls
         shell: bash
         run: |
           set -euo pipefail
           ROBOTS="$(curl --fail --silent --show-error "$SITE_URL/robots.txt")"
-          printf '%s' "$ROBOTS" | grep -qi 'Disallow: /admin'
-          printf '%s' "$ROBOTS" | grep -qi 'Sitemap:'
+          grep -qi 'Disallow: /admin' <<<"$ROBOTS"
+          grep -qi 'Sitemap:' <<<"$ROBOTS"
           SITEMAP="$(curl --fail --silent --show-error "$SITE_URL/sitemap.xml")"
-          printf '%s' "$SITEMAP" | grep -q 'central-il-local-pros.vercel.app'
-          ! printf '%s' "$SITEMAP" | grep -q 'example.com'
+          grep -q 'central-il-local-pros.vercel.app' <<<"$SITEMAP"
+          if grep -q 'example.com' <<<"$SITEMAP"; then
+            echo 'Sitemap contains placeholder example.com URL.' >&2
+            exit 1
+          fi
           curl --silent --show-error --head "$SITE_URL/admin" | grep -qi '^x-robots-tag: noindex, nofollow, noarchive'
           SEARCH="$(curl --fail --silent --show-error "$SITE_URL/search?city=chatham")"
-          printf '%s' "$SEARCH" | grep -qi 'noindex'
+          grep -qi 'noindex' <<<"$SEARCH"
