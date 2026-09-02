@@ -7,7 +7,10 @@ const EVENTS = new Set([
   'market_sponsorship_click','marketing_review_click','business_visibility_click',
 ])
 const PLANS = new Set(['free','verified','featured','pro','sponsorship','marketing_review'])
-const SOURCES = new Set(['for-businesses','pricing-grid','market-page','city-page','business-profile','contact','navigation'])
+const SOURCES = new Set([
+  'for-businesses','pricing-grid','market-page','city-page','business-profile','contact','navigation',
+  'featured-sidebar','homepage-featured-section','homepage-featured-empty',
+])
 const text = (value: unknown, max: number) => typeof value === 'string' ? value.trim().slice(0, max) : ''
 
 export async function POST(req: Request) {
