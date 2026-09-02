@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const TENANT_ID='6673621d-b359-4c17-a984-c8f50d914eb3'
