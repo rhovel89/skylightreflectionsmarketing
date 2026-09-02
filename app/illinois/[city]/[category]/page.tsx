@@ -72,6 +72,24 @@ function schemaBusinessType(vertical: string) {
   return 'LocalBusiness'
 }
 
+function trustResource(vertical: string) {
+  if (vertical === 'home') return {
+    label: 'Illinois consumer resource',
+    title: 'Home Repair Consumer Guidance',
+    body: 'The Illinois Attorney General provides home-repair guidance covering written estimates, contract terms, consumer rights and warning signs of repair scams. Use it alongside your own contractor comparison.',
+    href: 'https://illinoisattorneygeneral.gov/consumer-protection/home-repair/',
+    link: 'Open Illinois Attorney General guidance →',
+  }
+  if (vertical === 'legal') return {
+    label: 'Illinois court resource',
+    title: 'Court Forms, Legal Help & Self-Help Resources',
+    body: 'The Illinois Courts Self-Help Center provides court forms, Illinois Court Help, legal-aid information and lawyer-finding resources. It provides legal information, not advice for your specific case.',
+    href: 'https://www.illinoiscourts.gov/self-help/',
+    link: 'Open Illinois Courts Self-Help →',
+  }
+  return null
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ city: string; category: string }> }): Promise<Metadata> {
   const { city, category } = await params
   const [locations, cats] = await Promise.all([getLocations(), getCategories()])
@@ -135,6 +153,7 @@ export default async function Page({ params }: { params: Promise<{ city: string;
     .slice(0, 3)
 
   const label = categoryLabel(cat.slug, cat.name, cat.vertical)
+  const officialResource = trustResource(cat.vertical)
   const faq = [
     {
       question: `How many ${label.plural} profiles are published in ${loc.name}?`,
@@ -213,6 +232,8 @@ export default async function Page({ params }: { params: Promise<{ city: string;
             <div className="search-panel"><SearchForm categories={cats} locations={locations} defaults={{ city, category }} /></div>
 
             {seo?.content && <div className="card local-copy"><div className="kpi">Local Buying Guide</div><p className="muted">{seo.content}</p></div>}
+
+            {officialResource && <div className="card local-copy"><div className="kpi">{officialResource.label}</div><h3>{officialResource.title}</h3><p className="muted">{officialResource.body}</p><a href={officialResource.href} target="_blank" rel="noreferrer">{officialResource.link}</a></div>}
 
             {relevantGuides.length > 0 && <section className="inline-guide-section">
               <div className="section-head compact-head">
