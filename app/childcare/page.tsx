@@ -69,7 +69,7 @@ export default function Page(){
           <li>Can you provide current references from families who have used your care?</li>
         </ul></div>
       </div>
-    </section>
+    </div></section>
 
     <section className="section alt"><div className="container"><div className="grid grid-2">
       <div className="card"><div className="kpi">Visit before deciding</div><h2>What to Look For In Person</h2><ul>
