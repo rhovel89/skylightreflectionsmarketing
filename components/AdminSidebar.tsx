@@ -1,6 +1,6 @@
 const groups:[string,[string,string][]][]=[
   ['Directory',[
-    ['dashboard','Dashboard'],['businesses','Businesses'],['submissions','Approval Queue'],['claims','Claims'],['leads','Skylight Lead Marketplace'],['lead-billing','Lead Billing & Inbox Access'],['reports','Listing Reports']
+    ['dashboard','Dashboard'],['businesses','Businesses'],['submissions','Approval Queue'],['claims','Claims'],['leads','Skylight Lead Marketplace'],['lead-billing','Lead Revenue CRM'],['lead-notifications','Lead Email & SMS Alerts'],['reports','Listing Reports']
   ]],
   ['Markets & Content',[
     ['locations','Markets & Locations'],['categories','Category Manager'],['branches','Locations & Branches'],['coverage','Page Coverage Manager'],['content-blocks','Site Content Blocks'],['media','Business Media'],['guides','Content Hub / Guides'],['seo','SEO Command Center']
