@@ -144,7 +144,8 @@ async function uploadMedia(fd: FormData) {
   }
 
   revalidatePath('/business-portal/media')
-  revalidatePath(`/business/${String(fd.get('business_slug') || '')}`)
+  const slug = String(fd.get('business_slug') || '')
+  if (slug) revalidatePath(`/business/${slug}`)
 }
 
 async function deleteMedia(fd: FormData) {
@@ -168,6 +169,8 @@ async function deleteMedia(fd: FormData) {
 
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams
+  const claims = await requireUser('/business-portal/media')
+  const uid = String(claims.sub)
   const { businesses, s } = await getOwnerData('/business-portal/media')
   if (!businesses.length) {
     return <div className="card empty-rich"><h2>Claim a business first</h2><p className="muted">Media tools become available after staff approves a legitimate ownership claim.</p><Link className="btn btn-primary" href="/search">Find My Listing</Link></div>
@@ -246,7 +249,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
         <p className="small muted">{m.original_filename || m.alt_text || m.caption || m.storage_path}{m.mime_type ? ` · ${m.mime_type}` : ''}</p>
         {m.caption && <p>{m.caption}</p>}
         {m.review_notes && <div className="notice warn">Staff note: {m.review_notes}</div>}
-        {m.submitted_by === String((await requireUser('/business-portal/media')).sub) && <form action={deleteMedia}><input type="hidden" name="id" value={m.id} /><input type="hidden" name="business_slug" value={b.slug} /><button className="btn btn-light">Remove Upload</button></form>}
+        {m.submitted_by === uid && <form action={deleteMedia}><input type="hidden" name="id" value={m.id} /><input type="hidden" name="business_slug" value={b.slug} /><button className="btn btn-light">Remove Upload</button></form>}
       </div>)}
       {!data.length && <div className="empty">No media submitted yet.</div>}
     </div>
