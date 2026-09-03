@@ -9,7 +9,7 @@ const groups:[string,[string,string][]][]=[
     ['site-builder','Site Builder / Brand & Content'],['pricing','Pricing & Plans'],['revenue-stack','Revenue Stack'],['revenue','Revenue Operations'],['navigation','Navigation Editor'],['edit-requests','Business Edit Requests'],['subscriptions','Subscription Manager'],['sponsorships','Sponsored Placement']
   ]],
   ['Growth & Intelligence',[
-    ['growth','Acquisition Funnel'],['inventory-expansion','Inventory Expansion'],['routing','Lead Routing'],['prospects','Skylight Sales CRM'],['outreach','Marketing Opportunities'],['marketing-leads','Skylight Leads'],['marketing','Marketing Control Center'],['search','Search Intelligence'],['analytics','Listing Analytics']
+    ['growth','Acquisition Funnel'],['content-intelligence','Content & Market Intelligence'],['inventory-expansion','Inventory Expansion'],['routing','Lead Routing'],['prospects','Skylight Sales CRM'],['outreach','Marketing Opportunities'],['marketing-leads','Skylight Leads'],['marketing','Marketing Control Center'],['search','Search Intelligence'],['analytics','Listing Analytics']
   ]],
   ['Administration',[
     ['launch-readiness','Launch Readiness'],['bulk-import','Bulk Import'],['team','Team / Roles'],['audit','Audit Log']
