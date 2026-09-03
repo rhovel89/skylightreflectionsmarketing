@@ -1,0 +1,2 @@
+update public.plans set description='Enhanced visibility, homepage featured-placement eligibility, business analytics and optional Lead Inbox add-on.' where tenant_id='6673621d-b359-4c17-a984-c8f50d914eb3' and slug='featured';
+update public.plans set description='Advanced directory tools, Pro mini-site, Lead Inbox access, reporting and expanded profile capabilities.' where tenant_id='6673621d-b359-4c17-a984-c8f50d914eb3' and slug='pro';
