@@ -99,10 +99,10 @@ export async function VerticalPage({
         <section className="section"><div className="container">
           {vertical === 'other' && (
             <div className="card" style={{ marginBottom: 24 }}>
-              <div className="kpi">New local-service matching</div>
-              <h2>Need childcare or another independent local service?</h2>
-              <p className="muted">Browse published local providers or submit a private childcare request for staff-reviewed matching. Childcare requests are not posted publicly and should never include a child’s full name, school, medical details or other sensitive information.</p>
-              <div className="actions"><Link className="btn btn-primary" href="/childcare">Find Childcare</Link><Link className="btn btn-light" href="/contact?reason=list-business">List a Local Service</Link></div>
+              <div className="kpi">Parent resource</div>
+              <h2>Looking for childcare guidance?</h2>
+              <p className="muted">Childcare is an informational parent resource only. Review official Illinois provider-search links, questions to ask, visit and safety checklists, and due-diligence guidance. Central Illinois Local Pros does not collect childcare requests or match families with caregivers.</p>
+              <div className="actions"><Link className="btn btn-primary" href="/childcare">Childcare Resources</Link><Link className="btn btn-light" href="/contact?reason=list-business">List a Local Service</Link></div>
             </div>
           )}
           <SearchForm categories={visibleCats} locations={locations} />
