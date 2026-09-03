@@ -14,13 +14,25 @@ export async function getBusinesses(opts:{vertical?:string;city?:string;category
     const s=await createClient(); const limit=opts.limit??100
     let cityBusinessIds:string[]|undefined
     const matchedBranches=new Map<string,{address_text?:string|null;city?:string|null;state?:string|null;postal_code?:string|null;phone?:string|null;is_primary?:boolean|null}>()
-    if(opts.city){const{data:loc}=await s.from('locations').select('id').eq('tenant_id',TENANT_ID).eq('slug',opts.city).eq('is_active',true).maybeSingle();if(!loc)return[];const{data:branchRows,error:branchError}=await s.from('business_locations').select('business_id,address_text,city,state,postal_code,phone,is_primary').eq('tenant_id',TENANT_ID).eq('location_id',loc.id).eq('is_active',true);if(branchError)return[];for(const row of branchRows??[]){if(!matchedBranches.has(row.business_id)||row.is_primary)matchedBranches.set(row.business_id,row)}cityBusinessIds=[...matchedBranches.keys()];if(!cityBusinessIds.length)return[]}
+    const serviceAreaBusinessIds=new Set<string>()
+    if(opts.city){
+      const{data:loc}=await s.from('locations').select('id,name,state').eq('tenant_id',TENANT_ID).eq('slug',opts.city).eq('is_active',true).maybeSingle();if(!loc)return[]
+      const[{data:branchRows,error:branchError},{data:serviceRows,error:serviceError}]=await Promise.all([
+        s.from('business_locations').select('business_id,address_text,city,state,postal_code,phone,is_primary').eq('tenant_id',TENANT_ID).eq('location_id',loc.id).eq('is_active',true),
+        s.from('business_service_areas').select('business_id').eq('location_id',loc.id),
+      ])
+      if(branchError||serviceError)return[]
+      for(const row of branchRows??[]){if(!matchedBranches.has(row.business_id)||row.is_primary)matchedBranches.set(row.business_id,row)}
+      for(const row of serviceRows??[])serviceAreaBusinessIds.add(row.business_id)
+      cityBusinessIds=[...new Set([...matchedBranches.keys(),...serviceAreaBusinessIds])]
+      if(!cityBusinessIds.length)return[]
+    }
     if(opts.category){const{data:cat}=await s.from('categories').select('id').eq('tenant_id',TENANT_ID).eq('slug',opts.category).eq('is_active',true).maybeSingle();if(!cat)return[]}
     let query=s.from('businesses').select('id,slug,name,abbr,phone,email,website,description,hours,rating,review_count,verified,claimed,profile_score,status,price_range,menu_url,ordering_url,reservation_url,attributes,address_text,source_name,source_url,primary_location_id,business_categories!inner(categories!inner(vertical,slug,name)),locations!businesses_primary_location_id_fkey(name,slug)').eq('tenant_id',TENANT_ID).eq('status','published').limit(limit)
     if(opts.vertical)query=query.eq('business_categories.categories.vertical',opts.vertical);if(opts.category)query=query.eq('business_categories.categories.slug',opts.category);if(cityBusinessIds)query=query.in('id',cityBusinessIds);if(opts.q?.trim())query=query.ilike('name',`%${opts.q.trim()}%`)
     const{data,error}=await query.order('verified',{ascending:false}).order('profile_score',{ascending:false}).order('name');if(error)return[]
     const rows=(data??[]) as unknown as Business[]
-    return rows.map(b=>Object.assign({},b,opts.city?{matched_location:matchedBranches.get(b.id)}:{}))
+    return rows.map(b=>Object.assign({},b,opts.city?{matched_location:matchedBranches.get(b.id),matched_service_area:serviceAreaBusinessIds.has(b.id)}:{}))
   } catch { return [] }
 }
 
