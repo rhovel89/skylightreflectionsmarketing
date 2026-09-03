@@ -1,0 +1,13 @@
+create index if not exists business_lead_credits_business_fk_idx on public.business_lead_credits(business_id);
+create index if not exists business_lead_credits_charge_fk_idx on public.business_lead_credits(charge_id);
+create index if not exists business_lead_credits_created_by_fk_idx on public.business_lead_credits(created_by);
+create index if not exists lead_credit_applications_tenant_fk_idx on public.lead_credit_applications(tenant_id);
+create index if not exists lead_credit_requests_business_fk_idx on public.lead_credit_requests(business_id);
+create index if not exists lead_credit_requests_lead_fk_idx on public.lead_credit_requests(lead_id);
+create index if not exists lead_credit_requests_requested_by_fk_idx on public.lead_credit_requests(requested_by);
+create index if not exists lead_credit_requests_reviewed_by_fk_idx on public.lead_credit_requests(reviewed_by);
+create index if not exists lead_delivery_charges_invoice_fk_idx on public.lead_delivery_charges(invoice_id);
+create index if not exists lead_delivery_charges_lead_fk_idx on public.lead_delivery_charges(lead_id);
+create index if not exists lead_marketplace_inventory_target_business_fk_idx on public.lead_marketplace_inventory(target_business_id);
+create index if not exists lead_marketplace_offers_business_fk_idx on public.lead_marketplace_offers(business_id);
+create index if not exists lead_marketplace_offers_route_recipient_fk_idx on public.lead_marketplace_offers(route_recipient_id);
