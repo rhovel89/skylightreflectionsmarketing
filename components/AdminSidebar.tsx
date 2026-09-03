@@ -2,13 +2,13 @@ import { DEFAULT_BRAND } from '@/lib/constants'
 
 const groups:[string,[string,string][]][]=[
   ['Directory',[
-    ['dashboard','Dashboard'],['businesses','Businesses'],['submissions','Approval Queue'],['claims','Claims'],['leads','Skylight Lead Marketplace'],['lead-billing','Lead Revenue CRM'],['revenue-intelligence','Revenue Intelligence'],['lead-notifications','Lead Email & SMS Alerts'],['reports','Listing Reports']
+    ['dashboard','Dashboard'],['businesses','Businesses'],['business-media','Business Media & Menus'],['submissions','Approval Queue'],['claims','Claims'],['leads','Skylight Lead Marketplace'],['lead-billing','Lead Revenue CRM'],['revenue-intelligence','Revenue Intelligence'],['lead-notifications','Lead Email & SMS Alerts'],['reports','Listing Reports']
   ]],
   ['Markets & Content',[
-    ['locations','Markets & Locations'],['categories','Category Manager'],['branches','Locations & Branches'],['coverage','Page Coverage Manager'],['content-blocks','Site Content Blocks'],['media','Business Media'],['guides','Content Hub / Guides'],['seo','SEO Command Center']
+    ['locations','Markets & Locations'],['categories','Category Manager'],['branches','Locations & Branches'],['coverage','Page Coverage Manager'],['content-blocks','Site Content Blocks'],['media','Owner Media Review'],['guides','Content Hub / Guides'],['seo','SEO Command Center']
   ]],
   ['Site Management',[
-    ['site-builder','Site Builder / Brand & Content'],['pricing','Pricing & Plans'],['revenue-stack','Revenue Stack'],['revenue','Revenue Operations'],['navigation','Navigation Editor'],['edit-requests','Business Edit Requests'],['subscriptions','Subscription Manager'],['sponsorships','Sponsored Placement']
+    ['site-builder','Site Builder / Brand & Content'],['pricing','Pricing & Plans'],['revenue-stack','Revenue Stack'],['revenue','Revenue Operations'],['navigation','Navigation Editor'],['edit-requests','Business Edit Requests'],['subscriptions','Subscription Manager'],['sponsorships','Featured / Sponsored Placement']
   ]],
   ['Growth & Intelligence',[
     ['launch-growth','Launch + Growth Command Center'],['growth-opportunities','Growth Opportunity Queue'],['growth','Acquisition Funnel'],['content-intelligence','Content & Market Intelligence'],['inventory-expansion','Inventory Expansion'],['routing','Lead Routing'],['prospects','Skylight Sales CRM'],['outreach','Actionable Outreach Tasks'],['outreach-templates','Outreach Template Library'],['marketing-leads','Skylight Leads'],['marketing','Marketing Control Center'],['search','Search Intelligence'],['analytics','Listing Analytics']
