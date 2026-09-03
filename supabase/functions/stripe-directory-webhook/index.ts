@@ -4,6 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 const TENANT_ID='6673621d-b359-4c17-a984-c8f50d914eb3'
 const APP_ID='central-il-local-pros'
 const ACTIVE_STATUSES=new Set(['active','trialing','past_due'])
+const LEAD_INVOICE_EVENTS=new Set(['invoice.finalized','invoice.paid','invoice.payment_failed','invoice.voided'])
 const enc=new TextEncoder()
 
 function json(body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:{'content-type':'application/json'}})}
@@ -27,24 +28,33 @@ Deno.serve(async(req:Request)=>{
   const existing=await db.from('stripe_webhook_events').select('event_id,status').eq('event_id',event.id).maybeSingle();if(existing.data?.status==='processed')return json({ok:true,duplicate:true})
   await db.from('stripe_webhook_events').upsert({event_id:event.id,event_type:event.type,tenant_id:TENANT_ID,status:'received',received_at:new Date().toISOString()},{onConflict:'event_id'})
   const audit=async(action_type:string,action_text:string)=>{await db.from('audit_logs').insert({tenant_id:TENANT_ID,actor_user_id:null,action_type,action_text})}
+  const notifyOwners=async(businessId:string,eventKey:string,title:string,body:string)=>{const owners=await db.from('business_owners').select('user_id').eq('business_id',businessId);if(owners.error)throw owners.error;const rows=(owners.data||[]).map((x:any)=>({user_id:x.user_id,tenant_id:TENANT_ID,title,body,action_url:`/business-portal/billing?business=${businessId}`,event_key:eventKey}));if(rows.length){const n=await db.from('notifications').upsert(rows,{onConflict:'user_id,event_key',ignoreDuplicates:true});if(n.error)throw n.error}}
   try{
     const obj=event.data.object
-    if((event.type==='invoice.paid'||event.type==='invoice.voided')&&obj?.metadata?.internal_invoice_id){
+    if(LEAD_INVOICE_EVENTS.has(event.type)&&obj?.metadata?.internal_invoice_id){
       const internalInvoiceId=String(obj.metadata.internal_invoice_id),businessId=String(obj.metadata.business_id||'')
-      const leadInvoiceRes=await db.from('lead_invoices').select('id,tenant_id,business_id,invoice_number,amount_due_cents,status,stripe_invoice_id').eq('id',internalInvoiceId).maybeSingle();const leadInvoice=leadInvoiceRes.data
+      const leadInvoiceRes=await db.from('lead_invoices').select('id,tenant_id,business_id,invoice_number,amount_due_cents,status,due_at,stripe_invoice_id').eq('id',internalInvoiceId).maybeSingle();const leadInvoice=leadInvoiceRes.data
       const mismatch=!leadInvoice||leadInvoice.tenant_id!==TENANT_ID||(businessId&&businessId!==leadInvoice.business_id)||(leadInvoice.stripe_invoice_id&&leadInvoice.stripe_invoice_id!==obj.id)||(event.type==='invoice.paid'&&Number(obj.amount_paid)!==Number(leadInvoice.amount_due_cents))
       if(mismatch){await db.from('stripe_webhook_events').update({status:'needs_review',processed_at:new Date().toISOString(),error_message:'Lead invoice webhook did not match the internal invoice, business, Stripe invoice ID, or paid amount.'}).eq('event_id',event.id);return json({ok:true,needs_review:true})}
-      const now=new Date().toISOString()
+      const now=new Date().toISOString(),base={stripe_invoice_id:obj.id,hosted_invoice_url:obj.hosted_invoice_url||null,invoice_pdf_url:obj.invoice_pdf||null,updated_at:now}
       if(event.type==='invoice.paid'){
-        await db.from('lead_invoices').update({status:'paid',paid_at:now,stripe_invoice_id:obj.id,hosted_invoice_url:obj.hosted_invoice_url||null,invoice_pdf_url:obj.invoice_pdf||null,updated_at:now}).eq('id',internalInvoiceId)
+        await db.from('lead_invoices').update({...base,status:'paid',paid_at:now}).eq('id',internalInvoiceId)
         await db.from('lead_delivery_charges').update({billing_status:'paid'}).eq('invoice_id',internalInvoiceId)
         await audit('lead_invoice_paid',`Stripe confirmed lead invoice ${leadInvoice.invoice_number} paid for $${(Number(leadInvoice.amount_due_cents)/100).toFixed(2)}. Charges remain based on delivered leads, not lead close outcome.`)
-      }else{
-        await db.from('lead_invoices').update({status:'void',stripe_invoice_id:obj.id,updated_at:now}).eq('id',internalInvoiceId)
+      }else if(event.type==='invoice.voided'){
+        await db.from('lead_invoices').update({...base,status:'void'}).eq('id',internalInvoiceId)
         await db.from('lead_delivery_charges').update({billing_status:'unbilled',invoice_id:null}).eq('invoice_id',internalInvoiceId).eq('billing_status','invoiced')
         await audit('lead_invoice_voided',`Stripe voided lead invoice ${leadInvoice.invoice_number}; attached delivered-lead charges were returned to the unbilled ledger.`)
+      }else if(event.type==='invoice.finalized'){
+        await db.from('lead_invoices').update(base).eq('id',internalInvoiceId)
+        await audit('lead_invoice_finalized',`Stripe finalized lead invoice ${leadInvoice.invoice_number}. Internal billing state remains ${leadInvoice.status} until send/payment lifecycle confirms a state change.`)
+      }else{
+        const overdue=leadInvoice.due_at&&new Date(leadInvoice.due_at).getTime()<Date.now(),nextStatus=overdue?'overdue':(leadInvoice.status==='draft'?'sent':leadInvoice.status)
+        await db.from('lead_invoices').update({...base,status:nextStatus}).eq('id',internalInvoiceId)
+        await notifyOwners(leadInvoice.business_id,`stripe-payment-failed:${internalInvoiceId}:${event.id}`,'Lead invoice payment issue',`${leadInvoice.invoice_number} had a Stripe payment failure. The delivered-lead charge remains due under your agreement. Please review billing details or payment method.`)
+        await audit('lead_invoice_payment_failed',`Stripe reported payment failure for lead invoice ${leadInvoice.invoice_number}; internal status is ${nextStatus}. Delivered-lead billing remains due.`)
       }
-      await db.from('stripe_webhook_events').update({status:'processed',processed_at:now,error_message:null}).eq('event_id',event.id);return json({ok:true,lead_invoice_reconciled:true,status:event.type==='invoice.paid'?'paid':'void'})
+      await db.from('stripe_webhook_events').update({status:'processed',processed_at:now,error_message:null}).eq('event_id',event.id);return json({ok:true,lead_invoice_reconciled:true,status:event.type.replace('invoice.','')})
     }
     if(event.type==='checkout.session.completed'){
       if(!belongsToDirectory(obj)){await db.from('stripe_webhook_events').update({status:'processed',processed_at:new Date().toISOString(),error_message:null}).eq('event_id',event.id);return json({ok:true,ignored:true})}
