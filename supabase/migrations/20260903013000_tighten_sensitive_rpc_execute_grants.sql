@@ -1,0 +1,11 @@
+revoke execute on function public.configure_business_lead_program(uuid,boolean,text,integer,integer,integer,integer,text,text,text) from anon;
+revoke execute on function public.create_lead_invoice(uuid,text) from anon;
+revoke execute on function public.deliver_billable_lead(uuid,uuid,text,integer) from anon;
+revoke execute on function public.get_business_lead_access(uuid) from anon;
+revoke execute on function public.set_lead_invoice_status(uuid,text,text,text,text) from anon;
+revoke execute on function public.configure_marketplace_lead(uuid,integer,text,integer,integer,text) from anon;
+revoke execute on function public.create_marketplace_lead_offer(uuid,uuid,integer,timestamptz) from anon;
+revoke execute on function public.get_business_marketplace_offers(uuid) from anon;
+revoke execute on function public.get_marketing_integration_secret(uuid,text) from anon;
+revoke execute on function public.save_marketing_integration_secret(uuid,text,jsonb) from anon;
+revoke execute on function public.delete_marketing_integration_secret(uuid,text) from anon;
