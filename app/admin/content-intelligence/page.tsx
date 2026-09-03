@@ -1,3 +1,281 @@
-import{createClient}from'@/lib/supabase/server';import{TENANT_ID}from'@/lib/constants';
-const norm=(v:any)=>String(v||'').trim().toLowerCase();const ageDays=(v:any)=>v?Math.floor((Date.now()-new Date(String(v)).getTime())/86400000):9999;
-export default async function Page(){const s=await createClient(),ninety=new Date(Date.now()-90*86400000).toISOString();const[{data:businesses},{data:locations},{data:categories},{data:branches},{data:areas},{data:bc},{data:seo},{data:guides},{data:searches}]=await Promise.all([s.from('businesses').select('id').eq('tenant_id',TENANT_ID).eq('status','published').limit(5000),s.from('locations').select('id,name,slug').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'),s.from('categories').select('id,name,slug,vertical').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'),s.from('business_locations').select('business_id,location_id').eq('tenant_id',TENANT_ID).eq('is_active',true).limit(15000),s.from('business_service_areas').select('business_id,location_id').limit(20000),s.from('business_categories').select('business_id,category_id').limit(25000),s.from('seo_pages').select('id,market_location_id,category_id,city,category,title,index_mode,reviewed,updated_at').eq('tenant_id',TENANT_ID).limit(5000),s.from('guides').select('id,slug,title,type,city,category,summary,body,status,published_at,updated_at').eq('tenant_id',TENANT_ID).eq('status','published').order('updated_at',{ascending:true}).limit(3000),s.from('search_events').select('service,location,result_count,created_at').eq('tenant_id',TENANT_ID).gte('created_at',ninety).order('created_at',{ascending:false}).limit(5000)]);const published=new Set((businesses??[]).map((x:any)=>String(x.id))),locMap=new Map((locations??[]).map((x:any)=>[String(x.id),x])),catMap=new Map((categories??[]).map((x:any)=>[String(x.id),x])),catsByBusiness=new Map<string,Set<string>>();for(const x of bc??[]){const id=String((x as any).business_id),cat=String((x as any).category_id);if(!published.has(id)||!catMap.has(cat))continue;const set=catsByBusiness.get(id)||new Set<string>();set.add(cat);catsByBusiness.set(id,set)}const providersByLocation=new Map<string,Set<string>>();const addProvider=(x:any)=>{const id=String(x.business_id||''),loc=String(x.location_id||'');if(!published.has(id)||!locMap.has(loc))return;const set=providersByLocation.get(loc)||new Set<string>();set.add(id);providersByLocation.set(loc,set)};for(const x of branches??[])addProvider(x);for(const x of areas??[])addProvider(x);const countFor=(locId:string,catId?:string|null)=>{const providers=providersByLocation.get(locId)||new Set<string>();if(!catId)return providers.size;let n=0;for(const id of providers)if(catsByBusiness.get(id)?.has(catId))n++;return n};const reviewedIndexableByKey=new Map<string,any>();for(const x of seo??[]){if(!(x as any).reviewed||(x as any).index_mode==='noindex')continue;const key=`${String((x as any).market_location_id)}|${String((x as any).category_id||'')}`;reviewedIndexableByKey.set(key,x)}const missingSeo:any[]=[];for(const loc of locations??[]){const locId=String((loc as any).id),cityProviders=countFor(locId),cityKey=`${locId}|`;if(cityProviders>=3&&!reviewedIndexableByKey.get(cityKey))missingSeo.push({city:(loc as any).name,category:'City page',providers:cityProviders,kind:'city'});const catCounts=new Map<string,number>();for(const id of providersByLocation.get(locId)||[]){for(const catId of catsByBusiness.get(id)||[])catCounts.set(catId,(catCounts.get(catId)||0)+1)}for(const[catId,count]of catCounts){if(count<3||reviewedIndexableByKey.get(`${locId}|${catId}`))continue;const cat=catMap.get(catId);if(cat)missingSeo.push({city:(loc as any).name,category:(cat as any).name,providers:count,kind:'category'})}}missingSeo.sort((a,b)=>b.providers-a.providers||a.city.localeCompare(b.city));const underfilled=(seo??[]).map((x:any)=>({id:x.id,city:x.city,category:x.category||'City page',providers:countFor(String(x.market_location_id),x.category_id?String(x.category_id):null),reviewed:Boolean(x.reviewed),index_mode:x.index_mode,updated_at:x.updated_at})).filter((x:any)=>x.reviewed&&x.index_mode!=='noindex'&&x.providers<3).sort((a:any,b:any)=>a.providers-b.providers||a.city.localeCompare(b.city));const guideIssues=(guides??[]).map((g:any)=>{const chars=String(g.body||'').trim().length,summaryChars=String(g.summary||'').trim().length,days=ageDays(g.updated_at),issues:string[]=[];if(chars<1200)issues.push(`Thin body · ${chars} chars`);if(summaryChars<80)issues.push(`Short summary · ${summaryChars} chars`);if(days>180)issues.push(`Stale · ${days} days since update`);if(!String(g.city||'').trim())issues.push('No city assigned');return{...g,chars,summaryChars,days,issues}}).filter((g:any)=>g.issues.length).sort((a:any,b:any)=>b.issues.length-a.issues.length||a.chars-b.chars);const dupMap=new Map<string,any[]>();for(const g of guides??[]){const key=`${norm((g as any).type)}|${norm((g as any).city)}|${norm((g as any).category)}`,a=dupMap.get(key)||[];a.push(g);dupMap.set(key,a)}const duplicates=[...dupMap.entries()].filter(([,a])=>a.length>1).map(([key,a])=>({key,city:(a[0] as any).city||'No city',category:(a[0] as any).category||'General',type:(a[0] as any).type||'Guide',count:a.length,titles:a.map((x:any)=>x.title)})).sort((a,b)=>b.count-a.count);const searchMap=new Map<string,{service:string;location:string;searches:number;results:number;min:number}>();for(const x of searches??[]){const service=String((x as any).service||'').trim()||'Any service',location=String((x as any).location||'').trim()||'Any location',key=`${norm(service)}|${norm(location)}`,v=searchMap.get(key)||{service,location,searches:0,results:0,min:99999};v.searches++;v.results+=Number((x as any).result_count||0);v.min=Math.min(v.min,Number((x as any).result_count||0));searchMap.set(key,v)}const demandGaps=[...searchMap.values()].map(x=>({...x,avg:Math.round(x.results/Math.max(1,x.searches)*10)/10})).filter(x=>x.avg<3).sort((a,b)=>b.searches-a.searches||a.avg-b.avg).slice(0,40),eligibleSeo=(seo??[]).filter((x:any)=>x.reviewed&&x.index_mode!=='noindex'&&countFor(String(x.market_location_id),x.category_id?String(x.category_id):null)>=3).length;return <><div className="admin-page-head"><div><div className="kpi">Private Content & Market Intelligence</div><h1>SEO Coverage, Guide Quality & Inventory Opportunities</h1><p className="muted">Staff-only queues for index eligibility, missing reviewed SEO, guide freshness, overlapping content intent and customer searches that are returning too few providers. None of these diagnostics appear in customer accounts or public pages.</p></div><span className="badge sponsored">Internal only</span></div><div className="stat-grid"><div className="stat">Index-Eligible SEO Pages<strong>{eligibleSeo}</strong></div><div className="stat">Eligible Pages Missing SEO<strong>{missingSeo.length}</strong></div><div className="stat">Reviewed Pages Under Threshold<strong>{underfilled.length}</strong></div><div className="stat">Published Guides<strong>{(guides??[]).length}</strong></div><div className="stat">Guide Review Queue<strong>{guideIssues.length}</strong></div><div className="stat">Duplicate Intent Clusters<strong>{duplicates.length}</strong></div></div><div className="admin-card" style={{marginTop:18}}><div className="section-head compact-head"><div><div className="kpi">Index Expansion Queue</div><h2>Markets with enough providers but no reviewed indexable SEO page</h2><p className="small muted">A market enters this queue only after it has at least three published providers connected by an active physical location or clearly labeled service area. Paid placement does not affect provider counts. A reviewed page explicitly set to noindex remains out of the indexable set until staff changes that mode.</p></div></div>{missingSeo.length?<div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>City</th><th>Page / Category</th><th>Providers</th><th>Opportunity</th></tr></thead><tbody>{missingSeo.slice(0,60).map((x:any,i:number)=><tr key={`${x.city}-${x.category}-${i}`}><td>{x.city}</td><td>{x.category}</td><td>{x.providers}</td><td>{x.kind==='city'?'Create/review city SEO page':'Create/review city-category SEO page'}</td></tr>)}</tbody></table></div>:<p className="muted">No index-eligible coverage gaps are currently missing a reviewed indexable SEO page.</p>}</div><div className="admin-card" style={{marginTop:18}}><div className="section-head compact-head"><div><div className="kpi">Protected Noindex Queue</div><h2>Indexable-mode SEO pages still below the provider threshold</h2><p className="small muted">These pages remain protected from indexing until provider inventory reaches three. The correct action is usually inventory expansion, not forcing indexation. Pages explicitly set to noindex are intentional and excluded from this mismatch queue.</p></div></div>{underfilled.length?<div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>City</th><th>Page / Category</th><th>Providers</th><th>Index Mode</th><th>Recommended Action</th></tr></thead><tbody>{underfilled.slice(0,60).map((x:any)=><tr key={x.id}><td>{x.city}</td><td>{x.category}</td><td>{x.providers}</td><td>{x.index_mode}</td><td>{x.providers===0?'Recruit / verify provider inventory':'Add provider inventory before index eligibility'}</td></tr>)}</tbody></table></div>:<p className="muted">All reviewed SEO pages in an indexable mode currently meet the three-provider threshold.</p>}</div><div className="grid grid-2" style={{marginTop:18}}><div className="admin-card"><div className="kpi">Guide Quality & Freshness</div><h2>Published guides needing staff review</h2><p className="small muted">This is a review queue, not an automatic takedown system. Thinness is initially flagged below 1,200 body characters; freshness is flagged after 180 days.</p>{guideIssues.length?<div className="lead-route-list">{guideIssues.slice(0,30).map((g:any)=><div className="info-row" key={g.id}><span>{g.title}<small className="muted" style={{display:'block'}}>{g.city||'No city'} · {g.category||g.type||'General'}</small></span><strong>{g.issues.join(' · ')}</strong></div>)}</div>:<p className="muted">No published guides currently trigger the review thresholds.</p>}</div><div className="admin-card"><div className="kpi">Duplicate Intent Review</div><h2>Guide clusters that may overlap</h2><p className="small muted">Matching city + category + guide type is a review signal only. Staff should merge, differentiate or cross-link based on actual search intent.</p>{duplicates.length?<div className="lead-route-list">{duplicates.slice(0,20).map(x=><div className="admin-card" key={x.key} style={{marginTop:10}}><strong>{x.city} · {x.category} · {x.type}</strong><p className="small muted">{x.count} guides: {x.titles.join(' · ')}</p></div>)}</div>:<p className="muted">No duplicate intent clusters were detected by the current grouping rule.</p>}</div></div><div className="admin-card" style={{marginTop:18}}><div className="section-head compact-head"><div><div className="kpi">Search Demand / Inventory Expansion</div><h2>Recent searches returning fewer than three results</h2><p className="small muted">Last 90 days. Higher search volume plus lower average result count indicates the strongest inventory-expansion opportunity.</p></div></div>{demandGaps.length?<div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Service</th><th>Location</th><th>Searches</th><th>Avg. Results</th><th>Lowest Result Count</th><th>Priority</th></tr></thead><tbody>{demandGaps.map(x=><tr key={`${x.service}-${x.location}`}><td>{x.service}</td><td>{x.location}</td><td>{x.searches}</td><td>{x.avg}</td><td>{x.min===99999?0:x.min}</td><td>{x.searches>=10&&x.avg<1?'Critical':x.searches>=3&&x.avg<2?'High':x.avg===0?'Recruit providers':'Watch / expand'}</td></tr>)}</tbody></table></div>:<p className="muted">No low-result search clusters were recorded in the last 90 days.</p>}</div></>}
+import { createClient } from '@/lib/supabase/server'
+import { TENANT_ID } from '@/lib/constants'
+
+const norm = (value: unknown) => String(value || '').trim().toLowerCase()
+const ageDays = (value: unknown) => value ? Math.floor((Date.now() - new Date(String(value)).getTime()) / 86400000) : 9999
+
+type DemandRow = {
+  service: string
+  location: string
+  searches: number
+  results: number
+  min: number
+}
+
+export default async function Page() {
+  const s = await createClient()
+  const ninety = new Date(Date.now() - 90 * 86400000).toISOString()
+  const [
+    { data: businesses },
+    { data: locations },
+    { data: categories },
+    { data: branches },
+    { data: areas },
+    { data: bc },
+    { data: seo },
+    { data: guides },
+    { data: searches },
+  ] = await Promise.all([
+    s.from('businesses').select('id').eq('tenant_id', TENANT_ID).eq('status', 'published').limit(5000),
+    s.from('locations').select('id,name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true).order('name'),
+    s.from('categories').select('id,name,slug,vertical').eq('tenant_id', TENANT_ID).eq('is_active', true).order('name'),
+    s.from('business_locations').select('business_id,location_id').eq('tenant_id', TENANT_ID).eq('is_active', true).limit(15000),
+    s.from('business_service_areas').select('business_id,location_id').limit(20000),
+    s.from('business_categories').select('business_id,category_id').limit(25000),
+    s.from('seo_pages').select('id,market_location_id,category_id,city,category,title,index_mode,reviewed,updated_at').eq('tenant_id', TENANT_ID).limit(5000),
+    s.from('guides').select('id,slug,title,type,city,category,summary,body,status,published_at,updated_at').eq('tenant_id', TENANT_ID).eq('status', 'published').order('updated_at', { ascending: true }).limit(3000),
+    s.from('search_events').select('service,location,result_count,created_at').eq('tenant_id', TENANT_ID).gte('created_at', ninety).order('created_at', { ascending: false }).limit(5000),
+  ])
+
+  const published = new Set((businesses ?? []).map((row: any) => String(row.id)))
+  const locMap = new Map((locations ?? []).map((row: any) => [String(row.id), row]))
+  const catMap = new Map((categories ?? []).map((row: any) => [String(row.id), row]))
+  const locationByTerm = new Map<string, any>()
+  const categoryByTerm = new Map<string, any>()
+
+  for (const location of locations ?? []) {
+    locationByTerm.set(norm((location as any).name), location)
+    locationByTerm.set(norm((location as any).slug), location)
+  }
+  for (const category of categories ?? []) {
+    categoryByTerm.set(norm((category as any).name), category)
+    categoryByTerm.set(norm((category as any).slug), category)
+  }
+
+  const catsByBusiness = new Map<string, Set<string>>()
+  for (const row of bc ?? []) {
+    const businessId = String((row as any).business_id)
+    const categoryId = String((row as any).category_id)
+    if (!published.has(businessId) || !catMap.has(categoryId)) continue
+    const set = catsByBusiness.get(businessId) || new Set<string>()
+    set.add(categoryId)
+    catsByBusiness.set(businessId, set)
+  }
+
+  const providersByLocation = new Map<string, Set<string>>()
+  const addProvider = (row: any) => {
+    const businessId = String(row.business_id || '')
+    const locationId = String(row.location_id || '')
+    if (!published.has(businessId) || !locMap.has(locationId)) return
+    const set = providersByLocation.get(locationId) || new Set<string>()
+    set.add(businessId)
+    providersByLocation.set(locationId, set)
+  }
+  for (const row of branches ?? []) addProvider(row)
+  for (const row of areas ?? []) addProvider(row)
+
+  const countFor = (locationId: string, categoryId?: string | null) => {
+    const providers = providersByLocation.get(locationId) || new Set<string>()
+    if (!categoryId) return providers.size
+    let count = 0
+    for (const businessId of providers) if (catsByBusiness.get(businessId)?.has(categoryId)) count++
+    return count
+  }
+
+  const globalCountForCategory = (categoryId: string) => {
+    let count = 0
+    for (const businessId of published) if (catsByBusiness.get(businessId)?.has(categoryId)) count++
+    return count
+  }
+
+  const reviewedIndexableByKey = new Map<string, any>()
+  for (const row of seo ?? []) {
+    if (!(row as any).reviewed || (row as any).index_mode === 'noindex') continue
+    reviewedIndexableByKey.set(`${String((row as any).market_location_id)}|${String((row as any).category_id || '')}`, row)
+  }
+
+  const missingSeo: any[] = []
+  for (const location of locations ?? []) {
+    const locationId = String((location as any).id)
+    const cityProviders = countFor(locationId)
+    const cityKey = `${locationId}|`
+    if (cityProviders >= 3 && !reviewedIndexableByKey.get(cityKey)) {
+      missingSeo.push({ city: (location as any).name, category: 'City page', providers: cityProviders, kind: 'city' })
+    }
+    const catCounts = new Map<string, number>()
+    for (const businessId of providersByLocation.get(locationId) || []) {
+      for (const categoryId of catsByBusiness.get(businessId) || []) {
+        catCounts.set(categoryId, (catCounts.get(categoryId) || 0) + 1)
+      }
+    }
+    for (const [categoryId, count] of catCounts) {
+      if (count < 3 || reviewedIndexableByKey.get(`${locationId}|${categoryId}`)) continue
+      const category = catMap.get(categoryId)
+      if (category) missingSeo.push({ city: (location as any).name, category: (category as any).name, providers: count, kind: 'category' })
+    }
+  }
+  missingSeo.sort((a, b) => b.providers - a.providers || a.city.localeCompare(b.city))
+
+  const underfilled = (seo ?? [])
+    .map((row: any) => ({
+      id: row.id,
+      city: row.city,
+      category: row.category || 'City page',
+      providers: countFor(String(row.market_location_id), row.category_id ? String(row.category_id) : null),
+      reviewed: Boolean(row.reviewed),
+      index_mode: row.index_mode,
+      updated_at: row.updated_at,
+    }))
+    .filter((row: any) => row.reviewed && row.index_mode !== 'noindex' && row.providers < 3)
+    .sort((a: any, b: any) => a.providers - b.providers || a.city.localeCompare(b.city))
+
+  const guideIssues = (guides ?? [])
+    .map((guide: any) => {
+      const chars = String(guide.body || '').trim().length
+      const summaryChars = String(guide.summary || '').trim().length
+      const days = ageDays(guide.updated_at)
+      const issues: string[] = []
+      if (chars < 1200) issues.push(`Thin body · ${chars} chars`)
+      if (summaryChars < 80) issues.push(`Short summary · ${summaryChars} chars`)
+      if (days > 180) issues.push(`Stale · ${days} days since update`)
+      if (!String(guide.city || '').trim()) issues.push('No city assigned')
+      return { ...guide, chars, summaryChars, days, issues }
+    })
+    .filter((guide: any) => guide.issues.length)
+    .sort((a: any, b: any) => b.issues.length - a.issues.length || a.chars - b.chars)
+
+  const dupMap = new Map<string, any[]>()
+  for (const guide of guides ?? []) {
+    const key = `${norm((guide as any).type)}|${norm((guide as any).city)}|${norm((guide as any).category)}`
+    const group = dupMap.get(key) || []
+    group.push(guide)
+    dupMap.set(key, group)
+  }
+  const duplicates = [...dupMap.entries()]
+    .filter(([, group]) => group.length > 1)
+    .map(([key, group]) => ({
+      key,
+      city: (group[0] as any).city || 'No city',
+      category: (group[0] as any).category || 'General',
+      type: (group[0] as any).type || 'Guide',
+      count: group.length,
+      titles: group.map((row: any) => row.title),
+    }))
+    .sort((a, b) => b.count - a.count)
+
+  const searchMap = new Map<string, DemandRow>()
+  for (const row of searches ?? []) {
+    const service = String((row as any).service || '').trim() || 'Any service'
+    const location = String((row as any).location || '').trim() || 'Any location'
+    const key = `${norm(service)}|${norm(location)}`
+    const value = searchMap.get(key) || { service, location, searches: 0, results: 0, min: 99999 }
+    value.searches++
+    value.results += Number((row as any).result_count || 0)
+    value.min = Math.min(value.min, Number((row as any).result_count || 0))
+    searchMap.set(key, value)
+  }
+
+  const historicalDemand = [...searchMap.values()]
+    .map(row => {
+      const historicalAvg = Math.round(row.results / Math.max(1, row.searches) * 10) / 10
+      const location = row.location === 'Any location' ? null : locationByTerm.get(norm(row.location))
+      const category = row.service === 'Any service' ? null : categoryByTerm.get(norm(row.service))
+      const locationKnown = row.location === 'Any location' || Boolean(location)
+      const categoryKnown = row.service === 'Any service' || Boolean(category)
+      let currentProviders: number | null = null
+
+      if (locationKnown && categoryKnown) {
+        if (location && category) currentProviders = countFor(String((location as any).id), String((category as any).id))
+        else if (location) currentProviders = countFor(String((location as any).id))
+        else if (category) currentProviders = globalCountForCategory(String((category as any).id))
+        else currentProviders = published.size
+      }
+
+      const gapToThree = currentProviders == null ? null : Math.max(0, 3 - currentProviders)
+      return { ...row, historicalAvg, currentProviders, gapToThree, locationKnown, categoryKnown }
+    })
+    .filter(row => row.historicalAvg < 3)
+
+  const demandGaps = historicalDemand
+    .filter(row => row.currentProviders == null || row.currentProviders < 3)
+    .sort((a, b) => b.searches - a.searches || (a.currentProviders ?? -1) - (b.currentProviders ?? -1) || a.historicalAvg - b.historicalAvg)
+    .slice(0, 40)
+
+  const resolvedDemandGaps = historicalDemand
+    .filter(row => row.currentProviders != null && row.currentProviders >= 3)
+    .sort((a, b) => b.searches - a.searches || b.currentProviders! - a.currentProviders!)
+
+  const priorityFor = (row: typeof demandGaps[number]) => {
+    if (!row.locationKnown || !row.categoryKnown || row.currentProviders == null) return 'Taxonomy review'
+    if (row.searches >= 10 && row.currentProviders === 0) return 'Critical'
+    if (row.searches >= 3 && row.currentProviders < 2) return 'High'
+    if (row.currentProviders === 0) return 'Recruit providers'
+    return `Add ${Math.max(1, 3 - row.currentProviders)} provider${3 - row.currentProviders === 1 ? '' : 's'}`
+  }
+
+  const eligibleSeo = (seo ?? []).filter((row: any) => row.reviewed && row.index_mode !== 'noindex' && countFor(String(row.market_location_id), row.category_id ? String(row.category_id) : null) >= 3).length
+
+  return <>
+    <div className="admin-page-head">
+      <div>
+        <div className="kpi">Private Content & Market Intelligence</div>
+        <h1>SEO Coverage, Guide Quality & Inventory Opportunities</h1>
+        <p className="muted">Staff-only queues for index eligibility, missing reviewed SEO, guide freshness, overlapping content intent and customer searches that are returning too few providers. None of these diagnostics appear in customer accounts or public pages.</p>
+      </div>
+      <span className="badge sponsored">Internal only</span>
+    </div>
+
+    <div className="stat-grid">
+      <div className="stat">Index-Eligible SEO Pages<strong>{eligibleSeo}</strong></div>
+      <div className="stat">Eligible Pages Missing SEO<strong>{missingSeo.length}</strong></div>
+      <div className="stat">Reviewed Pages Under Threshold<strong>{underfilled.length}</strong></div>
+      <div className="stat">Published Guides<strong>{(guides ?? []).length}</strong></div>
+      <div className="stat">Guide Review Queue<strong>{guideIssues.length}</strong></div>
+      <div className="stat">Duplicate Intent Clusters<strong>{duplicates.length}</strong></div>
+      <div className="stat">Resolved Demand Gaps<strong>{resolvedDemandGaps.length}</strong></div>
+    </div>
+
+    <div className="admin-card" style={{ marginTop: 18 }}>
+      <div className="section-head compact-head"><div>
+        <div className="kpi">Index Expansion Queue</div>
+        <h2>Markets with enough providers but no reviewed indexable SEO page</h2>
+        <p className="small muted">A market enters this queue only after it has at least three published providers connected by an active physical location or clearly labeled service area. Paid placement does not affect provider counts. A reviewed page explicitly set to noindex remains out of the indexable set until staff changes that mode.</p>
+      </div></div>
+      {missingSeo.length ? <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>City</th><th>Page / Category</th><th>Providers</th><th>Opportunity</th></tr></thead><tbody>{missingSeo.slice(0, 60).map((row: any, index: number) => <tr key={`${row.city}-${row.category}-${index}`}><td>{row.city}</td><td>{row.category}</td><td>{row.providers}</td><td>{row.kind === 'city' ? 'Create/review city SEO page' : 'Create/review city-category SEO page'}</td></tr>)}</tbody></table></div> : <p className="muted">No index-eligible coverage gaps are currently missing a reviewed indexable SEO page.</p>}
+    </div>
+
+    <div className="admin-card" style={{ marginTop: 18 }}>
+      <div className="section-head compact-head"><div>
+        <div className="kpi">Protected Noindex Queue</div>
+        <h2>Indexable-mode SEO pages still below the provider threshold</h2>
+        <p className="small muted">These pages remain protected from indexing until provider inventory reaches three. The correct action is usually inventory expansion, not forcing indexation. Pages explicitly set to noindex are intentional and excluded from this mismatch queue.</p>
+      </div></div>
+      {underfilled.length ? <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>City</th><th>Page / Category</th><th>Providers</th><th>Index Mode</th><th>Recommended Action</th></tr></thead><tbody>{underfilled.slice(0, 60).map((row: any) => <tr key={row.id}><td>{row.city}</td><td>{row.category}</td><td>{row.providers}</td><td>{row.index_mode}</td><td>{row.providers === 0 ? 'Recruit / verify provider inventory' : 'Add provider inventory before index eligibility'}</td></tr>)}</tbody></table></div> : <p className="muted">All reviewed SEO pages in an indexable mode currently meet the three-provider threshold.</p>}
+    </div>
+
+    <div className="grid grid-2" style={{ marginTop: 18 }}>
+      <div className="admin-card">
+        <div className="kpi">Guide Quality & Freshness</div>
+        <h2>Published guides needing staff review</h2>
+        <p className="small muted">This is a review queue, not an automatic takedown system. Thinness is initially flagged below 1,200 body characters; freshness is flagged after 180 days.</p>
+        {guideIssues.length ? <div className="lead-route-list">{guideIssues.slice(0, 30).map((guide: any) => <div className="info-row" key={guide.id}><span>{guide.title}<small className="muted" style={{ display: 'block' }}>{guide.city || 'No city'} · {guide.category || guide.type || 'General'}</small></span><strong>{guide.issues.join(' · ')}</strong></div>)}</div> : <p className="muted">No published guides currently trigger the review thresholds.</p>}
+      </div>
+      <div className="admin-card">
+        <div className="kpi">Duplicate Intent Review</div>
+        <h2>Guide clusters that may overlap</h2>
+        <p className="small muted">Matching city + category + guide type is a review signal only. Staff should merge, differentiate or cross-link based on actual search intent.</p>
+        {duplicates.length ? <div className="lead-route-list">{duplicates.slice(0, 20).map(row => <div className="admin-card" key={row.key} style={{ marginTop: 10 }}><strong>{row.city} · {row.category} · {row.type}</strong><p className="small muted">{row.count} guides: {row.titles.join(' · ')}</p></div>)}</div> : <p className="muted">No duplicate intent clusters were detected by the current grouping rule.</p>}
+      </div>
+    </div>
+
+    <div className="admin-card" style={{ marginTop: 18 }}>
+      <div className="section-head compact-head"><div>
+        <div className="kpi">Search Demand / Inventory Expansion</div>
+        <h2>Historical low-result searches reconciled with today’s provider inventory</h2>
+        <p className="small muted">Search volume and historical averages cover the last 90 days. Current Providers is recalculated from today’s published physical-location and legitimate service-area inventory, so a repaired historical gap automatically leaves this open queue. Unmapped search terms are routed to taxonomy review instead of being treated as confirmed zero-provider markets.</p>
+      </div></div>
+      {demandGaps.length ? <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Service</th><th>Location</th><th>Searches</th><th>Historical Avg.</th><th>Current Providers</th><th>Gap to 3</th><th>Priority</th></tr></thead><tbody>{demandGaps.map(row => <tr key={`${row.service}-${row.location}`}><td>{row.service}</td><td>{row.location}</td><td>{row.searches}</td><td>{row.historicalAvg}</td><td>{row.currentProviders == null ? 'Needs mapping' : row.currentProviders}</td><td>{row.gapToThree == null ? '—' : row.gapToThree}</td><td>{priorityFor(row)}</td></tr>)}</tbody></table></div> : <p className="muted">No unresolved low-result search clusters were recorded in the last 90 days.</p>}
+      {resolvedDemandGaps.length > 0 && <p className="small muted" style={{ marginTop: 12 }}>{resolvedDemandGaps.length} historical low-result cluster{resolvedDemandGaps.length === 1 ? '' : 's'} now meet the three-provider inventory threshold and are excluded from the open expansion queue.</p>}
+    </div>
+  </>
+}

@@ -151,6 +151,15 @@ jobs:
           CHATHAM="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/illinois/chatham")"
           grep -q 'Chatham' <<<"$CHATHAM"
 
+          PONTIAC="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/search?city=pontiac")"
+          grep -q 'mexican-restaurants' <<<"$PONTIAC"
+          grep -q 'Mexican Restaurants' <<<"$PONTIAC"
+
+          PONTIAC_MEXICAN="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/search?city=pontiac&category=mexican-restaurants")"
+          grep -q 'La Mex' <<<"$PONTIAC_MEXICAN"
+          grep -q 'The Taco Truck' <<<"$PONTIAC_MEXICAN"
+          grep -q '2 results' <<<"$PONTIAC_MEXICAN"
+
       - name: Verify live crawler and privacy controls
         shell: bash
         run: |
