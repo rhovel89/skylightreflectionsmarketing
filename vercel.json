@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "npm run build"
+  "buildCommand": "npm run build",
+  "ignoreCommand": "git diff --quiet \"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" \"${VERCEL_GIT_COMMIT_SHA:-HEAD}\" -- . ':(exclude).github/**' ':(exclude)supabase/migrations/**' ':(exclude)README.md' ':(exclude)LAUNCH_RUNBOOK.md' ':(exclude)VALIDATION.md' ':(exclude)CANONICAL_STATUS.json'"
 }
