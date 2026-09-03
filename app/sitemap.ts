@@ -7,18 +7,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl()
   const s = await createClient()
   const [
-    { data: biz }, { data: seo }, { data: guides }, { data: locations }, { data: categories }, { data: branches }, { data: businessCategories },
+    { data: biz }, { data: seo }, { data: guides }, { data: locations }, { data: categories }, { data: branches }, { data: serviceAreas }, { data: businessCategories },
   ] = await Promise.all([
     s.from('businesses').select('slug,updated_at').eq('tenant_id', TENANT_ID).eq('status', 'published'),
     s.from('seo_pages').select('city,category,updated_at').eq('tenant_id', TENANT_ID).eq('reviewed', true).eq('index_mode', 'auto'),
     s.from('guides').select('slug,updated_at').eq('tenant_id', TENANT_ID).eq('status', 'published'),
-    s.from('locations').select('name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true),
+    s.from('locations').select('id,name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true),
     s.from('categories').select('name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true),
-    s.from('business_locations').select('business_id,city,businesses!inner(status,tenant_id)').eq('tenant_id', TENANT_ID).eq('is_active', true).eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(10000),
+    s.from('business_locations').select('business_id,location_id,businesses!inner(status,tenant_id)').eq('tenant_id', TENANT_ID).eq('is_active', true).eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(10000),
+    s.from('business_service_areas').select('business_id,location_id,businesses!inner(status,tenant_id)').eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(20000),
     s.from('business_categories').select('business_id,categories!inner(name,tenant_id)').eq('categories.tenant_id', TENANT_ID).limit(20000),
   ])
 
   const citySlug = new Map((locations ?? []).map(x => [String(x.name).toLowerCase(), x.slug]))
+  const locationNameById = new Map((locations ?? []).map(x => [String(x.id), String(x.name).toLowerCase()]))
   const categorySlug = new Map((categories ?? []).map(x => [String(x.name).toLowerCase(), x.slug]))
   const categoriesByBusiness = new Map<string, Set<string>>()
   for (const row of businessCategories ?? []) {
@@ -33,13 +35,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const cityCoverage = new Map<string, Set<string>>()
   const categoryCoverage = new Map<string, Set<string>>()
-  for (const row of branches ?? []) {
-    const id = String((row as any).business_id || '')
-    const city = String((row as any).city || '').trim().toLowerCase()
-    if (!id || !city) continue
-    add(cityCoverage, city, id)
-    for (const category of categoriesByBusiness.get(id) ?? []) add(categoryCoverage, `${city}|${category}`, id)
+  const addProvider = (businessId: string, locationId: string) => {
+    const city = locationNameById.get(locationId)
+    if (!businessId || !city) return
+    add(cityCoverage, city, businessId)
+    for (const category of categoriesByBusiness.get(businessId) ?? []) add(categoryCoverage, `${city}|${category}`, businessId)
   }
+  for (const row of branches ?? []) addProvider(String((row as any).business_id || ''), String((row as any).location_id || ''))
+  for (const row of serviceAreas ?? []) addProvider(String((row as any).business_id || ''), String((row as any).location_id || ''))
 
   const fixed: [string, MetadataRoute.Sitemap[number]['changeFrequency'], number][] = [
     ['', 'weekly', 1],
