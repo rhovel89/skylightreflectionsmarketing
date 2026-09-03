@@ -27,7 +27,7 @@ begin
       else false end;
     if not v_should_run then v_skipped:=v_skipped+1; continue; end if;
     begin
-      v_invoice:=private.create_lead_invoice_internal(v_program.business_id,'Automatically prepared from delivered leads by Lead Revenue CRM.',null);
+      v_invoice:=private.create_lead_invoice_internal(v_program.business_id,'Automatically prepared from delivered leads by Lead Revenue CRM.',null::uuid);
       update public.business_lead_programs set last_auto_invoice_at=now(),updated_at=now() where id=v_program.id;
       select invoice_number into v_number from public.lead_invoices where id=v_invoice;
       if v_program.notify_on_invoice then
@@ -39,7 +39,7 @@ begin
       v_created:=v_created+1;
     exception when others then
       if sqlerrm in ('no_unbilled_leads','bundle_not_yet_fulfilled') then v_skipped:=v_skipped+1;
-      else insert into public.audit_logs(tenant_id,actor_user_id,action_type,action_text) values(v_program.tenant_id,null,'lead_billing_automation_error','Automatic lead invoice preparation failed for business '||v_program.business_id::text||': '||left(sqlerrm,500)); end if;
+      else insert into public.audit_logs(tenant_id,actor_user_id,action_type,action_text) values(v_program.tenant_id,null::uuid,'lead_billing_automation_error','Automatic lead invoice preparation failed for business '||v_program.business_id::text||': '||left(sqlerrm,500)); end if;
     end;
   end loop;
 
@@ -51,7 +51,7 @@ begin
   end if;
 
   insert into public.audit_logs(tenant_id,actor_user_id,action_type,action_text)
-  select distinct tenant_id,null,'lead_billing_automation_run','Lead billing automation completed: '||v_created||' draft invoice(s) created, '||v_overdue||' invoice(s) marked overdue, '||v_skipped||' program(s) skipped.' from public.business_lead_programs limit 1;
+  select distinct tenant_id,null::uuid,'lead_billing_automation_run','Lead billing automation completed: '||v_created||' draft invoice(s) created, '||v_overdue||' invoice(s) marked overdue, '||v_skipped||' program(s) skipped.' from public.business_lead_programs limit 1;
   return jsonb_build_object('ok',true,'draft_invoices_created',v_created,'invoices_marked_overdue',v_overdue,'programs_skipped',v_skipped);
 end$$;
 
