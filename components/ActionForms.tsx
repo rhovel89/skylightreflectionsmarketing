@@ -1,6 +1,6 @@
 'use client'
 import { useActionState } from 'react'
-import { submitLead, submitLawnCareLead, submitChildcareLead, submitClaim, submitListingReport, type ActionState } from '@/app/actions'
+import { submitLead, submitLawnCareLead, submitClaim, submitListingReport, type ActionState } from '@/app/actions'
 
 const init: ActionState = { ok:false, message:'' }
 function Status({state}:{state:ActionState}){return state.message?<div className={state.ok?'form-status success':'form-status error'}>{state.message}</div>:null}
@@ -44,34 +44,6 @@ export function LawnCareLeadForm(){
     <label className="check"><input name="consent" type="checkbox" required/> I agree that Central Illinois Local Pros / Skylight Reflections Marketing may contact me about this request and may share my request and contact information with one or more matched local lawn-care businesses that may contact me by phone, text, or email about this request.</label>
     <p className="small muted">Businesses see only redacted opportunity information before a legitimate lead purchase. Buying a lead does not make a business verified, featured, sponsored, or higher-ranked organically, and a lead is an opportunity rather than a guaranteed job.</p>
     <button className="btn btn-primary" disabled={pending}>{pending?'Sending…':'Submit Lawn Care Request'}</button><Status state={state}/>
-  </form>
-}
-
-export function ChildcareLeadForm(){
-  const[state,action,pending]=useActionState(submitChildcareLead,init)
-  return <form action={action} className="form-card">
-    <h2>Private Childcare Request</h2>
-    <p className="muted small">Give only the information needed for staff-reviewed matching. Do not enter a child’s full name, school, exact home address, diagnosis, medical record, custody details, Social Security number or other sensitive identifying information.</p>
-    <div className="form-grid">
-      <label>City / Area<input name="city" required maxLength={100}/></label>
-      <label>Number of Children<input name="child_count" type="number" min={1} max={10} defaultValue={1} required/></label>
-      <label>Care pattern<select name="care_pattern" required><option>Recurring</option><option>One-time</option><option>Not sure</option></select></label>
-      <label>Preferred start date<input name="start_date" type="date"/></label>
-      <label>Care location<select name="care_location" required><option>Family home</option><option>Provider home</option><option>Either / open to options</option></select></label>
-      <label>Transportation needed?<select name="transportation" required><option>No</option><option>Yes</option><option>Not sure</option></select></label>
-      <label>Parent / Guardian Name<input name="name" required maxLength={120}/></label>
-      <label>Phone<input name="phone" required maxLength={40}/></label>
-      <label>Email<input name="email" type="email" required maxLength={160}/></label>
-      <label>When do you need care?<select name="timeline"><option>Immediately</option><option>Within 1 week</option><option>1–4 weeks</option><option>Planning ahead</option></select></label>
-    </div>
-    <fieldset className="form-card" style={{padding:16,margin:'12px 0'}}><legend><strong>Approximate age range(s)</strong></legend><div className="grid grid-2"><label className="check"><input type="checkbox" name="age_range" value="Infant"/> Infant</label><label className="check"><input type="checkbox" name="age_range" value="Toddler"/> Toddler</label><label className="check"><input type="checkbox" name="age_range" value="Preschool"/> Preschool</label><label className="check"><input type="checkbox" name="age_range" value="School-age"/> School-age</label></div></fieldset>
-    <fieldset className="form-card" style={{padding:16,margin:'12px 0'}}><legend><strong>Days needed</strong></legend><div className="grid grid-2">{['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Flexible'].map(day=><label className="check" key={day}><input type="checkbox" name="days_needed" value={day}/> {day}</label>)}</div></fieldset>
-    <label>General hours needed<input name="hours_needed" maxLength={160} placeholder="Example: weekday daytime or 7:30 AM–4:30 PM. Do not include school or address details."/></label>
-    <label>General accessibility / logistics considerations<textarea name="accommodations" maxLength={400} placeholder="Optional. Describe logistics only; do not include diagnoses, medical history, school, custody or other sensitive child information."/></label>
-    <label>General message<textarea name="general_message" maxLength={800} placeholder="Anything else a staff reviewer should know without identifying a child."/></label>
-    <label className="check"><input name="consent" type="checkbox" required/> I agree that Central Illinois Local Pros / Skylight Reflections Marketing may contact me about this childcare request and may share the redacted request and my contact information with an appropriate published childcare provider after directory review.</label>
-    <p className="small muted">This is a directory matching service, not an employment agency, childcare licensing authority, endorsement, or guarantee of safety. Childcare requests are staff-reviewed and are not sold through the paid lead marketplace. Licensing or exemption status, background checks, references, capacity and fit should be independently confirmed before care begins.</p>
-    <button className="btn btn-primary" disabled={pending}>{pending?'Sending…':'Submit Private Childcare Request'}</button><Status state={state}/>
   </form>
 }
 

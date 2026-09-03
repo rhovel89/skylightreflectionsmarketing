@@ -30,37 +30,6 @@ export async function submitLawnCareLead(_:ActionState, fd:FormData):Promise<Act
   } catch(e){return {ok:false,message:e instanceof Error?e.message:'Unable to submit lawn-care request.'}}
 }
 
-export async function submitChildcareLead(_:ActionState, fd:FormData):Promise<ActionState>{
-  try {
-    const city=text(fd,'city').slice(0,100), name=text(fd,'name').slice(0,120), phone=text(fd,'phone').slice(0,40), email=text(fd,'email').slice(0,160)
-    const childCount=Math.max(1,Math.min(10,Number(text(fd,'child_count'))||1))
-    const ages=fd.getAll('age_range').map(v=>String(v)).filter(v=>['Infant','Toddler','Preschool','School-age'].includes(v)).slice(0,4)
-    const days=fd.getAll('days_needed').map(v=>String(v)).filter(v=>['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Flexible'].includes(v)).slice(0,8)
-    const hours=text(fd,'hours_needed').slice(0,160), carePattern=text(fd,'care_pattern').slice(0,40), startDate=text(fd,'start_date').slice(0,20)
-    const careLocation=text(fd,'care_location').slice(0,60), transportation=text(fd,'transportation').slice(0,40), accommodations=text(fd,'accommodations').slice(0,400)
-    const generalMessage=text(fd,'general_message').slice(0,800), timeline=text(fd,'timeline').slice(0,80), consent=fd.get('consent')==='on'
-    const allowedPatterns=['One-time','Recurring','Not sure'], allowedLocations=['Family home','Provider home','Either / open to options'], allowedTransport=['No','Yes','Not sure']
-    if(!city||!name||phone.length<7||!email.includes('@')||!allowedPatterns.includes(carePattern)||!allowedLocations.includes(careLocation)||!allowedTransport.includes(transportation)||!consent) return {ok:false,message:'Please complete the required childcare request fields and consent.'}
-    const message=[
-      `Children needing care: ${childCount}`,
-      ages.length?`Approximate age ranges: ${ages.join(', ')}`:'Approximate age ranges: not specified',
-      days.length?`Days needed: ${days.join(', ')}`:'Days needed: not specified',
-      hours?`General hours needed: ${hours}`:null,
-      `Care pattern: ${carePattern}`,
-      startDate?`Preferred start date: ${startDate}`:null,
-      `Care location preference: ${careLocation}`,
-      `Transportation needed: ${transportation}`,
-      accommodations?`General accessibility / logistics considerations: ${accommodations}`:null,
-      generalMessage?`General message: ${generalMessage}`:null,
-      'Privacy note: The form did not request child names, school, exact home address, medical records, diagnoses, custody details or other sensitive identifying information.'
-    ].filter(Boolean).join('\n')
-    const s=await createClient()
-    const {error}=await s.rpc('submit_directory_lead',{p_tenant_id:TENANT_ID,p_business_id:null,p_service:'Childcare Providers',p_city:city,p_consumer_name:name,p_phone:phone,p_email:email,p_message:message,p_timeline:timeline||null,p_consent_to_contact:true})
-    if(error)return {ok:false,message:error.message}
-    return {ok:true,message:'Your private childcare request was received for staff-reviewed matching. It is not posted publicly and is not being sold through the paid lead marketplace.'}
-  } catch(e){return {ok:false,message:e instanceof Error?e.message:'Unable to submit childcare request.'}}
-}
-
 export async function submitClaim(_:ActionState, fd:FormData):Promise<ActionState>{
   try {const s=await createClient(),businessId=text(fd,'business_id');const {error}=await s.rpc('submit_business_claim',{p_business_id:businessId,p_claimant_name:text(fd,'name'),p_claimant_role:text(fd,'role'),p_email:text(fd,'email'),p_phone:text(fd,'phone')||null});if(error)return{ok:false,message:error.message};await s.rpc('track_growth_event',{p_tenant_id:TENANT_ID,p_event_type:'claim_submit',p_page_path:'/business-profile',p_business_id:businessId,p_city:null,p_category:null,p_plan:'free',p_source:'business-profile'});return{ok:true,message:'Claim submitted. Staff will review ownership before access is granted.'}}catch(e){return{ok:false,message:e instanceof Error?e.message:'Unable to submit claim.'}}
 }
