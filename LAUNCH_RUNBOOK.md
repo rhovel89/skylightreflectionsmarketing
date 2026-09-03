@@ -10,7 +10,7 @@ This runbook is the external launch and ongoing production-control sequence. Do 
 
 The GitHub Actions workflow must be green on the exact release commit. It validates:
 
-- locked dependency install on Node 22
+- locked dependency install on Node 24
 - TypeScript
 - full Next.js production build
 - built production server startup

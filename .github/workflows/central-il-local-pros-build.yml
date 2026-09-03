@@ -36,10 +36,10 @@ jobs:
           else
             echo "requires_deployment=true" >> "$GITHUB_OUTPUT"
           fi
-      - name: Use Node 22
+      - name: Use Node 24
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
       - name: TypeScript check

@@ -12,7 +12,7 @@ const protectedMarkets=new Map<string,string>([
   [marketKey('Pontiac','Cafes & Coffee'),'Intentional editorial exception: keep this market at two legitimate providers and noindex until a genuinely strong third physical business is found. Do not add a weak or fabricated listing simply to unlock the page.'],
 ]);
 
-export function InventoryExpansionPanel({branches,serviceAreas,businessCategories,locations,searchEvents}:{branches:BranchRow[];serviceAreas:ServiceAreaRow[];businessCategories:CategoryRow[];locations:LocationRow[];searchEvents:SearchRow[]}){
+export function InventoryExpansionPanel({branches,serviceAreas=[],businessCategories,locations,searchEvents}:{branches:BranchRow[];serviceAreas?:ServiceAreaRow[];businessCategories:CategoryRow[];locations:LocationRow[];searchEvents:SearchRow[]}){
   const categoriesByBusiness=new Map<string,{name:string;slug:string;vertical:string}[]>();
   for(const row of businessCategories){
     const businessId=String(row.business_id||''); const category=row.categories; const name=String(category?.name||'').trim(); const slug=String(category?.slug||'').trim(); const vertical=String(category?.vertical||'').trim();
