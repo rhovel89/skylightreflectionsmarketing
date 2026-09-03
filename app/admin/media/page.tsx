@@ -1,2 +1,18 @@
-import{createClient}from'@/lib/supabase/server';import{TENANT_ID}from'@/lib/constants';import{AdminMediaModeration}from'@/components/AdminMediaModeration'
-export default async function Page(){const s=await createClient();const{data,error}=await s.from('business_media').select('id,business_id,storage_path,media_type,alt_text,caption,sort_order,status,approval_status,submitted_by,created_at,updated_at,reviewed_by,reviewed_at,review_notes,businesses!inner(id,name,slug,tenant_id)').eq('tenant_id',TENANT_ID).order('created_at',{ascending:false}).limit(100);return <><div className="admin-page-head"><div><div className="kpi">Protected Moderation</div><h1>Business Media</h1><p className="muted">Review owner-submitted logos, cover images and gallery media before public display. Metadata remains editable without bypassing approval state.</p></div><span className="badge sponsored">Workflow controlled</span></div>{error?<div className="notice warn">{error.message}</div>:<AdminMediaModeration rows={(data??[]) as any[]}/>}</>}
+import { createClient } from '@/lib/supabase/server'
+import { TENANT_ID } from '@/lib/constants'
+import { AdminMediaModeration } from '@/components/AdminMediaModeration'
+
+export default async function Page() {
+  const s = await createClient()
+  const { data, error } = await s
+    .from('business_media')
+    .select('id,business_id,storage_path,media_type,mime_type,original_filename,alt_text,caption,sort_order,status,approval_status,submitted_by,created_at,updated_at,reviewed_by,reviewed_at,review_notes,businesses!inner(id,name,slug,tenant_id)')
+    .eq('tenant_id', TENANT_ID)
+    .order('created_at', { ascending: false })
+    .limit(100)
+
+  return <>
+    <div className="admin-page-head"><div><div className="kpi">Protected Moderation</div><h1>Business Media</h1><p className="muted">Review owner-submitted logos, cover images, showcase photos and restaurant menus before public display. Metadata remains editable without bypassing approval state.</p></div><span className="badge sponsored">Workflow controlled</span></div>
+    {error ? <div className="notice warn">{error.message}</div> : <AdminMediaModeration rows={(data ?? []) as any[]} />}
+  </>
+}
