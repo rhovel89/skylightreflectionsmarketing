@@ -9,6 +9,7 @@ type FeaturedBusiness = {
   phone?:string|null
   website?:string|null
   description?:string|null
+  logo_url?:string|null
   sponsored_category?:string|null
   sponsored_city?:string|null
   sponsorship_placement?:string|null
@@ -21,7 +22,7 @@ export function FeaturedBusinessSidebar({businesses,contextLabel='this page'}:{b
       <Link className="small" href="/advertising-disclosure">Ad disclosure</Link>
     </div>
     {businesses.length>0?<div className="featured-sidebar-list">{businesses.map(b=><article className="featured-sidebar-card" key={b.id}>
-      <div className="featured-sidebar-top"><div className="business-icon featured-icon">{b.abbr||b.name.slice(0,2).toUpperCase()}</div><span className="badge sponsored">Sponsored</span></div>
+      <div className="featured-sidebar-top"><div className="business-icon featured-icon">{b.logo_url?<img src={b.logo_url} alt={`${b.name} logo`} style={{width:'100%',height:'100%',objectFit:'contain',borderRadius:12}}/>:b.abbr||b.name.slice(0,2).toUpperCase()}</div><span className="badge sponsored">Sponsored</span></div>
       <h3><Link href={`/business/${b.slug}`}>{b.name}</Link></h3>
       {(b.sponsored_category||b.sponsored_city)&&<p className="small muted">{[b.sponsored_category,b.sponsored_city].filter(Boolean).join(' · ')}</p>}
       <p className="small muted">{b.description||'Explore this featured local business profile for current listing and contact information.'}</p>
