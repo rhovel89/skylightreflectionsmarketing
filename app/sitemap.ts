@@ -10,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { data: biz }, { data: seo }, { data: guides }, { data: locations }, { data: categories }, { data: branches }, { data: serviceAreas }, { data: businessCategories },
   ] = await Promise.all([
     s.from('businesses').select('slug,updated_at').eq('tenant_id', TENANT_ID).eq('status', 'published'),
-    s.from('seo_pages').select('city,category,updated_at').eq('tenant_id', TENANT_ID).eq('reviewed', true).eq('index_mode', 'auto'),
+    s.from('seo_pages').select('city,category,updated_at').eq('tenant_id', TENANT_ID).eq('reviewed', true).neq('index_mode', 'noindex'),
     s.from('guides').select('slug,updated_at').eq('tenant_id', TENANT_ID).eq('status', 'published'),
     s.from('locations').select('id,name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true),
     s.from('categories').select('name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true),
