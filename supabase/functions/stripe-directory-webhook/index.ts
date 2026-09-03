@@ -29,6 +29,23 @@ Deno.serve(async(req:Request)=>{
   const audit=async(action_type:string,action_text:string)=>{await db.from('audit_logs').insert({tenant_id:TENANT_ID,actor_user_id:null,action_type,action_text})}
   try{
     const obj=event.data.object
+    if((event.type==='invoice.paid'||event.type==='invoice.voided')&&obj?.metadata?.internal_invoice_id){
+      const internalInvoiceId=String(obj.metadata.internal_invoice_id),businessId=String(obj.metadata.business_id||'')
+      const leadInvoiceRes=await db.from('lead_invoices').select('id,tenant_id,business_id,invoice_number,amount_due_cents,status,stripe_invoice_id').eq('id',internalInvoiceId).maybeSingle();const leadInvoice=leadInvoiceRes.data
+      const mismatch=!leadInvoice||leadInvoice.tenant_id!==TENANT_ID||(businessId&&businessId!==leadInvoice.business_id)||(leadInvoice.stripe_invoice_id&&leadInvoice.stripe_invoice_id!==obj.id)||(event.type==='invoice.paid'&&Number(obj.amount_paid)!==Number(leadInvoice.amount_due_cents))
+      if(mismatch){await db.from('stripe_webhook_events').update({status:'needs_review',processed_at:new Date().toISOString(),error_message:'Lead invoice webhook did not match the internal invoice, business, Stripe invoice ID, or paid amount.'}).eq('event_id',event.id);return json({ok:true,needs_review:true})}
+      const now=new Date().toISOString()
+      if(event.type==='invoice.paid'){
+        await db.from('lead_invoices').update({status:'paid',paid_at:now,stripe_invoice_id:obj.id,hosted_invoice_url:obj.hosted_invoice_url||null,invoice_pdf_url:obj.invoice_pdf||null,updated_at:now}).eq('id',internalInvoiceId)
+        await db.from('lead_delivery_charges').update({billing_status:'paid'}).eq('invoice_id',internalInvoiceId)
+        await audit('lead_invoice_paid',`Stripe confirmed lead invoice ${leadInvoice.invoice_number} paid for $${(Number(leadInvoice.amount_due_cents)/100).toFixed(2)}. Charges remain based on delivered leads, not lead close outcome.`)
+      }else{
+        await db.from('lead_invoices').update({status:'void',stripe_invoice_id:obj.id,updated_at:now}).eq('id',internalInvoiceId)
+        await db.from('lead_delivery_charges').update({billing_status:'unbilled',invoice_id:null}).eq('invoice_id',internalInvoiceId).eq('billing_status','invoiced')
+        await audit('lead_invoice_voided',`Stripe voided lead invoice ${leadInvoice.invoice_number}; attached delivered-lead charges were returned to the unbilled ledger.`)
+      }
+      await db.from('stripe_webhook_events').update({status:'processed',processed_at:now,error_message:null}).eq('event_id',event.id);return json({ok:true,lead_invoice_reconciled:true,status:event.type==='invoice.paid'?'paid':'void'})
+    }
     if(event.type==='checkout.session.completed'){
       if(!belongsToDirectory(obj)){await db.from('stripe_webhook_events').update({status:'processed',processed_at:new Date().toISOString(),error_message:null}).eq('event_id',event.id);return json({ok:true,ignored:true})}
       if(obj?.metadata?.checkout_kind==='lead_purchase'){
