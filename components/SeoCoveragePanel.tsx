@@ -1,13 +1,14 @@
 type SeoRow={id?:string;city?:string|null;category?:string|null;title?:string|null;intro?:string|null;content?:string|null;reviewed?:boolean|null;index_mode?:string|null;updated_at?:string|null}
-type BranchRow={city?:string|null;business_id?:string|null}
+type BranchRow={city?:string|null;location_id?:string|null;business_id?:string|null}
+type ServiceAreaRow={business_id?:string|null;location_id?:string|null}
 type BusinessCategoryRow={business_id?:string|null;categories?:{name?:string|null;slug?:string|null;vertical?:string|null}|null}
-type LocationRow={name:string;slug:string}
+type LocationRow={id:string;name:string;slug:string}
 type CategoryRef={name:string;slug:string}
 type MarketRow={marketKey:string;city:string;citySlug:string;category:string;categorySlug:string;providers:number;seo?:SeoRow;copyChars:number}
 
 const key=(city:string,category:string)=>`${city.trim().toLowerCase()}::${category.trim().toLowerCase()}`
 
-export function SeoCoveragePanel({rows,branches,businessCategories,locations}:{rows:SeoRow[];branches:BranchRow[];businessCategories:BusinessCategoryRow[];locations:LocationRow[]}){
+export function SeoCoveragePanel({rows,branches,serviceAreas=[],businessCategories,locations}:{rows:SeoRow[];branches:BranchRow[];serviceAreas?:ServiceAreaRow[];businessCategories:BusinessCategoryRow[];locations:LocationRow[]}){
   const categoriesByBusiness=new Map<string,Map<string,CategoryRef>>()
   const categoryRefs=new Map<string,CategoryRef>()
   for(const row of businessCategories){
@@ -21,16 +22,23 @@ export function SeoCoveragePanel({rows,branches,businessCategories,locations}:{r
     categoriesByBusiness.get(businessId)!.set(name.toLowerCase(),ref)
   }
 
+  const locationById=new Map(locations.map(l=>[String(l.id),l]))
   const providerSets=new Map<string,Set<string>>()
-  for(const branch of branches){
-    const city=String(branch.city||'').trim()
-    const businessId=String(branch.business_id||'')
-    if(!city||!businessId)continue
+  const addConnection=(businessId:string,city:string)=>{
+    if(!businessId||!city)return
     for(const category of categoriesByBusiness.get(businessId)?.values()||[]){
       const marketKey=key(city,category.name)
       if(!providerSets.has(marketKey))providerSets.set(marketKey,new Set())
       providerSets.get(marketKey)!.add(businessId)
     }
+  }
+  for(const branch of branches){
+    const city=String(locationById.get(String(branch.location_id||''))?.name||branch.city||'').trim()
+    addConnection(String(branch.business_id||''),city)
+  }
+  for(const area of serviceAreas){
+    const city=String(locationById.get(String(area.location_id||''))?.name||'').trim()
+    addConnection(String(area.business_id||''),city)
   }
 
   const seoByKey=new Map(rows.filter(r=>r.city&&r.category).map(r=>[key(String(r.city),String(r.category)),r]))
@@ -62,16 +70,16 @@ export function SeoCoveragePanel({rows,branches,businessCategories,locations}:{r
   const stale=eligible.filter(x=>x.seo?.updated_at&&Date.now()-new Date(String(x.seo.updated_at)).getTime()>1000*60*60*24*180).length
 
   return <section className="admin-card">
-    <div className="section-head"><div><div className="kpi">Private SEO intelligence</div><h2>Indexable Market Coverage</h2><p className="muted">Tracks only real city/category inventory. A page is considered index-eligible here only when at least three distinct published businesses serve that category in the market.</p></div></div>
+    <div className="section-head"><div><div className="kpi">Private SEO intelligence</div><h2>Indexable Market Coverage</h2><p className="muted">Tracks the same legitimate city/category coverage used by the public directory: active physical locations plus clearly labeled service areas. A service area counts as market coverage but is never represented as an office.</p></div></div>
     <div className="grid grid-4">
-      <div className="card"><div className="kpi">Eligible markets</div><h2>{eligible.length}</h2><p className="small muted">3+ published providers</p></div>
+      <div className="card"><div className="kpi">Eligible markets</div><h2>{eligible.length}</h2><p className="small muted">3+ distinct published providers</p></div>
       <div className="card"><div className="kpi">Reviewed coverage</div><h2>{reviewed.length}</h2><p className="small muted">Reviewed and not manually noindex</p></div>
       <div className="card"><div className="kpi">Missing SEO records</div><h2>{missing.length}</h2><p className="small muted">Eligible inventory without a matching SEO record</p></div>
       <div className="card"><div className="kpi">One provider away</div><h2>{nearEligible.length}</h2><p className="small muted">2-provider markets; research quality before quantity</p></div>
     </div>
 
-    <div className="section-head" style={{marginTop:28}}><div><h3>SEO eligibility action queue</h3><p className="small muted">These markets are closest to the live indexing threshold. A third provider counts only when the business/category/location relationship is legitimate and source-backed. Service areas do not become offices, and a paid plan never changes eligibility.</p></div><a href="/admin/data-quality?type=seo_inventory&priority=high">Open persistent task queue →</a></div>
-    {nearEligible.length?<div className="grid grid-3">{nearEligible.slice(0,12).map(x=><div className="card" key={x.marketKey}><div className="kpi">2 providers · 1 legitimate addition needed</div><h3>{x.category} in {x.city}, IL</h3><p className="small muted">Keep protected until provider #3 is verified as real inventory.</p><div className="card-actions"><a href="/admin/inventory-expansion">Research inventory →</a>{x.citySlug&&x.categorySlug&&<a href={`/illinois/${x.citySlug}/${x.categorySlug}`} target="_blank" rel="noreferrer">Preview public market →</a>}</div></div>)}</div>:<div className="notice">No markets are currently exactly one legitimate provider away from the three-provider threshold.</div>}
+    <div className="section-head" style={{marginTop:28}}><div><h3>SEO eligibility action queue</h3><p className="small muted">These markets are closest to the live indexing threshold. A third provider counts only when the business/category/market relationship is legitimate and source-backed. Service-area coverage remains labeled as service-area coverage, and paid plans never change eligibility.</p></div><a href="/admin/data-quality?type=seo_inventory&priority=high">Open persistent task queue →</a></div>
+    {nearEligible.length?<div className="grid grid-3">{nearEligible.slice(0,12).map(x=><div className="card" key={x.marketKey}><div className="kpi">2 providers · 1 legitimate addition needed</div><h3>{x.category} in {x.city}, IL</h3><p className="small muted">Keep protected until provider #3 is verified as real physical-location or clearly labeled service-area inventory.</p><div className="card-actions"><a href="/admin/inventory-expansion">Research inventory →</a>{x.citySlug&&x.categorySlug&&<a href={`/illinois/${x.citySlug}/${x.categorySlug}`} target="_blank" rel="noreferrer">Preview public market →</a>}</div></div>)}</div>:<div className="notice">No markets are currently exactly one legitimate provider away from the three-provider threshold.</div>}
     {deeperGaps.length>0&&<p className="small muted" style={{marginTop:14}}>{deeperGaps.length} additional market{deeperGaps.length===1?' is':'s are'} at one provider and require deeper inventory development before SEO review.</p>}
 
     <div className="section-head" style={{marginTop:28}}><div><h3>Copy improvement queue</h3><p className="small muted">Prioritizes index-eligible pages with shorter combined intro + buying-guide copy. Provider depth wins ties. This is an editorial review queue, not an automatic publishing rule.</p></div><span className="badge neutral">{stale} stale 180+ days</span></div>
