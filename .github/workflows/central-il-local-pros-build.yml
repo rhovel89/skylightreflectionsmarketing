@@ -177,6 +177,16 @@ jobs:
           grep -q 'La Mex' <<<"$PONTIAC_MEXICAN"
           grep -q 'The Taco Truck' <<<"$PONTIAC_MEXICAN"
 
+          FLANAGAN_PLUMBING="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/illinois/flanagan/plumbing")"
+          grep -q 'Koeller Plumbing' <<<"$FLANAGAN_PLUMBING"
+          grep -q 'Jim Durre Plumbing, Heating &amp; Electrical' <<<"$FLANAGAN_PLUMBING"
+          grep -q 'Plumbing<!-- --> (3)' <<<"$FLANAGAN_PLUMBING"
+          grep -q 'service area only, not a local office' <<<"$FLANAGAN_PLUMBING"
+          if grep -qi 'name="robots" content="noindex' <<<"$FLANAGAN_PLUMBING"; then
+            echo 'Flanagan plumbing unexpectedly returned noindex metadata.' >&2
+            exit 1
+          fi
+
       - name: Verify live crawler and privacy controls
         shell: bash
         run: |
@@ -186,6 +196,7 @@ jobs:
           grep -qi 'Sitemap:' <<<"$ROBOTS"
           SITEMAP="$(curl --fail --silent --show-error "$SITE_URL/sitemap.xml")"
           grep -q 'central-il-local-pros.vercel.app' <<<"$SITEMAP"
+          grep -q "$SITE_URL/illinois/flanagan/plumbing" <<<"$SITEMAP"
           if grep -q 'example.com' <<<"$SITEMAP"; then
             echo 'Sitemap contains placeholder example.com URL.' >&2
             exit 1
