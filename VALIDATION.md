@@ -80,3 +80,7 @@ No fake lead, verification, sponsorship, review or customer activity was inserte
 **V15.5 is production live.**
 
 There are no remaining external launch gates for hosting, Auth bootstrap, Super Admin access, or final branding. Remaining work is post-launch hardening and real-traffic verification, chiefly enabling Supabase Auth leaked-password protection when available and continuing to validate owner/lead/media workflows with legitimate production activity rather than fabricated records.
+
+## Non-runtime deployment skip proof
+
+On 2026-09-03, this validation-only change was committed specifically to verify the production release controls added in `84e26c71aefedcf7b3e3aa70a016d90b6b472f72`. Because `VALIDATION.md` does not affect the deployed Next.js runtime, GitHub CI should classify this commit as non-runtime and Vercel should skip creating a new application build. The canonical production application must remain healthy on the last deployed runtime commit while the normal CI smoke, dynamic-market, crawler and privacy checks still pass.
