@@ -7,6 +7,7 @@ import { FeaturedBusinessSidebar } from '@/components/FeaturedBusinessSidebar'
 import { SearchForm } from '@/components/SearchForm'
 import { getBusinesses, getCategories, getLocations, getFeaturedSidebarBusinesses, recordListingEvents, recordSearchEvent } from '@/lib/data'
 import { getSearchAvailability } from '@/lib/search-availability'
+import { resolveCategoryIntent } from '@/lib/search-intent'
 
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
@@ -32,18 +33,22 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const city = typeof sp.city === 'string' ? sp.city : undefined
   const q = typeof sp.q === 'string' ? sp.q : undefined
   const claim = sp.claim === '1'
+  const intent = !category && q?.trim() ? resolveCategoryIntent(q) : null
+  const effectiveCategory = category || intent?.slug
+  const keyword = intent && !category ? undefined : q
 
   const [cats, locations, businesses, featured, availability] = await Promise.all([
     getCategories(),
     getLocations(),
-    getBusinesses({ category, city, q, limit: 150 }),
-    getFeaturedSidebarBusinesses({ category, city, pagePath: '/search', limit: 4 }),
+    getBusinesses({ category: effectiveCategory, city, q: keyword, limit: 150 }),
+    getFeaturedSidebarBusinesses({ category: effectiveCategory, city, pagePath: '/search', limit: 4 }),
     getSearchAvailability(),
   ])
 
-  const catLabel = cats.find(c => c.slug === category)?.name
+  const catLabel = cats.find(c => c.slug === effectiveCategory)?.name
   const cityLabel = locations.find(l => l.slug === city)?.name
-  const filters = [catLabel, cityLabel, q?.trim() ? `“${q.trim()}”` : undefined].filter(Boolean) as string[]
+  const intentLabel = intent && catLabel && q?.trim() ? `“${q.trim()}” → ${catLabel}` : undefined
+  const filters = [intentLabel || catLabel, cityLabel, !intent && q?.trim() ? `“${q.trim()}”` : undefined].filter(Boolean) as string[]
   const requestHeaders = await headers()
   const isAutomated = automatedRequest(requestHeaders.get('user-agent') || '', sp)
 
@@ -56,8 +61,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
 
   const context = [catLabel, cityLabel].filter(Boolean).join(' in ') || 'Central Illinois local search'
   const browseCats = city ? cats.filter(c => Number(availability[city]?.[c.slug] ?? 0) > 0) : cats
-  const relatedCats = businesses.length === 0 && city && category
-    ? (relatedCategoryMap[category] ?? []).map(slug => {
+  const relatedCats = businesses.length === 0 && city && effectiveCategory
+    ? (relatedCategoryMap[effectiveCategory] ?? []).map(slug => {
         const cat = cats.find(c => c.slug === slug)
         const count = Number(availability[city]?.[slug] ?? 0)
         return cat && count > 0 ? { cat, count } : null
@@ -69,7 +74,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       <section className="pagehero"><div className="container">
         <div className="eyebrow">Central Illinois Local Search</div>
         <h1>Find Local Businesses</h1>
-        <p>Search published local profiles by category, city, or business name. Category choices automatically reflect the businesses currently available in the selected city or town.</p>
+        <p>Search published local profiles by category, city, business name, or common service phrases. Category choices automatically reflect the businesses currently available in the selected city or town.</p>
       </div></section>
       <section className="section"><div className="container">
         {claim && <div className="card" style={{ marginBottom: 20 }}>
@@ -78,6 +83,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
           <p className="muted">Search by business name or city, open the correct profile, then use <strong>Claim This Listing</strong>. Claim requests are reviewed before owner access is granted, and claimed status does not automatically mean verified.</p>
         </div>}
         <div className="search-panel"><SearchForm categories={cats} locations={locations} defaults={{ category, city, q }} availability={availability} /></div>
+        {intent && catLabel && <div className="notice" style={{ marginTop: 16 }}><strong>Search intent matched:</strong> “{q?.trim()}” is being interpreted as <strong>{catLabel}</strong>. Results still use normal organic relevance and location rules; this mapping does not create or promote providers.</div>}
         <div className="featured-content-layout" style={{ marginTop: 24 }}>
           <div className="featured-content-main">
             <div className="results-toolbar">
@@ -91,11 +97,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
               ? <div className="business-list">{businesses.map(b => <BusinessCard key={b.id} business={b} />)}</div>
               : <div className="empty empty-rich">
                   <h2>No matching businesses found</h2>
-                  <p>{cityLabel ? 'That category is not currently represented by a published listing in this market. Choose another available category or search by business name.' : 'Try removing one filter, choosing a nearby Central Illinois market, or searching by the business name.'}</p>
+                  <p>{cityLabel ? 'That service or category is not currently represented by a published listing in this market. Choose another available category or search by business name.' : 'Try removing one filter, choosing a nearby Central Illinois market, or searching by the business name.'}</p>
                   {relatedCats.length > 0 && <div className="card" style={{ margin: '18px 0', textAlign: 'left' }}>
                     <div className="kpi">Related local options</div>
-                    <h3>Other grooming providers in {cityLabel}</h3>
-                    <p className="small muted">These are related local grooming options only. They are <strong>not</strong> being represented as mobile groomers.</p>
+                    <h3>Related providers in {cityLabel}</h3>
+                    <p className="small muted">These are related local options only. They are not being represented as the exact service you searched for.</p>
                     <div className="grid grid-2" style={{ marginTop: 12 }}>{relatedCats.map(({ cat, count }) =>
                       <Link className="card category-card" key={cat.id} href={`/search?category=${encodeURIComponent(cat.slug)}&city=${encodeURIComponent(city!)}${claim ? '&claim=1' : ''}`}>
                         <strong>{cat.name}</strong><p className="small muted">{count} published local {count === 1 ? 'profile' : 'profiles'}</p>
