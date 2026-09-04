@@ -171,10 +171,11 @@ jobs:
 
           PONTIAC="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/search?city=pontiac&internal_check=1")"
           grep -q 'mexican-restaurants' <<<"$PONTIAC"
-          grep -q 'Mexican Restaurants<!-- --> (2)' <<<"$PONTIAC"
+          grep -q 'Mexican Restaurants<!-- --> (3)' <<<"$PONTIAC"
 
           PONTIAC_MEXICAN="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/search?city=pontiac&category=mexican-restaurants&internal_check=1")"
           grep -q 'La Mex' <<<"$PONTIAC_MEXICAN"
+          grep -q 'Madison Street Family Restaurant' <<<"$PONTIAC_MEXICAN"
           grep -q 'The Taco Truck' <<<"$PONTIAC_MEXICAN"
 
           FLANAGAN_PLUMBING="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/illinois/flanagan/plumbing")"
