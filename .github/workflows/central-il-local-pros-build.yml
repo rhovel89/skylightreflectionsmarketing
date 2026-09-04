@@ -9,6 +9,7 @@ on:
 permissions:
   contents: read
 
+# Workflow-only commits intentionally validate the existing production application without requiring a new Vercel build.
 jobs:
   validate:
     runs-on: ubuntu-latest
