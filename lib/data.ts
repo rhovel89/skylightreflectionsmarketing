@@ -3,6 +3,8 @@ import { DEFAULT_BRAND, TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 import type { Business, Category, Location, PublicConfig, SiteSettings } from '@/lib/types'
 
 const today=()=>new Date().toISOString().slice(0,10)
+const normalizeKeyword=(value:unknown)=>String(value??'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim()
+function businessMatchesKeyword(b:any,keyword:string){const terms:string[]=[String(b?.name||''),String(b?.description||'')];for(const link of b?.business_categories??[]){const category=Array.isArray(link?.categories)?link.categories[0]:link?.categories;if(category?.name)terms.push(String(category.name));if(category?.slug)terms.push(String(category.slug))}return normalizeKeyword(terms.join(' ')).includes(keyword)}
 async function activeSponsorships(s:any,businessIds:string[]){if(!businessIds.length)return[];const d=today();const{data}=await s.from('sponsorships').select('business_id,market_location_id,category_id,placement,page_path,priority,sort_order,origin,starts_on,ends_on').in('business_id',businessIds).eq('active',true).or(`starts_on.is.null,starts_on.lte.${d}`).or(`ends_on.is.null,ends_on.gte.${d}`);return data??[]}
 async function approvedLogoUrls(s:any,businessIds:string[]){const ids=[...new Set(businessIds.filter(Boolean))];const map=new Map<string,string>();if(!ids.length)return map;const{data}=await s.from('business_media').select('business_id,storage_path,sort_order,created_at').eq('tenant_id',TENANT_ID).in('business_id',ids).eq('media_type','logo').eq('status','active').eq('approval_status','approved').order('sort_order',{ascending:true}).order('created_at',{ascending:false});for(const row of data??[]){if(map.has(row.business_id))continue;const url=s.storage.from('business-media').getPublicUrl(row.storage_path).data.publicUrl;if(url)map.set(row.business_id,url)}return map}
 
@@ -12,7 +14,7 @@ export async function getCategories(vertical?: string): Promise<Category[]> { tr
 export async function getLocations(): Promise<Location[]> { try { const s=await createClient(); const {data}=await s.from('locations').select('id,slug,name,county,state,region,is_active').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'); return (data??[]) as Location[] } catch { return [] } }
 export async function getBusinesses(opts:{vertical?:string;city?:string;category?:string;q?:string;limit?:number}={}):Promise<Business[]> {
   try {
-    const s=await createClient(); const limit=opts.limit??100
+    const s=await createClient(); const limit=opts.limit??100; const keyword=normalizeKeyword(opts.q).slice(0,200); const candidateLimit=keyword?Math.max(1000,limit):limit
     let cityBusinessIds:string[]|undefined
     const matchedBranches=new Map<string,{address_text?:string|null;city?:string|null;state?:string|null;postal_code?:string|null;phone?:string|null;is_primary?:boolean|null}>()
     const serviceAreaBusinessIds=new Set<string>()
@@ -29,11 +31,12 @@ export async function getBusinesses(opts:{vertical?:string;city?:string;category
       if(!cityBusinessIds.length)return[]
     }
     if(opts.category){const{data:cat}=await s.from('categories').select('id').eq('tenant_id',TENANT_ID).eq('slug',opts.category).eq('is_active',true).maybeSingle();if(!cat)return[]}
-    let query=s.from('businesses').select('id,slug,name,abbr,phone,email,website,description,hours,rating,review_count,verified,claimed,profile_score,status,price_range,menu_url,ordering_url,reservation_url,attributes,address_text,source_name,source_url,primary_location_id,business_categories!inner(categories!inner(vertical,slug,name)),locations!businesses_primary_location_id_fkey(name,slug)').eq('tenant_id',TENANT_ID).eq('status','published').limit(limit)
-    if(opts.vertical)query=query.eq('business_categories.categories.vertical',opts.vertical);if(opts.category)query=query.eq('business_categories.categories.slug',opts.category);if(cityBusinessIds)query=query.in('id',cityBusinessIds);if(opts.q?.trim())query=query.ilike('name',`%${opts.q.trim()}%`)
+    let query=s.from('businesses').select('id,slug,name,abbr,phone,email,website,description,hours,rating,review_count,verified,claimed,profile_score,status,price_range,menu_url,ordering_url,reservation_url,attributes,address_text,source_name,source_url,primary_location_id,business_categories!inner(categories!inner(vertical,slug,name)),locations!businesses_primary_location_id_fkey(name,slug)').eq('tenant_id',TENANT_ID).eq('status','published').limit(candidateLimit)
+    if(opts.vertical)query=query.eq('business_categories.categories.vertical',opts.vertical);if(opts.category)query=query.eq('business_categories.categories.slug',opts.category);if(cityBusinessIds)query=query.in('id',cityBusinessIds)
     const{data,error}=await query.order('verified',{ascending:false}).order('profile_score',{ascending:false}).order('name');if(error)return[]
     const rows=(data??[]) as unknown as Business[]
-    return rows.map(b=>Object.assign({},b,opts.city?{matched_location:matchedBranches.get(b.id),matched_service_area:serviceAreaBusinessIds.has(b.id)}:{}))
+    const filtered=keyword?rows.filter(b=>businessMatchesKeyword(b,keyword)):rows
+    return filtered.slice(0,limit).map(b=>Object.assign({},b,opts.city?{matched_location:matchedBranches.get(b.id),matched_service_area:serviceAreaBusinessIds.has(b.id)}:{}))
   } catch { return [] }
 }
 
