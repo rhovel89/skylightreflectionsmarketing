@@ -33,23 +33,27 @@ export default async function Page({ params }: { params: Promise<{ section: stri
     const [
       { data: locationRows, error: locationError },
       { data: branchRows, error: branchError },
+      { data: serviceAreaRows, error: serviceAreaError },
       { data: categoryRows, error: categoryError },
       { data: searchRows, error: searchError },
     ] = await Promise.all([
-      s.from('locations').select('name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true).order('name'),
-      s.from('business_locations').select('city,business_id,businesses!inner(status,tenant_id)').eq('tenant_id', TENANT_ID).eq('is_active', true).eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(5000),
-      s.from('business_categories').select('business_id,categories!inner(name,slug,vertical,tenant_id)').eq('categories.tenant_id', TENANT_ID).limit(10000),
-      s.from('search_events').select('service,location,result_count,created_at').eq('tenant_id', TENANT_ID).gte('created_at', ninetyDaysAgo).order('created_at', { ascending: false }).limit(1000),
+      s.from('locations').select('id,name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true).order('name'),
+      s.from('business_locations').select('city,location_id,business_id,businesses!inner(status,tenant_id)').eq('tenant_id', TENANT_ID).eq('is_active', true).eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(8000),
+      s.from('business_service_areas').select('business_id,location_id,businesses!inner(status,tenant_id)').eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(15000),
+      s.from('business_categories').select('business_id,categories!inner(name,slug,vertical,tenant_id)').eq('categories.tenant_id', TENANT_ID).limit(15000),
+      s.from('search_events').select('service,location,result_count,created_at').eq('tenant_id', TENANT_ID).gte('created_at', ninetyDaysAgo).order('created_at', { ascending: false }).limit(2000),
     ])
     return <>
       <AdminHead cfg={cfg} />
       {locationError && <div className="notice warn">{locationError.message}</div>}
       {branchError && <div className="notice warn">{branchError.message}</div>}
+      {serviceAreaError && <div className="notice warn">{serviceAreaError.message}</div>}
       {categoryError && <div className="notice warn">{categoryError.message}</div>}
       {searchError && <div className="notice warn">{searchError.message}</div>}
       <InventoryExpansionPanel
         locations={(locationRows ?? []) as any[]}
         branches={(branchRows ?? []) as any[]}
+        serviceAreas={(serviceAreaRows ?? []) as any[]}
         businessCategories={(categoryRows ?? []) as any[]}
         searchEvents={(searchRows ?? []) as any[]}
       />
@@ -109,14 +113,15 @@ export default async function Page({ params }: { params: Promise<{ section: stri
   }
 
   if (section === 'seo') {
-    const [{ data, error }, { data: locationRows, error: locationError }, { data: branchRows, error: branchError }, { data: categoryRows, error: categoryError }] = await Promise.all([
+    const [{ data, error }, { data: locationRows, error: locationError }, { data: branchRows, error: branchError }, { data: serviceAreaRows, error: serviceAreaError }, { data: categoryRows, error: categoryError }] = await Promise.all([
       s.from('seo_pages').select(cfg.select).eq('tenant_id', TENANT_ID).order('updated_at', { ascending: false }).limit(500),
-      s.from('locations').select('name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true).order('name'),
-      s.from('business_locations').select('city,business_id,businesses!inner(status,tenant_id)').eq('tenant_id', TENANT_ID).eq('is_active', true).eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(3000),
-      s.from('business_categories').select('business_id,categories!inner(name,slug,vertical,tenant_id)').eq('categories.tenant_id', TENANT_ID).limit(5000),
+      s.from('locations').select('id,name,slug').eq('tenant_id', TENANT_ID).eq('is_active', true).order('name'),
+      s.from('business_locations').select('city,location_id,business_id,businesses!inner(status,tenant_id)').eq('tenant_id', TENANT_ID).eq('is_active', true).eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(8000),
+      s.from('business_service_areas').select('business_id,location_id,businesses!inner(status,tenant_id)').eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(15000),
+      s.from('business_categories').select('business_id,categories!inner(name,slug,vertical,tenant_id)').eq('categories.tenant_id', TENANT_ID).limit(15000),
     ])
     const rows = (data ?? []).slice(0, 100) as unknown as Record<string, unknown>[]
-    return <><AdminHead cfg={cfg} /><AdminCreateForm section={section} />{locationError && <div className="notice warn">{locationError.message}</div>}{branchError && <div className="notice warn">{branchError.message}</div>}{categoryError && <div className="notice warn">{categoryError.message}</div>}<SeoCoveragePanel rows={(data ?? []) as any[]} locations={(locationRows ?? []) as any[]} branches={(branchRows ?? []) as any[]} businessCategories={(categoryRows ?? []) as any[]} /><div className="admin-list-meta"><span className="kpi">SEO editor · {rows.length} records shown</span><span className="small muted">Reviewed content does not override the live 3-provider indexing threshold. Underfilled markets remain protected automatically.</span></div>{error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}</>
+    return <><AdminHead cfg={cfg} /><AdminCreateForm section={section} />{locationError && <div className="notice warn">{locationError.message}</div>}{branchError && <div className="notice warn">{branchError.message}</div>}{serviceAreaError && <div className="notice warn">{serviceAreaError.message}</div>}{categoryError && <div className="notice warn">{categoryError.message}</div>}<SeoCoveragePanel rows={(data ?? []) as any[]} locations={(locationRows ?? []) as any[]} branches={(branchRows ?? []) as any[]} serviceAreas={(serviceAreaRows ?? []) as any[]} businessCategories={(categoryRows ?? []) as any[]} /><div className="admin-list-meta"><span className="kpi">SEO editor · {rows.length} records shown</span><span className="small muted">Reviewed content does not override the live 3-provider indexing threshold. Physical locations and clearly labeled service areas both count as legitimate market coverage, but service areas never become offices.</span></div>{error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}</>
   }
 
   let q = s.from(cfg.table).select(cfg.select).limit(100)
