@@ -9,7 +9,7 @@ on:
 permissions:
   contents: read
 
-# Workflow-only commits intentionally validate the existing production application without requiring a new Vercel build.
+# Workflow/data-only commits intentionally validate the existing production application without requiring a new Vercel build.
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -32,7 +32,13 @@ jobs:
           set -euo pipefail
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
             echo "requires_deployment=true" >> "$GITHUB_OUTPUT"
-          elif git diff --quiet "${GITHUB_SHA}^" "$GITHUB_SHA" -- . ':(exclude).github/**'; then
+          elif git diff --quiet "${GITHUB_SHA}^" "$GITHUB_SHA" -- . \
+            ':(exclude).github/**' \
+            ':(exclude)supabase/migrations/**' \
+            ':(exclude)README.md' \
+            ':(exclude)LAUNCH_RUNBOOK.md' \
+            ':(exclude)VALIDATION.md' \
+            ':(exclude)CANONICAL_STATUS.json'; then
             echo "requires_deployment=false" >> "$GITHUB_OUTPUT"
           else
             echo "requires_deployment=true" >> "$GITHUB_OUTPUT"
@@ -125,7 +131,7 @@ jobs:
                 break
               fi
             else
-              echo "Attempt $i: workflow-only commit; live application commit=${LIVE_SHA:-unknown} ok=$OK"
+              echo "Attempt $i: non-runtime commit; live application commit=${LIVE_SHA:-unknown} ok=$OK"
               if [ "$OK" = "true" ] && [ -n "$LIVE_SHA" ]; then
                 MATCHED=1
                 break
