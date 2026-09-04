@@ -4,36 +4,141 @@ type CategoryRow={business_id?:string|null;categories?:{name?:string|null;slug?:
 type LocationRow={id:string;name:string;slug:string};
 type SearchRow={service?:string|null;location?:string|null;result_count?:number|null;created_at?:string|null};
 
-type Market={key:string;city:string;citySlug:string;category:string;categorySlug:string;vertical:string;providers:number;cityBusinesses:number;localSearches:number;zeroResults:number;generalSearches:number;score:number};
+type Market={key:string;city:string;citySlug:string;category:string;categorySlug:string;vertical:string;providers:number;cityBusinesses:number;localSearches:number;zeroResults:number;generalSearches:number;score:number;demandOnly:boolean};
+type CategoryMeta={name:string;slug:string;vertical:string};
+type LocalDemand={city:string;service:string;searches:number;zero:number};
 
 const norm=(value:string)=>value.trim().toLowerCase();
 const marketKey=(city:string,category:string)=>`${norm(city)}::${norm(category)}`;
 const protectedMarkets=new Map<string,string>([
-  [marketKey('Pontiac','Cafes & Coffee'),'Intentional editorial exception: keep this market at two legitimate providers and noindex until a genuinely strong third physical business is found. Do not add a weak or fabricated listing simply to unlock the page.'],
+  [marketKey('Pontiac','Cafes & Coffee'),'Intentional editorial exception: do not add a weak or fabricated listing simply to unlock this market. Research only genuinely relevant providers supported by current evidence.'],
 ]);
 
 export function InventoryExpansionPanel({branches,serviceAreas=[],businessCategories,locations,searchEvents}:{branches:BranchRow[];serviceAreas?:ServiceAreaRow[];businessCategories:CategoryRow[];locations:LocationRow[];searchEvents:SearchRow[]}){
-  const categoriesByBusiness=new Map<string,{name:string;slug:string;vertical:string}[]>();
+  const categoriesByBusiness=new Map<string,CategoryMeta[]>();
+  const categoryByTerm=new Map<string,CategoryMeta>();
   for(const row of businessCategories){
-    const businessId=String(row.business_id||''); const category=row.categories; const name=String(category?.name||'').trim(); const slug=String(category?.slug||'').trim(); const vertical=String(category?.vertical||'').trim();
-    if(!businessId||!name||!slug)continue; const current=categoriesByBusiness.get(businessId)||[]; if(!current.some(item=>item.slug===slug))current.push({name,slug,vertical}); categoriesByBusiness.set(businessId,current);
+    const businessId=String(row.business_id||'');
+    const category=row.categories;
+    const name=String(category?.name||'').trim();
+    const slug=String(category?.slug||'').trim();
+    const vertical=String(category?.vertical||'').trim();
+    if(!name||!slug)continue;
+    const meta={name,slug,vertical};
+    categoryByTerm.set(norm(name),meta);
+    categoryByTerm.set(norm(slug),meta);
+    if(!businessId)continue;
+    const current=categoriesByBusiness.get(businessId)||[];
+    if(!current.some(item=>item.slug===slug))current.push(meta);
+    categoriesByBusiness.set(businessId,current);
   }
+
   const locationById=new Map(locations.map(item=>[String(item.id),item]));
-  const cityBusinessSets=new Map<string,Set<string>>(); const providerSets=new Map<string,Set<string>>(); const marketMeta=new Map<string,{city:string;category:string;categorySlug:string;vertical:string}>();
-  const addConnection=(businessId:string,city:string)=>{if(!businessId||!city)return;const cityKey=norm(city);if(!cityBusinessSets.has(cityKey))cityBusinessSets.set(cityKey,new Set());cityBusinessSets.get(cityKey)!.add(businessId);for(const category of categoriesByBusiness.get(businessId)||[]){const key=marketKey(city,category.name);if(!providerSets.has(key))providerSets.set(key,new Set());providerSets.get(key)!.add(businessId);marketMeta.set(key,{city,category:category.name,categorySlug:category.slug,vertical:category.vertical})}};
-  for(const branch of branches){const businessId=String(branch.business_id||'');const loc=locationById.get(String(branch.location_id||''));const city=String(loc?.name||branch.city||'').trim();addConnection(businessId,city)}
-  for(const area of serviceAreas){const businessId=String(area.business_id||'');const city=String(locationById.get(String(area.location_id||''))?.name||'').trim();addConnection(businessId,city)}
+  const locationByTerm=new Map<string,LocationRow>();
+  for(const location of locations){
+    locationByTerm.set(norm(location.name),location);
+    locationByTerm.set(norm(location.slug),location);
+  }
 
-  const localDemand=new Map<string,{searches:number;zero:number}>(); const generalDemand=new Map<string,number>();
-  for(const event of searchEvents){const service=String(event.service||'').trim();if(!service)continue;const location=String(event.location||'').trim();if(location){const key=marketKey(location,service),current=localDemand.get(key)||{searches:0,zero:0};current.searches+=1;if(Number(event.result_count||0)===0)current.zero+=1;localDemand.set(key,current)}else generalDemand.set(norm(service),(generalDemand.get(norm(service))||0)+1)}
+  const cityBusinessSets=new Map<string,Set<string>>();
+  const providerSets=new Map<string,Set<string>>();
+  const marketMeta=new Map<string,{city:string;category:string;categorySlug:string;vertical:string}>();
+  const addConnection=(businessId:string,city:string)=>{
+    if(!businessId||!city)return;
+    const cityKey=norm(city);
+    if(!cityBusinessSets.has(cityKey))cityBusinessSets.set(cityKey,new Set());
+    cityBusinessSets.get(cityKey)!.add(businessId);
+    for(const category of categoriesByBusiness.get(businessId)||[]){
+      const key=marketKey(city,category.name);
+      if(!providerSets.has(key))providerSets.set(key,new Set());
+      providerSets.get(key)!.add(businessId);
+      marketMeta.set(key,{city,category:category.name,categorySlug:category.slug,vertical:category.vertical});
+    }
+  };
+  for(const branch of branches){
+    const businessId=String(branch.business_id||'');
+    const loc=locationById.get(String(branch.location_id||''));
+    const city=String(loc?.name||branch.city||'').trim();
+    addConnection(businessId,city);
+  }
+  for(const area of serviceAreas){
+    const businessId=String(area.business_id||'');
+    const city=String(locationById.get(String(area.location_id||''))?.name||'').trim();
+    addConnection(businessId,city);
+  }
 
+  const localDemand=new Map<string,LocalDemand>();
+  const generalDemand=new Map<string,number>();
+  for(const event of searchEvents){
+    const service=String(event.service||'').trim();
+    if(!service)continue;
+    const location=String(event.location||'').trim();
+    if(location){
+      const key=marketKey(location,service);
+      const current=localDemand.get(key)||{city:location,service,searches:0,zero:0};
+      current.searches+=1;
+      if(Number(event.result_count||0)===0)current.zero+=1;
+      localDemand.set(key,current);
+    }else{
+      generalDemand.set(norm(service),(generalDemand.get(norm(service))||0)+1);
+    }
+  }
+
+  const scoreFor=(providers:number,cityBusinesses:number,localSearches:number,zeroResults:number,generalSearches:number)=>(providers===2?100:providers===1?40:0)+Math.min(cityBusinesses*2,60)+(localSearches*30)+(zeroResults*20)+(generalSearches*5);
   const markets:Market[]=[];
-  for(const [key,set] of providerSets){const meta=marketMeta.get(key);if(!meta)continue;const providers=set.size;if(providers<1||providers>=3)continue;const location=locations.find(item=>norm(item.name)===norm(meta.city));if(!location)continue;const cityBusinesses=cityBusinessSets.get(norm(meta.city))?.size||0;if(cityBusinesses<3)continue;const demand=localDemand.get(key)||{searches:0,zero:0};const general=generalDemand.get(norm(meta.category))||0;const score=(providers===2?100:40)+Math.min(cityBusinesses*2,60)+(demand.searches*30)+(demand.zero*20)+(general*5);markets.push({key,city:meta.city,citySlug:location.slug,category:meta.category,categorySlug:meta.categorySlug,vertical:meta.vertical,providers,cityBusinesses,localSearches:demand.searches,zeroResults:demand.zero,generalSearches:general,score})}
-  const protectedRows=markets.filter(row=>protectedMarkets.has(row.key));const opportunities=markets.filter(row=>!protectedMarkets.has(row.key)).sort((a,b)=>b.score-a.score||b.providers-a.providers||b.cityBusinesses-a.cityBusinesses||a.city.localeCompare(b.city)||a.category.localeCompare(b.category));const oneAway=opportunities.filter(row=>row.providers===2),deeper=opportunities.filter(row=>row.providers===1),recentDemand=searchEvents.length;
+
+  for(const [key,set] of providerSets){
+    const meta=marketMeta.get(key);
+    if(!meta)continue;
+    const providers=set.size;
+    if(providers<1||providers>=3)continue;
+    const location=locationByTerm.get(norm(meta.city));
+    if(!location)continue;
+    const cityBusinesses=cityBusinessSets.get(norm(meta.city))?.size||0;
+    if(cityBusinesses<3)continue;
+    const demand=localDemand.get(key)||{city:meta.city,service:meta.category,searches:0,zero:0};
+    const general=generalDemand.get(norm(meta.category))||0;
+    markets.push({key,city:meta.city,citySlug:location.slug,category:meta.category,categorySlug:meta.categorySlug,vertical:meta.vertical,providers,cityBusinesses,localSearches:demand.searches,zeroResults:demand.zero,generalSearches:general,score:scoreFor(providers,cityBusinesses,demand.searches,demand.zero,general),demandOnly:false});
+  }
+
+  // A zero-provider market cannot appear in providerSets by definition. Preserve it when real search demand
+  // maps cleanly to an existing city and category so staff can research the gap without fabricating inventory.
+  for(const [key,demand] of localDemand){
+    if(providerSets.has(key))continue;
+    const location=locationByTerm.get(norm(demand.city));
+    const category=categoryByTerm.get(norm(demand.service));
+    if(!location||!category)continue;
+    const cityBusinesses=cityBusinessSets.get(norm(location.name))?.size||0;
+    if(cityBusinesses<3)continue;
+    const general=generalDemand.get(norm(category.name))||0;
+    markets.push({key,city:location.name,citySlug:location.slug,category:category.name,categorySlug:category.slug,vertical:category.vertical,providers:0,cityBusinesses,localSearches:demand.searches,zeroResults:demand.zero,generalSearches:general,score:scoreFor(0,cityBusinesses,demand.searches,demand.zero,general),demandOnly:true});
+  }
+
+  const protectedRows=markets.filter(row=>protectedMarkets.has(row.key));
+  const opportunities=markets.filter(row=>!protectedMarkets.has(row.key)).sort((a,b)=>b.score-a.score||b.providers-a.providers||b.cityBusinesses-a.cityBusinesses||a.city.localeCompare(b.city)||a.category.localeCompare(b.category));
+  const zeroProvider=opportunities.filter(row=>row.providers===0);
+  const oneAway=opportunities.filter(row=>row.providers===2);
+  const oneProvider=opportunities.filter(row=>row.providers===1);
+  const recentDemand=searchEvents.length;
 
   return <>
-    <section className="admin-card"><div className="section-head"><div><div className="kpi">Private growth intelligence</div><h2>Local Inventory Expansion Engine</h2><p className="muted">Ranks underfilled city/category markets from live published-business inventory, counting active physical locations and legitimate service-area coverage consistently with public index eligibility. It never overrides the three-provider rule.</p></div></div><div className="grid grid-4"><div className="card"><div className="kpi">Underfilled markets</div><h2>{markets.length}</h2><p className="small muted">1–2 real published providers in an established city</p></div><div className="card"><div className="kpi">One provider away</div><h2>{oneAway.length}</h2><p className="small muted">Unprotected quick wins at exactly two providers</p></div><div className="card"><div className="kpi">Deeper opportunities</div><h2>{deeper.length}</h2><p className="small muted">Markets currently starting from one provider</p></div><div className="card"><div className="kpi">Demand events loaded</div><h2>{recentDemand}</h2><p className="small muted">Recent search signals used as a secondary ranking input</p></div></div><div className="notice" style={{marginTop:18}}><strong>Research integrity:</strong> add only real businesses supported by current source evidence. Physical branches and service areas must remain separate concepts; a service area is never represented as an office. Researched/imported businesses default to Claimed = false, Verified = false, Featured = false, Rating = 0 and Review Count = 0. Paid placement never changes organic ranking.</div></section>
+    <section className="admin-card">
+      <div className="section-head"><div><div className="kpi">Private growth intelligence</div><h2>Local Inventory Expansion Engine</h2><p className="muted">Ranks underfilled city/category markets from live published-business inventory, counting active physical locations and legitimate service-area coverage consistently with public index eligibility. It also preserves zero-provider markets when actual recent search demand maps to a known city/category. It never overrides the three-provider rule.</p></div></div>
+      <div className="grid grid-4">
+        <div className="card"><div className="kpi">Underfilled markets</div><h2>{markets.length}</h2><p className="small muted">0–2 real published providers in established cities</p></div>
+        <div className="card"><div className="kpi">Zero-provider demand</div><h2>{zeroProvider.length}</h2><p className="small muted">Real recorded searches with no current matching provider</p></div>
+        <div className="card"><div className="kpi">One provider away</div><h2>{oneAway.length}</h2><p className="small muted">Unprotected quick wins at exactly two providers</p></div>
+        <div className="card"><div className="kpi">One-provider gaps</div><h2>{oneProvider.length}</h2><p className="small muted">Markets currently starting from one provider</p></div>
+        <div className="card"><div className="kpi">Demand events loaded</div><h2>{recentDemand}</h2><p className="small muted">Recent search signals used as a secondary ranking input</p></div>
+      </div>
+      <div className="notice" style={{marginTop:18}}><strong>Research integrity:</strong> add only real businesses supported by current source evidence. Physical branches and service areas must remain separate concepts; a service area is never represented as an office. Zero-provider demand is a research signal, not permission to broaden a category definition. Researched/imported businesses default to Claimed = false, Verified = false, Featured = false, Rating = 0 and Review Count = 0. Paid placement never changes organic ranking.</div>
+    </section>
+
     {protectedRows.length>0&&<section className="admin-card"><div className="section-head"><div><div className="kpi">Protected editorial exceptions</div><h2>Do Not Force the Threshold</h2><p className="muted">These markets are intentionally excluded from the growth queue.</p></div></div><div className="grid grid-3">{protectedRows.map(row=><div className="card" key={row.key}><div className="kpi">{row.providers}/3 providers · protected</div><h3>{row.category} in {row.city}, IL</h3><p className="small muted">{protectedMarkets.get(row.key)}</p><a href={`/illinois/${row.citySlug}/${row.categorySlug}`} target="_blank" rel="noreferrer">Review protected public page →</a></div>)}</div></section>}
-    <section className="admin-card"><div className="section-head"><div><div className="kpi">Highest-value research queue</div><h2>Next Markets to Expand</h2><p className="muted">Provider proximity leads the score, followed by established city inventory and real search demand. Service-area coverage counts only where it is actually recorded for the provider.</p></div><span className="badge neutral">Top {Math.min(opportunities.length,18)}</span></div>{opportunities.length?<div className="grid grid-3">{opportunities.slice(0,18).map((row,index)=><div className="card" key={row.key}><div className="kpi">#{index+1} · score {row.score} · {row.providers}/3 providers</div><h3>{row.category} in {row.city}, IL</h3><p className="small muted">Need {3-row.providers} more legitimate provider{3-row.providers===1?'':'s'} · {row.cityBusinesses} published businesses connected to city · {row.localSearches} local search{row.localSearches===1?'':'es'} · {row.zeroResults} zero-result search{row.zeroResults===1?'':'es'}{row.generalSearches?` · ${row.generalSearches} general ${row.category} search${row.generalSearches===1?'':'es'}`:''}</p><p className="small muted">Vertical: {row.vertical||'local business'}. Research official business sites, city/chamber/tourism directories and other current primary evidence before adding anything.</p><a href={`/illinois/${row.citySlug}/${row.categorySlug}`} target="_blank" rel="noreferrer">Review current market →</a></div>)}</div>:<div className="notice">No unprotected underfilled markets are currently available in established cities.</div>}</section>
+
+    <section className="admin-card">
+      <div className="section-head"><div><div className="kpi">Highest-value research queue</div><h2>Next Markets to Expand</h2><p className="muted">Provider proximity leads the score, followed by established city inventory and real search demand. Zero-provider markets enter only when an actual recorded search maps to a known city/category. Service-area coverage counts only where it is actually recorded for the provider.</p></div><span className="badge neutral">Top {Math.min(opportunities.length,18)}</span></div>
+      {opportunities.length?<div className="grid grid-3">{opportunities.slice(0,18).map((row,index)=><div className="card" key={row.key}><div className="kpi">#{index+1} · score {row.score} · {row.providers}/3 providers{row.demandOnly?' · demand-only gap':''}</div><h3>{row.category} in {row.city}, IL</h3><p className="small muted">Need {3-row.providers} more legitimate provider{3-row.providers===1?'':'s'} · {row.cityBusinesses} published businesses connected to city · {row.localSearches} local search{row.localSearches===1?'':'es'} · {row.zeroResults} zero-result search{row.zeroResults===1?'':'es'}{row.generalSearches?` · ${row.generalSearches} general ${row.category} search${row.generalSearches===1?'':'es'}`:''}</p><p className="small muted">Vertical: {row.vertical||'local business'}. Research official business sites, city/chamber/tourism directories and other current primary evidence before adding anything. Do not convert adjacent services into this category merely to raise provider count.</p><a href={`/illinois/${row.citySlug}/${row.categorySlug}`} target="_blank" rel="noreferrer">Review current market →</a></div>)}</div>:<div className="notice">No unprotected underfilled markets are currently available in established cities.</div>}
+    </section>
   </>;
 }
