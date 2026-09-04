@@ -1,5 +1,6 @@
 import './admin-shell.css'
 import './dashboard.css'
+import './section-ui.css'
 import { requireStaff } from '@/lib/auth'
 import { AdminSidebar } from '@/components/AdminSidebar'
 
