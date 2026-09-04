@@ -16,6 +16,8 @@ import { TeamRoles } from '@/components/TeamRoles'
 import { AdminCreateForm } from '@/components/AdminCreateForm'
 import { BulkImport } from '@/components/BulkImport'
 
+const createSections = new Set(['businesses', 'locations', 'categories', 'content-blocks', 'guides', 'branches'])
+
 export default async function Page({ params }: { params: Promise<{ section: string }> }) {
   const { section } = await params
   if (section === 'site-builder') return <SiteBuilder />
@@ -63,25 +65,25 @@ export default async function Page({ params }: { params: Promise<{ section: stri
   if (section === 'claims') {
     const { data, error } = await s.from('business_claims').select('id,business_id,claimant_user_id,claimant_name,claimant_role,email,phone,status,created_at,reviewed_by,reviewed_at,review_notes,businesses!inner(id,name,slug,tenant_id,claimed,verified)').eq('businesses.tenant_id', TENANT_ID).order('created_at', { ascending: false }).limit(100)
     const rows = (data ?? []) as unknown as Record<string, any>[]
-    return <><AdminHead cfg={cfg} workflow /><QueueMeta rows={rows} />{error ? <div className="notice warn">{error.message}</div> : <AdminModerationQueue kind="claims" rows={rows} />}</>
+    return <><AdminHead cfg={cfg} workflow />{error ? <div className="notice warn">{error.message}</div> : <AdminModerationQueue kind="claims" rows={rows} />}</>
   }
 
   if (section === 'submissions') {
     const { data, error } = await s.from('business_submissions').select('id,business_name,category,city,phone,website,description,status,contact_name,email,created_at,reviewed_by,reviewed_at,review_notes,source').eq('tenant_id', TENANT_ID).order('created_at', { ascending: false }).limit(100)
     const rows = (data ?? []) as unknown as Record<string, any>[]
-    return <><AdminHead cfg={cfg} workflow /><QueueMeta rows={rows} />{error ? <div className="notice warn">{error.message}</div> : <AdminModerationQueue kind="submissions" rows={rows} />}</>
+    return <><AdminHead cfg={cfg} workflow />{error ? <div className="notice warn">{error.message}</div> : <AdminModerationQueue kind="submissions" rows={rows} />}</>
   }
 
   if (section === 'edit-requests') {
     const { data, error } = await s.from('business_edit_requests').select('id,business_id,requested_by,request_type,proposed_changes,status,staff_notes,created_at,reviewed_by,reviewed_at,businesses!inner(id,name,slug,tenant_id)').eq('tenant_id', TENANT_ID).order('created_at', { ascending: false }).limit(100)
     const rows = (data ?? []) as unknown as Record<string, any>[]
-    return <><AdminHead cfg={cfg} workflow /><QueueMeta rows={rows} />{error ? <div className="notice warn">{error.message}</div> : <AdminModerationQueue kind="edit-requests" rows={rows} />}</>
+    return <><AdminHead cfg={cfg} workflow />{error ? <div className="notice warn">{error.message}</div> : <AdminModerationQueue kind="edit-requests" rows={rows} />}</>
   }
 
   if (section === 'reports') {
     const { data, error } = await s.from('listing_reports').select('id,business_id,reporter_name,reporter_email,report_type,details,status,staff_notes,created_at,reviewed_by,reviewed_at,businesses(id,name,slug,tenant_id)').eq('tenant_id', TENANT_ID).order('created_at', { ascending: false }).limit(100)
     const rows = (data ?? []) as unknown as Record<string, any>[]
-    return <><AdminHead cfg={cfg} workflow /><QueueMeta rows={rows} />{error ? <div className="notice warn">{error.message}</div> : <AdminModerationQueue kind="reports" rows={rows} />}</>
+    return <><AdminHead cfg={cfg} workflow />{error ? <div className="notice warn">{error.message}</div> : <AdminModerationQueue kind="reports" rows={rows} />}</>
   }
 
   if (section === 'businesses') {
@@ -90,7 +92,13 @@ export default async function Page({ params }: { params: Promise<{ section: stri
       s.from('businesses').select('id,name,status,claimed,verified,featured,phone,website,address_text,source_name,source_url,source_checked_at').eq('tenant_id', TENANT_ID).eq('status', 'published').order('verified', { ascending: true }).order('name').limit(50),
     ])
     const rows = (data ?? []) as unknown as Record<string, unknown>[]
-    return <><AdminHead cfg={cfg} /><AdminCreateForm section={section} />{verifyError ? <div className="notice warn">{verifyError.message}</div> : <BusinessVerificationPanel rows={(verifyRows ?? []) as unknown as Record<string, any>[]} />}<div className="admin-list-meta"><span className="kpi">Business data editor · {rows.length} records shown</span><span className="small muted">Claimed and Verified are controlled by protected workflows, not editable cells.</span></div>{error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}</>
+    return <>
+      <AdminHead cfg={cfg} />
+      <CreatePanel section={section} />
+      {verifyError ? <div className="notice warn">{verifyError.message}</div> : <BusinessVerificationPanel rows={(verifyRows ?? []) as unknown as Record<string, any>[]} />}
+      <div className="admin-list-meta"><span className="kpi">Business data editor · {rows.length} records shown</span><span className="small muted">Claimed and Verified are controlled by protected workflows, not editable cells.</span></div>
+      {error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}
+    </>
   }
 
   if (section === 'branches') {
@@ -99,7 +107,13 @@ export default async function Page({ params }: { params: Promise<{ section: stri
       s.from('business_locations').select('id,business_id,label,location_type,is_primary,is_active,verified,address_text,city,state,postal_code,source_name,source_url,source_checked_at,businesses!inner(name,tenant_id)').eq('tenant_id', TENANT_ID).eq('businesses.tenant_id', TENANT_ID).order('verified', { ascending: true }).order('city').limit(50),
     ])
     const rows = (data ?? []) as unknown as Record<string, unknown>[]
-    return <><AdminHead cfg={cfg} />{verifyError ? <div className="notice warn">{verifyError.message}</div> : <BranchVerificationPanel rows={(verifyRows ?? []) as unknown as Record<string, any>[]} />}<div className="admin-list-meta"><span className="kpi">Branch data editor · {rows.length} records shown</span><span className="small muted">The verified trust signal is controlled only from the verification panel above.</span></div>{error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}</>
+    return <>
+      <AdminHead cfg={cfg} />
+      <CreatePanel section={section} />
+      {verifyError ? <div className="notice warn">{verifyError.message}</div> : <BranchVerificationPanel rows={(verifyRows ?? []) as unknown as Record<string, any>[]} />}
+      <div className="admin-list-meta"><span className="kpi">Branch data editor · {rows.length} records shown</span><span className="small muted">The verified trust signal is controlled only from the verification panel above.</span></div>
+      {error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}
+    </>
   }
 
   if (section === 'guides') {
@@ -109,7 +123,15 @@ export default async function Page({ params }: { params: Promise<{ section: stri
       s.from('business_locations').select('city,business_id,businesses!inner(status,tenant_id)').eq('tenant_id', TENANT_ID).eq('is_active', true).eq('businesses.status', 'published').eq('businesses.tenant_id', TENANT_ID).limit(1000),
     ])
     const rows = (data ?? []) as unknown as Record<string, unknown>[]
-    return <><AdminHead cfg={cfg} /><AdminCreateForm section={section} />{locationError && <div className="notice warn">{locationError.message}</div>}{branchError && <div className="notice warn">{branchError.message}</div>}<GuideCoveragePanel rows={(data ?? []) as any[]} locations={(locationRows ?? []) as any[]} branches={(branchRows ?? []) as any[]} /><div className="admin-list-meta"><span className="kpi">Guide editor · {rows.length} records shown</span><span className="small muted">Create drafts first, publish only substantive useful content, and upgrade thin articles instead of duplicating search intent.</span></div>{error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}</>
+    return <>
+      <AdminHead cfg={cfg} />
+      <CreatePanel section={section} />
+      {locationError && <div className="notice warn">{locationError.message}</div>}
+      {branchError && <div className="notice warn">{branchError.message}</div>}
+      <GuideCoveragePanel rows={(data ?? []) as any[]} locations={(locationRows ?? []) as any[]} branches={(branchRows ?? []) as any[]} />
+      <div className="admin-list-meta"><span className="kpi">Guide editor · {rows.length} records shown</span><span className="small muted">Create drafts first, publish only substantive useful content, and upgrade thin articles instead of duplicating search intent.</span></div>
+      {error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}
+    </>
   }
 
   if (section === 'seo') {
@@ -121,7 +143,16 @@ export default async function Page({ params }: { params: Promise<{ section: stri
       s.from('business_categories').select('business_id,categories!inner(name,slug,vertical,tenant_id)').eq('categories.tenant_id', TENANT_ID).limit(15000),
     ])
     const rows = (data ?? []).slice(0, 100) as unknown as Record<string, unknown>[]
-    return <><AdminHead cfg={cfg} /><AdminCreateForm section={section} />{locationError && <div className="notice warn">{locationError.message}</div>}{branchError && <div className="notice warn">{branchError.message}</div>}{serviceAreaError && <div className="notice warn">{serviceAreaError.message}</div>}{categoryError && <div className="notice warn">{categoryError.message}</div>}<SeoCoveragePanel rows={(data ?? []) as any[]} locations={(locationRows ?? []) as any[]} branches={(branchRows ?? []) as any[]} serviceAreas={(serviceAreaRows ?? []) as any[]} businessCategories={(categoryRows ?? []) as any[]} /><div className="admin-list-meta"><span className="kpi">SEO editor · {rows.length} records shown</span><span className="small muted">Reviewed content does not override the live 3-provider indexing threshold. Physical locations and clearly labeled service areas both count as legitimate market coverage, but service areas never become offices.</span></div>{error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}</>
+    return <>
+      <AdminHead cfg={cfg} />
+      {locationError && <div className="notice warn">{locationError.message}</div>}
+      {branchError && <div className="notice warn">{branchError.message}</div>}
+      {serviceAreaError && <div className="notice warn">{serviceAreaError.message}</div>}
+      {categoryError && <div className="notice warn">{categoryError.message}</div>}
+      <SeoCoveragePanel rows={(data ?? []) as any[]} locations={(locationRows ?? []) as any[]} branches={(branchRows ?? []) as any[]} serviceAreas={(serviceAreaRows ?? []) as any[]} businessCategories={(categoryRows ?? []) as any[]} />
+      <div className="admin-list-meta"><span className="kpi">SEO editor · {rows.length} records shown</span><span className="small muted">Reviewed content does not override the live 3-provider indexing threshold. Physical locations and clearly labeled service areas both count as legitimate market coverage, but service areas never become offices.</span></div>
+      {error ? <div className="notice warn">{error.message}</div> : <AdminEntityEditor section={section} cfg={cfg} rows={rows} />}
+    </>
   }
 
   let q = s.from(cfg.table).select(cfg.select).limit(100)
@@ -129,14 +160,43 @@ export default async function Page({ params }: { params: Promise<{ section: stri
   if (cfg.order) q = q.order(cfg.order, { ascending: false })
   const { data, error } = await q
   const rows = (data ?? []) as unknown as Record<string, unknown>[]
-  return <><AdminHead cfg={cfg} />{!cfg.readOnly && <AdminCreateForm section={section} />} {error ? <div className="notice warn">{error.message}</div> : <><div className="admin-list-meta"><span className="kpi">Showing {rows.length} record{rows.length === 1 ? '' : 's'}</span>{rows.length === 100 && <span className="small muted">First 100 records shown. Use focused admin tools for larger operations.</span>}</div><AdminEntityEditor section={section} cfg={cfg} rows={rows} /></>}</>
+  return <>
+    <AdminHead cfg={cfg} />
+    {!cfg.readOnly && createSections.has(section) && <CreatePanel section={section} />}
+    {error ? <div className="notice warn">{error.message}</div> : <>
+      <div className="admin-list-meta"><span className="kpi">Showing {rows.length} record{rows.length === 1 ? '' : 's'}</span>{rows.length === 100 && <span className="small muted">First 100 records shown. Use focused admin tools for larger operations.</span>}</div>
+      <AdminEntityEditor section={section} cfg={cfg} rows={rows} />
+    </>}
+  </>
 }
 
 function AdminHead({ cfg, workflow = false }: { cfg: any; workflow?: boolean }) {
-  return <div className="admin-page-head"><div><div className="kpi">{workflow ? 'Protected Moderation' : 'Staff Management'}</div><h1>{cfg.title}</h1><p className="muted">{cfg.description}</p></div><span className={`badge ${workflow ? 'sponsored' : cfg.readOnly ? 'neutral' : 'verified'}`}>{workflow ? 'Workflow controlled' : cfg.readOnly ? 'Read only' : 'Editable'}</span></div>
+  return <div className="admin-page-head">
+    <div>
+      <div className="kpi">{workflow ? 'Protected Moderation' : 'Staff Management'}</div>
+      <h1>{cfg.title}</h1>
+      <p className="muted">{cfg.description}</p>
+    </div>
+    <span className={`badge ${workflow ? 'sponsored' : cfg.readOnly ? 'neutral' : 'verified'}`}>
+      {workflow ? 'Workflow controlled' : cfg.readOnly ? 'Read only' : 'Editable'}
+    </span>
+  </div>
 }
 
-function QueueMeta({ rows }: { rows: Record<string, any>[] }) {
-  const pending = rows.filter(r => ['pending', 'in_review', 'new'].includes(r.status)).length
-  return <div className="admin-list-meta"><span className="kpi">{pending} awaiting review · {rows.length} shown</span>{rows.length === 100 && <span className="small muted">First 100 records shown.</span>}</div>
+function CreatePanel({ section }: { section: string }) {
+  const copy: Record<string, [string, string]> = {
+    businesses: ['Add a Business', 'Create a new canonical listing only when you are ready.'],
+    branches: ['Add a Physical Branch', 'Add a legitimate office, storefront, restaurant, shop or service center.'],
+    guides: ['Create a Local Guide', 'Start a new guide draft without pushing the editor down the page.'],
+    locations: ['Add a City / Market', 'Expand the live market taxonomy.'],
+    categories: ['Add a Category', 'Expand the active directory taxonomy.'],
+    'content-blocks': ['Add a Content Block', 'Create a new editable public-site content block.'],
+  }
+  const [title, description] = copy[section] ?? ['Add New Record', 'Open the creation form when you need it.']
+  return <details className="admin-create-disclosure">
+    <summary>
+      <span className="admin-create-disclosure-title"><strong>{title}</strong><span>{description}</span></span>
+    </summary>
+    <div className="admin-create-disclosure-body"><AdminCreateForm section={section} /></div>
+  </details>
 }
