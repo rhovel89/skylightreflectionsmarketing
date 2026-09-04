@@ -5,7 +5,7 @@ const groups:[string,[string,string][]][]=[
     ['dashboard','Dashboard'],['businesses','Businesses'],['business-media','Business Media & Menus'],['submissions','Approval Queue'],['claims','Claims'],['leads','Skylight Lead Marketplace'],['lead-billing','Lead Revenue CRM'],['revenue-intelligence','Revenue Intelligence'],['lead-notifications','Lead Email & SMS Alerts'],['reports','Listing Reports']
   ]],
   ['Markets & Content',[
-    ['locations','Markets & Locations'],['categories','Category Manager'],['branches','Locations & Branches'],['coverage','Page Coverage Manager'],['content-blocks','Site Content Blocks'],['media','Owner Media Review'],['guides','Content Hub / Guides'],['seo','SEO Command Center'],['data-quality','Data Quality & SEO Reverification'],['data-quality?state=active&type=seo_inventory&priority=high','SEO Eligibility Quick Wins']
+    ['locations','Markets & Locations'],['categories','Category Manager'],['branches','Locations & Branches'],['coverage','Page Coverage Manager'],['content-blocks','Site Content Blocks'],['media','Owner Media Review'],['guides','Content Hub / Guides'],['seo','SEO Command Center'],['data-quality','Data Quality & SEO Reverification'],['data-quality?state=active&type=seo_inventory&priority=high','SEO 2-Provider Quick Wins']
   ]],
   ['Site Management',[
     ['site-builder','Site Builder / Brand & Content'],['pricing','Pricing & Plans'],['revenue-stack','Revenue Stack'],['revenue','Revenue Operations'],['navigation','Navigation Editor'],['edit-requests','Business Edit Requests'],['subscriptions','Subscription Manager'],['sponsorships','Featured / Sponsored Placement']
