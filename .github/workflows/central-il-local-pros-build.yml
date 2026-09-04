@@ -163,6 +163,12 @@ jobs:
           grep -q '1 category available' <<<"$CLINTON"
           grep -q 'Florists' <<<"$CLINTON"
 
+          LINCOLN_FLORIST="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/search?city=lincoln&q=florist&internal_check=1")"
+          grep -q "Debbie&#x27;s Downtown Floral" <<<"$LINCOLN_FLORIST"
+          grep -q "Grimsley&#x27;s Flower Store" <<<"$LINCOLN_FLORIST"
+          grep -q 'Wild Petals' <<<"$LINCOLN_FLORIST"
+          grep -q 'service area only, not a local office' <<<"$LINCOLN_FLORIST"
+
           PONTIAC="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/search?city=pontiac&internal_check=1")"
           grep -q 'mexican-restaurants' <<<"$PONTIAC"
           grep -q 'Mexican Restaurants<!-- --> (2)' <<<"$PONTIAC"
