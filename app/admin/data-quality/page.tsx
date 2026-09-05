@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { TENANT_ID } from '@/lib/constants'
 import { ADMIN_ENTITIES } from '@/lib/admin'
 import { AdminEntityEditor } from '@/components/AdminEntityEditor'
+import { AdminSavedViews } from '@/components/AdminSavedViews'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,9 +39,16 @@ export default async function Page({searchParams}:{searchParams:Promise<Record<s
   const state=one(sp.state)||'active'
   const type=one(sp.type)
   const priority=one(sp.priority)
-  const q=one(sp.q).trim().toLowerCase()
+  const rawQ=one(sp.q).trim()
+  const q=rawQ.toLowerCase()
   const s=await createClient()
   const cfg=ADMIN_ENTITIES['data-quality']
+  const savedViewParams=Object.fromEntries([
+    state!=='active'?['state',state]:null,
+    type?['type',type]:null,
+    priority?['priority',priority]:null,
+    rawQ?['q',rawQ]:null,
+  ].filter(Boolean) as string[][])
 
   const {data,error}=await s.from('data_quality_tasks')
     .select(cfg.select)
@@ -99,13 +107,15 @@ export default async function Page({searchParams}:{searchParams:Promise<Record<s
       <div className="stat">Resolved<strong>{resolved.length}</strong><span className="small muted">{ignored.length} currently ignored</span></div>
     </div>
 
+    <AdminSavedViews scope="data-quality" basePath="/admin/data-quality" queryParams={savedViewParams} />
+
     <div className="admin-card" style={{marginTop:18}}>
       <div className="section-head compact-head"><div><div className="kpi">Work Queue</div><h2>Prioritize evidence before expansion</h2><p className="small muted">Use status to claim work, add notes for research context, and edit the underlying listing/branch/SEO record when you have verified facts. Nightly refreshes preserve in-progress work and auto-resolve fixed conditions.</p></div><Link className="btn btn-light" href="/admin/data-quality">Reset</Link></div>
       <form method="get" className="grid grid-4" style={{alignItems:'end'}}>
         <label className="field"><span>Status</span><select name="state" defaultValue={state}><option value="active">Active</option><option value="open">Open</option><option value="in_progress">In progress</option><option value="resolved">Resolved</option><option value="ignored">Ignored</option><option value="all">All</option></select></label>
         <label className="field"><span>Task Type</span><select name="type" defaultValue={type}><option value="">All task types</option><option value="business_provenance">Business provenance</option><option value="branch_provenance">Branch provenance</option><option value="business_reverify">Business reverify</option><option value="branch_reverify">Branch reverify</option><option value="seo_inventory">SEO inventory</option></select></label>
         <label className="field"><span>Priority</span><select name="priority" defaultValue={priority}><option value="">All priorities</option><option value="hot">Hot</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
-        <label className="field"><span>Search</span><input name="q" defaultValue={one(sp.q)} placeholder="Business, city, category, source"/></label>
+        <label className="field"><span>Search</span><input name="q" defaultValue={rawQ} placeholder="Business, city, category, source"/></label>
         <div><button className="btn btn-primary" type="submit">Apply Filters</button></div>
       </form>
     </div>
@@ -118,7 +128,7 @@ export default async function Page({searchParams}:{searchParams:Promise<Record<s
       <div className="admin-card"><div className="kpi">SEO Integrity</div><h3>Threshold stays real</h3><p className="small muted">No task can override the live three-provider indexing guardrail. Paid placement, claim status and verification remain separate from organic eligibility.</p></div>
     </div>
 
-    <div className="admin-list-meta" style={{marginTop:18}}><span className="kpi">{filtered.length} matching task{filtered.length===1?'':'s'} · showing {shown.length}</span><span className="small muted">Edit task status, due date, assignment and staff notes below. Correct facts in the underlying editor.</span></div>
+    <div className="admin-list-meta" style={{marginTop:18}}><span className="kpi">{filtered.length} matching task{filtered.length===1?'':'s'} · showing {shown.length}</span><span className="small muted">Select records for safe staff assignment/due-date workflow actions, or edit individual task status, due date, assignment and staff notes below. Correct facts in the underlying editor.</span></div>
     {shown.length?<AdminEntityEditor section="data-quality" cfg={cfg} rows={shown as unknown as Record<string,unknown>[]} />:<div className="notice">No data-quality tasks match the selected filters.</div>}
 
     <div className="admin-row-actions" style={{marginTop:18}}><Link className="btn btn-light" href="/admin/businesses">Business Editor</Link><Link className="btn btn-light" href="/admin/branches">Branch Editor</Link><Link className="btn btn-light" href="/admin/seo">SEO Editor</Link><Link className="btn btn-light" href="/admin/operations-command-center">Growth Operations</Link></div>
