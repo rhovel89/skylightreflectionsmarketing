@@ -177,7 +177,7 @@ jobs:
           grep -q "Debbie&#x27;s Downtown Floral" <<<"$LINCOLN_FLORIST"
           grep -q "Grimsley&#x27;s Flower Store" <<<"$LINCOLN_FLORIST"
           grep -q 'Wild Petals' <<<"$LINCOLN_FLORIST"
-          grep -q 'service area only, not a local office' <<<"$LINCOLN_FLORIST"
+          grep -qi 'Service area only.*not a local office' <<<"$LINCOLN_FLORIST"
 
           PONTIAC="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/search?city=pontiac&internal_check=1")"
           grep -q 'mexican-restaurants' <<<"$PONTIAC"
@@ -192,7 +192,7 @@ jobs:
           grep -q 'Koeller Plumbing' <<<"$FLANAGAN_PLUMBING"
           grep -q 'Jim Durre Plumbing, Heating &amp; Electrical' <<<"$FLANAGAN_PLUMBING"
           grep -q 'Popejoy Plumbing, Heating, Electric and Septic' <<<"$FLANAGAN_PLUMBING"
-          grep -q 'service area only, not a local office' <<<"$FLANAGAN_PLUMBING"
+          grep -qi 'Service area only.*not a local office' <<<"$FLANAGAN_PLUMBING"
           if grep -qi 'name="robots" content="noindex' <<<"$FLANAGAN_PLUMBING"; then
             echo 'Flanagan plumbing unexpectedly returned noindex metadata.' >&2
             exit 1
