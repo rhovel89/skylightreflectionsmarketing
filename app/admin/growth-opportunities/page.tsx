@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { TENANT_ID } from '@/lib/constants'
 import { ADMIN_ENTITIES } from '@/lib/admin'
 import { AdminEntityEditor } from '@/components/AdminEntityEditor'
+import { AdminSavedViews } from '@/components/AdminSavedViews'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,6 +43,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const scoreFilter = Number(one(sp.min_score) || 0)
   const cfg = ADMIN_ENTITIES['growth-opportunities']
   const s = await createClient()
+  const savedViewParams = Object.fromEntries([
+    statusFilter !== 'open' ? ['status', statusFilter] : null,
+    typeFilter ? ['type', typeFilter] : null,
+    priorityFilter ? ['priority', priorityFilter] : null,
+    dueFilter ? ['due', dueFilter] : null,
+    contactFilter ? ['contact', contactFilter] : null,
+    scoreFilter ? ['min_score', String(scoreFilter)] : null,
+  ].filter(Boolean) as string[][])
+
   const { data, error } = await s
     .from('growth_opportunities')
     .select('id,opportunity_type,business_id,prospect_id,title,detail,score,estimated_monthly_value_cents,status,next_action,due_at,assigned_user_id,source_facts,last_refreshed_at,updated_at')
@@ -118,6 +128,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       <div className="stat">Resolved<strong>{resolved.length}</strong></div>
     </div>
 
+    <AdminSavedViews scope="growth-opportunities" basePath="/admin/growth-opportunities" queryParams={savedViewParams} />
+
     {inventoryOpen > 0 && <div className="admin-card" style={{marginTop:18}}>
       <div className="section-head compact-head"><div><div className="kpi">Inventory → Acquisition Loop</div><h2>Coverage gaps are now persistent staff work</h2><p className="small muted">One-provider-away and evidence-backed zero-provider demand gaps can be assigned, scheduled and resolved here. Use the coverage command center for live counts, then research the exact provider without fabricating a local office.</p></div><div className="admin-row-actions"><Link className="btn btn-primary" href="/admin/growth-opportunities?type=inventory_research">Open Inventory Tasks</Link><Link className="btn btn-light" href="/admin/inventory-expansion">Market Coverage Command Center</Link></div></div>
     </div>}
@@ -135,7 +147,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       </form>
     </div>
 
-    <div className="admin-list-meta" style={{marginTop:18}}><span className="kpi">{filtered.length} matching opportunit{filtered.length===1?'y':'ies'} · showing {shown.length}</span><span className="small muted">Status, due date and assignee remain staff-editable. Source facts, score and next action remain read-only generated context.</span></div>
+    <div className="admin-list-meta" style={{marginTop:18}}><span className="kpi">{filtered.length} matching opportunit{filtered.length===1?'y':'ies'} · showing {shown.length}</span><span className="small muted">Select records for safe staff assignment/due-date workflow actions. Status, due date and assignee remain staff-editable; source facts, score and next action remain generated context.</span></div>
     {editorRows.length ? <AdminEntityEditor section="growth-opportunities" cfg={cfg} rows={editorRows} /> : <div className="notice">No growth opportunities match the selected filters.</div>}
   </>
 }
