@@ -3,45 +3,27 @@ import { revalidatePath } from 'next/cache'
 import { getOwnerData } from '@/lib/owner'
 import { requireUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
+import { getBusinessPlanAccess } from '@/lib/business-plan'
 import { OwnerMediaUploadForm } from './OwnerMediaUploadForm'
-
-const ACTIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing', 'past_due']
 
 type MediaAccess = {
   planName: string
   planSlug: string
   galleryLimit: number
   menuUpload: boolean
-}
-
-function related(value: any) {
-  return Array.isArray(value) ? value[0] : value
+  accessSource: string
 }
 
 async function getMediaAccess(s: any, businessId: string): Promise<MediaAccess> {
-  const { data } = await s
-    .from('subscriptions')
-    .select('status,ends_at,updated_at,plans(name,slug,entitlements,is_active,sort_order)')
-    .eq('business_id', businessId)
-    .in('status', ACTIVE_SUBSCRIPTION_STATUSES)
-    .order('updated_at', { ascending: false })
-    .limit(10)
-
-  const now = Date.now()
-  const current = (data ?? []).find((row: any) => {
-    const plan = related(row.plans)
-    const ends = row.ends_at ? new Date(row.ends_at).getTime() : null
-    return plan?.is_active !== false && (!ends || ends > now)
-  })
-  const plan = current ? related((current as any).plans) : null
-  const entitlements = plan?.entitlements ?? {}
+  const access = await getBusinessPlanAccess(s, businessId)
+  const entitlements = access.effective_entitlements ?? {}
   const rawLimit = Number(entitlements.max_gallery_images ?? 0)
-
   return {
-    planName: plan?.name || 'Free',
-    planSlug: plan?.slug || 'free',
+    planName: access.effective_plan_name || 'Free',
+    planSlug: access.effective_plan_slug || 'free',
     galleryLimit: Number.isFinite(rawLimit) ? Math.max(0, rawLimit) : 0,
     menuUpload: Boolean(entitlements.menu_upload),
+    accessSource: access.access_source,
   }
 }
 
@@ -104,6 +86,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const galleryRemaining = Math.max(0, access.galleryLimit - galleryUsed)
   const canGallery = access.galleryLimit > 0
   const canMenu = restaurant && access.menuUpload
+  const complimentary = ['admin_trial', 'admin_complimentary'].includes(access.accessSource)
 
   return <div>
     {switcher}
@@ -116,12 +99,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       <Link className="btn btn-light" href={`/business/${b.slug}`}>View Public Profile</Link>
     </div>
 
+    {complimentary ? <div className="notice success" style={{ marginBottom: 18 }}><strong>{access.planName} complimentary access is active.</strong> These media entitlements were granted by an administrator without changing billing, verification or organic rank.</div> : null}
+
     <div className="grid grid-2" style={{ marginBottom: 18 }}>
       <div className="card">
         <div className="badges"><span className="badge neutral">{access.planName}</span>{canGallery && <span className="badge sponsored">{galleryUsed} / {access.galleryLimit} photos used</span>}</div>
         <h3>Showcase Photo Allowance</h3>
         {canGallery
-          ? <><p className="muted">Your {access.planName} plan includes up to <strong>{access.galleryLimit} showcase photos</strong>. Pending photos count toward the limit so the cap cannot be bypassed while media is under review.</p><p className="small muted">{galleryRemaining} showcase photo slot{galleryRemaining === 1 ? '' : 's'} currently available.</p></>
+          ? <><p className="muted">Your {access.planName} access includes up to <strong>{access.galleryLimit} showcase photos</strong>. Pending photos count toward the limit so the cap cannot be bypassed while media is under review.</p><p className="small muted">{galleryRemaining} showcase photo slot{galleryRemaining === 1 ? '' : 's'} currently available.</p></>
           : <><p className="muted">Logo and cover-image tools remain available for your claimed listing. Showcase service photos unlock with Featured (5) or Pro (10).</p><Link className="btn btn-light" href={`/business-portal/subscription?business=${b.id}`}>View Exposure Plans</Link></>}
       </div>
       <div className="card">
@@ -129,18 +114,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
         <h3>Menu Upload</h3>
         {restaurant
           ? canMenu
-            ? <p className="muted">Your plan includes one current restaurant menu file. Upload a PDF or menu image up to 12 MB. Replacing the menu does <strong>not</strong> use a showcase-photo slot.</p>
+            ? <p className="muted">Your plan access includes one current restaurant menu file. Upload a PDF or menu image up to 12 MB. Replacing the menu does <strong>not</strong> use a showcase-photo slot.</p>
             : <><p className="muted">Restaurant menu upload is available on Featured and Pro. It is separate from the showcase-photo allowance.</p><Link className="btn btn-light" href={`/business-portal/subscription?business=${b.id}`}>Unlock Menu Upload</Link></>
           : <p className="muted">Menu upload appears automatically for listings categorized as restaurants. Other business types use the gallery to show services, work, products and locations.</p>}
       </div>
     </div>
 
-    <OwnerMediaUploadForm
-      businessId={b.id}
-      canGallery={canGallery}
-      canMenu={canMenu}
-      defaultType={canGallery ? 'gallery' : 'logo'}
-    />
+    <OwnerMediaUploadForm businessId={b.id} canGallery={canGallery} canMenu={canMenu} defaultType={canGallery ? 'gallery' : 'logo'} />
 
     <div className="request-list" style={{ marginTop: 18 }}>
       {data.map((m: any) => <div className="card" key={m.id}>

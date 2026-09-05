@@ -55,6 +55,7 @@ const groups: NavGroup[] = [
       { href: '/admin/revenue-stack', label: 'Revenue Stack', keywords: 'monetization overview' },
       { href: '/admin/revenue', label: 'Revenue Operations', keywords: 'billing revenue' },
       { href: '/admin/subscriptions', label: 'Subscription Manager', keywords: 'plans recurring' },
+      { href: '/admin/plan-grants', label: 'Complimentary Plan Access', keywords: 'trial free pro featured admin grant complimentary access' },
       { href: '/admin/sponsorships', label: 'Featured / Sponsored Placement', keywords: 'ads featured sponsored' },
       { href: '/admin/routing', label: 'Lead Routing', keywords: 'assignment delivery' },
     ],
