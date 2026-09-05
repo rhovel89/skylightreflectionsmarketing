@@ -4,6 +4,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic'
 
+// Runtime sync marker: explicit Lead Buyer growth-opportunity integration is part of this production tree.
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
 
 export async function GET() {
