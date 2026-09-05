@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { TENANT_ID } from '@/lib/constants'
+import { requireBusinessAccount } from '@/lib/auth'
 
 const text=(fd:FormData,key:string)=>String(fd.get(key)??'').trim()
 const IMAGE_TYPES=new Set(['image/jpeg','image/png','image/webp'])
@@ -14,6 +15,7 @@ function fileExt(file:File){return file.type==='application/pdf'?'pdf':file.type
 
 export async function submitBusinessOnboarding(fd:FormData){
   if(text(fd,'cilp_form_guard'))redirect('/list-your-business?blocked=1')
+  const account=await requireBusinessAccount('/list-your-business')
   const s=await createClient()
   const submissionId=crypto.randomUUID()
   if(!uuid.test(submissionId))throw new Error('Unable to initialize the business submission.')
@@ -41,8 +43,8 @@ export async function submitBusinessOnboarding(fd:FormData){
   const serviceAreas=text(fd,'service_areas').split(',').map(x=>x.trim()).filter(Boolean).slice(0,30)
   const socialLinks={facebook:safeUrl(text(fd,'facebook')),instagram:safeUrl(text(fd,'instagram')),linkedin:safeUrl(text(fd,'linkedin')),youtube:safeUrl(text(fd,'youtube')),tiktok:safeUrl(text(fd,'tiktok'))}
   const services=text(fd,'services').split(/\n|,/).map(x=>x.trim()).filter(Boolean).slice(0,30)
-  const profileData={social_links:socialLinks,services,online_only:operatingModel==='online'}
-  const payload={id:submissionId,tenant_id:TENANT_ID,business_name:businessName,category:category||null,city:city||null,phone,email,contact_name:text(fd,'contact_name').slice(0,120)||null,website,description:description||null,status:'pending',service_areas:serviceAreas,consent_to_contact:true,source:'public_site',operating_model:operatingModel,address_text:operatingModel==='online'?null:text(fd,'address_text').slice(0,500)||null,state:operatingModel==='online'?null:text(fd,'state').slice(0,30)||'IL',postal_code:operatingModel==='online'?null:text(fd,'postal_code').slice(0,20)||null,hours:text(fd,'hours').slice(0,500)||null,price_range:text(fd,'price_range').slice(0,80)||null,menu_url:menuUrl,ordering_url:orderingUrl,reservation_url:reservationUrl,profile_data:profileData,marketing_opt_in:fd.get('marketing_opt_in')==='on',completed_at:new Date().toISOString()}
+  const profileData={social_links:socialLinks,services,online_only:operatingModel==='online',submitted_by_username:account.username}
+  const payload={id:submissionId,tenant_id:TENANT_ID,submitted_by_user_id:String(account.claims.sub),business_name:businessName,category:category||null,city:city||null,phone,email,contact_name:text(fd,'contact_name').slice(0,120)||null,website,description:description||null,status:'pending',service_areas:serviceAreas,consent_to_contact:true,source:'public_site',operating_model:operatingModel,address_text:operatingModel==='online'?null:text(fd,'address_text').slice(0,500)||null,state:operatingModel==='online'?null:text(fd,'state').slice(0,30)||'IL',postal_code:operatingModel==='online'?null:text(fd,'postal_code').slice(0,20)||null,hours:text(fd,'hours').slice(0,500)||null,price_range:text(fd,'price_range').slice(0,80)||null,menu_url:menuUrl,ordering_url:orderingUrl,reservation_url:reservationUrl,profile_data:profileData,marketing_opt_in:fd.get('marketing_opt_in')==='on',completed_at:new Date().toISOString()}
   const{error:insertError}=await s.from('business_submissions').insert(payload)
   if(insertError){if(insertError.code==='23505')throw new Error('A matching business submission is already waiting for review.');throw new Error(insertError.message)}
 

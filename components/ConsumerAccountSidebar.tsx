@@ -9,6 +9,7 @@ const items=[
  {href:'/account/saved',label:'Saved Businesses',hint:'Businesses you want to revisit'},
  {href:'/account/requests',label:'My Requests',hint:'Quote and information requests'},
  {href:'/account/notifications',label:'Notifications',hint:'Request and account updates'},
+ {href:'/account/business-access',label:'Business Access',hint:'Username and business-account status'},
  {href:'/account/settings',label:'Settings',hint:'Contact and notification preferences'},
 ]
 const active=(pathname:string,href:string)=>href==='/account'?pathname==='/account':pathname===href||pathname.startsWith(`${href}/`)
