@@ -10,6 +10,7 @@ export function LeadForm({businessId='',service='',city=''}:{businessId?:string;
   const direct=Boolean(businessId)
   return <form id="request-information" action={action} className="form-card public-conversion-form">
     <input type="hidden" name="business_id" value={businessId}/>
+    <div className="request-assurance"><span>{direct?'Direct request':'Local matching request'}</span><span>No payment required</span><span>Consent applies to this request</span></div>
     <div className="form-intro-row"><span className="form-step">1</span><div><strong>Tell us what you need</strong><small>{direct?'This request stays associated with the business you selected.':'We use the service and city to route a general local request.'}</small></div></div>
     <div className="form-grid">
       <label>Service<input name="service" defaultValue={service} required maxLength={120} autoComplete="off"/></label>
@@ -26,7 +27,9 @@ export function LeadForm({businessId='',service='',city=''}:{businessId?:string;
     <div className="form-intro-row"><span className="form-step">3</span><div><strong>Confirm this request</strong><small>Your consent applies to this request only.</small></div></div>
     <label className="check consent-check"><input name="consent" type="checkbox" required/> I agree that Central Illinois Local Pros / Skylight Reflections Marketing may contact me about this request and share my request and contact information with the business I selected, or for a general directory request, with one or more matched local businesses that may contact me by phone, text, or email about this request.</label>
     <p className="small muted conversion-form-note">{direct?'This is a direct directory request for the selected business. It is not automatically redistributed as a general marketplace lead.':'General requests may be matched through the directory lead service. This consent does not authorize unrelated marketing.'}</p>
-    <button className="btn btn-primary full" disabled={pending}>{pending?'Sending…':direct?'Send Request to This Business':'Request Local Matches'}</button><Status state={state}/>
+    <button className="btn btn-primary full" disabled={pending}>{pending?'Sending…':direct?'Send Request to This Business':'Request Local Matches'}</button>
+    <div className="request-next-step"><strong>What happens next?</strong><span>{direct?'The selected business can review the request and contact you directly using the information you provided.':'The directory can review the request and match it to eligible local businesses through the applicable lead workflow.'}</span></div>
+    <Status state={state}/>
   </form>
 }
 
@@ -61,6 +64,7 @@ export function ClaimForm({businessId}:{businessId:string}){
     <input type="hidden" name="business_id" value={businessId}/>
     <div className="claim-trust-strip"><span>Free claim</span><span>Staff reviewed</span><span>No automatic verification</span></div>
     <p className="small muted">Use information that helps staff confirm you are the owner, manager or an authorized representative. A successful claim connects owner access to the existing listing; it does not create a second listing.</p>
+    <div className="claim-next-steps"><div><b>1</b><span><strong>Submit</strong><small>Tell us who you are and your role.</small></span></div><div><b>2</b><span><strong>Staff review</strong><small>Ownership is reviewed before access is connected.</small></span></div><div><b>3</b><span><strong>Owner portal</strong><small>If approved, manage protected updates from your account.</small></span></div></div>
     <div className="form-grid">
       <label>Your Name<input name="name" required maxLength={120} autoComplete="name"/></label>
       <label>Your Role<input name="role" placeholder="Owner, manager, authorized representative" required maxLength={120}/></label>
