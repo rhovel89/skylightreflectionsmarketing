@@ -1,6 +1,6 @@
 'use client'
 import { useActionState } from 'react'
-import { submitLead, submitLawnCareLead, submitClaim, submitListingReport, type ActionState } from '@/app/actions'
+import { submitLead, submitLawnCareLead, submitListingReport, type ActionState } from '@/app/actions'
 
 const init: ActionState = { ok:false, message:'' }
 function Status({state}:{state:ActionState}){return state.message?<div role="status" aria-live="polite" className={state.ok?'form-status success':'form-status error'}>{state.message}</div>:null}
@@ -59,22 +59,14 @@ export function LawnCareLeadForm(){
 }
 
 export function ClaimForm({businessId}:{businessId:string}){
-  const[state,action,pending]=useActionState(submitClaim,init)
-  return <form id="claim-listing" action={action} className="form-card public-conversion-form claim-conversion-form">
-    <input type="hidden" name="business_id" value={businessId}/>
-    <div className="claim-trust-strip"><span>Free claim</span><span>Staff reviewed</span><span>No automatic verification</span></div>
-    <p className="small muted">Use information that helps staff confirm you are the owner, manager or an authorized representative. A successful claim connects owner access to the existing listing; it does not create a second listing.</p>
-    <div className="claim-next-steps"><div><b>1</b><span><strong>Submit</strong><small>Tell us who you are and your role.</small></span></div><div><b>2</b><span><strong>Staff review</strong><small>Ownership is reviewed before access is connected.</small></span></div><div><b>3</b><span><strong>Owner portal</strong><small>If approved, manage protected updates from your account.</small></span></div></div>
-    <div className="form-grid">
-      <label>Your Name<input name="name" required maxLength={120} autoComplete="name"/></label>
-      <label>Your Role<input name="role" placeholder="Owner, manager, authorized representative" required maxLength={120}/></label>
-      <label>Email<input type="email" name="email" required maxLength={160} autoComplete="email"/></label>
-      <label>Phone <span className="optional-label">optional</span><input name="phone" type="tel" inputMode="tel" maxLength={40} autoComplete="tel"/></label>
-    </div>
-    <button className="btn btn-primary full" disabled={pending}>{pending?'Submitting…':'Submit Free Claim for Review'}</button>
-    <p className="small muted conversion-form-note">Claiming is free. Staff review ownership before portal access is granted. Claimed, Verified, Sponsored and paid-plan states remain separate.</p>
-    <Status state={state}/>
-  </form>
+  return <div id="claim-listing" className="form-card public-conversion-form claim-conversion-form">
+    <div className="claim-trust-strip"><span>Free claim</span><span>Secure account</span><span>Staff ownership review</span><span>No automatic verification</span></div>
+    <div className="form-intro-row"><span className="form-step">1</span><div><strong>Own or manage this business?</strong><small>Use the secure ownership workflow instead of sending an anonymous claim.</small></div></div>
+    <p className="small muted">You’ll sign in or create an account, identify your role, choose an ownership-verification method and submit evidence for staff review. An approved claim connects owner access to this canonical listing; it does not create a duplicate listing.</p>
+    <div className="claim-next-steps"><div><b>1</b><span><strong>Sign in</strong><small>Use your business/account email.</small></span></div><div><b>2</b><span><strong>Submit evidence</strong><small>Explain how staff can verify your authority.</small></span></div><div><b>3</b><span><strong>Staff review</strong><small>Approved ownership connects the owner portal.</small></span></div></div>
+    <a className="btn btn-primary claim-primary-link" href={`/claim?business=${encodeURIComponent(businessId)}`}>Claim This Business</a>
+    <p className="small muted conversion-form-note">Claiming is free. Claimed, Verified, Sponsored and paid-plan states remain separate.</p>
+  </div>
 }
 
 export function ListingReportForm({businessId}:{businessId:string}){
