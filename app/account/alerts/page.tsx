@@ -1,0 +1,6 @@
+import{requireUser}from'@/lib/auth'
+import{createClient}from'@/lib/supabase/server'
+import{TENANT_ID}from'@/lib/constants'
+import{LocalAlertManager}from'@/components/LocalAlertManager'
+export const dynamic='force-dynamic'
+export default async function Page(){const claims=await requireUser('/account/alerts'),s=await createClient();const[locs,cats,prefs]=await Promise.all([s.from('locations').select('id,name,slug').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'),s.from('categories').select('id,name,slug').eq('tenant_id',TENANT_ID).eq('is_active',true).order('name'),s.from('consumer_local_alert_preferences').select('id,location_id,category_id,alert_type,email_enabled,in_app_enabled,active,created_at').eq('user_id',String(claims.sub)).eq('active',true).order('created_at',{ascending:false})]);const locationById=new Map((locs.data??[]).map(x=>[String(x.id),x.name])),categoryById=new Map((cats.data??[]).map(x=>[String(x.id),x.name])),preferences=(prefs.data??[]).map((p:any)=>({...p,location_name:locationById.get(String(p.location_id||''))||'',category_name:categoryById.get(String(p.category_id||''))||''}));return <LocalAlertManager locations={(locs.data??[])as any[]} categories={(cats.data??[])as any[]} preferences={preferences as any[]}/>}

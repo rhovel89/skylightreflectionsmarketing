@@ -1,0 +1,15 @@
+import{NextResponse}from'next/server'
+import{createClient}from'@/lib/supabase/server'
+import{requireStaff}from'@/lib/auth'
+const str=(v:unknown,n:number)=>String(v??'').trim().slice(0,n)
+const adminRoles=['admin','super_admin']
+export async function POST(req:Request){try{const{roles}=await requireStaff('/admin/local-commerce'),body=await req.json() as Record<string,any>,action=str(body.action,50),s=await createClient();if(action==='review'){const{error}=await s.rpc('admin_review_local_commerce',{p_entity_type:str(body.entity_type,40),p_entity_id:str(body.id,40),p_decision:str(body.decision,20),p_notes:str(body.notes,1200)||null});if(error)throw error;return NextResponse.json({ok:true})}
+ if(action==='edit'){const type=str(body.entity_type,40),id=str(body.id,40),patch=body.patch&&typeof body.patch==='object'&&!Array.isArray(body.patch)?body.patch:{};let table='',clean:Record<string,any>={};if(type==='recommendation'){table='business_recommendations';clean={body:str(patch.body,1200),service:str(patch.service,120)||null,city:str(patch.city,100)||null}}
+ else if(type==='deal'){table='business_deals';clean={title:str(patch.title,160),details:str(patch.details,2000)||null,promo_code:str(patch.promo_code,80)||null,cta_label:str(patch.cta_label,80)||null,cta_url:str(patch.cta_url,600)||null}}
+ else if(type==='catalog'){table='business_catalog_items';clean={name:str(patch.name,160),description:str(patch.description,1200)||null,price_label:str(patch.price_label,100)||null,category_label:str(patch.category_label,120)||null}}
+ else if(type==='portfolio'){table='business_portfolio_projects';clean={title:str(patch.title,180),summary:str(patch.summary,1800)||null,project_type:str(patch.project_type,120)||null,city:str(patch.city,100)||null}}
+ else if(type==='question'){table='local_pro_questions';clean={question:str(patch.question,1200),answer:str(patch.answer,2400)||null}}
+ else return NextResponse.json({error:'Unsupported commerce record.'},{status:400});const{error}=await s.from(table).update({...clean,updated_at:new Date().toISOString()}).eq('id',id);if(error)throw error;return NextResponse.json({ok:true})}
+ if(action==='marketplace_request'){if(!roles.some(r=>adminRoles.includes(r)))return NextResponse.json({error:'Admin access is required.'},{status:403});const{error}=await s.rpc('admin_review_marketplace_request',{p_request_id:str(body.id,40),p_decision:str(body.decision,20),p_admin_notes:str(body.notes,1200)||null});if(error)throw error;return NextResponse.json({ok:true})}
+ if(action==='referral'){if(!roles.some(r=>adminRoles.includes(r)))return NextResponse.json({error:'Admin access is required.'},{status:403});const{error}=await s.rpc('admin_review_business_referral',{p_referral_id:str(body.id,40),p_status:str(body.status,30),p_credit_value_cents:Math.max(0,Number(body.credit_value_cents||0)),p_notes:str(body.notes,1200)||null});if(error)throw error;return NextResponse.json({ok:true})}
+ return NextResponse.json({error:'Unsupported Admin action.'},{status:400})}catch(e:any){return NextResponse.json({error:String(e?.message||'Unable to process Admin action.')},{status:400})}}

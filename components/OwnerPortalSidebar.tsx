@@ -11,6 +11,7 @@ const shortcuts:PortalItem[]=[
  {href:'/business-portal',label:'Dashboard'},
  {href:'/business-portal/profile-strength',label:'Improve Profile'},
  {href:'/business-portal/leads',label:'Leads'},
+ {href:'/business-portal/commerce',label:'Commerce'},
  {href:'/business-portal/billing',label:'Billing'},
 ]
 
@@ -19,14 +20,16 @@ const groups:PortalGroup[]=[
   {href:'/business-portal/listing',label:'My Listing',keywords:'profile edit business information'},
   {href:'/business-portal/requests',label:'Change Requests',keywords:'pending edits moderation updates'},
   {href:'/business-portal/media',label:'Photos & Media',keywords:'logo cover gallery images menus'},
+  {href:'/business-portal/commerce',label:'Commerce & Offers',keywords:'deals availability services menu products portfolio q&a referrals'},
   {href:'/business-portal/profile-strength',label:'Profile Strength',keywords:'score completeness recommendations'},
   {href:'/business-portal/onboarding',label:'Getting Started',keywords:'onboarding setup checklist'},
   {href:'/business-portal/areas',label:'Cities & Branches',keywords:'physical locations offices'},
   {href:'/business-portal/service-areas',label:'Service Areas · Pro',keywords:'areas served cities pro'},
  ]},
- {id:'customers',label:'Customers & Performance',description:'Leads, activity and conversion signals',items:[
-  {href:'/business-portal/lead-marketplace',label:'Lead Marketplace',keywords:'buy opportunities leads'},
+ {id:'customers',label:'Customers & Performance',description:'Leads, reputation, activity and conversion signals',items:[
+  {href:'/business-portal/lead-marketplace',label:'Lead Marketplace',keywords:'buy request opportunities leads admin approval'},
   {href:'/business-portal/leads',label:'Lead Inbox · Pro',keywords:'customer leads inbox opportunities'},
+  {href:'/business-portal/reputation',label:'Reputation & Lead ROI',keywords:'reviews local faves recommendations won jobs quotes revenue roi'},
   {href:'/business-portal/analytics',label:'Analytics',keywords:'views clicks directions impressions'},
   {href:'/business-portal/performance',label:'Performance · Pro',keywords:'conversion performance pro'},
  ]},

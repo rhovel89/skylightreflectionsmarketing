@@ -4,7 +4,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic'
 
-// Runtime sync marker: Lead Buyer growth integration, private-helper hardening, and Admin interest alerts are part of this production tree.
+// Runtime sync marker: Local Commerce, Project Match, request-first lead marketplace, ROI, Local Alerts and commerce Growth intelligence are part of this production tree.
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
 
 export async function GET() {
@@ -12,20 +12,9 @@ export async function GET() {
   try {
     const s = await createClient()
     const { error } = await s.from('tenants').select('id').eq('id', TENANT_ID).maybeSingle()
-    if (error) {
-      return NextResponse.json(
-        { ok: false, service: TENANT_SLUG, version: '15.5.0', database: 'unavailable', deployment_commit:deploymentCommit() },
-        { status: 503, headers: { 'Cache-Control': 'no-store' } },
-      )
-    }
-    return NextResponse.json(
-      { ok: true, service: TENANT_SLUG, version: '15.5.0', database: 'ok', deployment_commit:deploymentCommit(), response_ms: Date.now() - started },
-      { status: 200, headers: { 'Cache-Control': 'no-store' } },
-    )
+    if (error) return NextResponse.json({ ok:false,service:TENANT_SLUG,version:'15.5.0',database:'unavailable',deployment_commit:deploymentCommit() },{status:503,headers:{'Cache-Control':'no-store'}})
+    return NextResponse.json({ ok:true,service:TENANT_SLUG,version:'15.5.0',database:'ok',deployment_commit:deploymentCommit(),response_ms:Date.now()-started },{status:200,headers:{'Cache-Control':'no-store'}})
   } catch {
-    return NextResponse.json(
-      { ok: false, service: TENANT_SLUG, version: '15.5.0', database: 'unavailable', deployment_commit:deploymentCommit() },
-      { status: 503, headers: { 'Cache-Control': 'no-store' } },
-    )
+    return NextResponse.json({ ok:false,service:TENANT_SLUG,version:'15.5.0',database:'unavailable',deployment_commit:deploymentCommit() },{status:503,headers:{'Cache-Control':'no-store'}})
   }
 }

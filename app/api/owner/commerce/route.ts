@@ -1,0 +1,19 @@
+import{NextResponse}from'next/server'
+import{createClient}from'@/lib/supabase/server'
+import{getClaims}from'@/lib/auth'
+const str=(v:unknown,n:number)=>String(v??'').trim().slice(0,n),nullable=(v:unknown,n:number)=>{const x=str(v,n);return x||null},uuid=(v:unknown)=>nullable(v,40)
+const toIso=(v:unknown)=>{const x=str(v,80);if(!x)return null;const d=new Date(x);return Number.isNaN(d.getTime())?null:d.toISOString()}
+export async function POST(req:Request){try{const claims=await getClaims();if(!claims?.sub)return NextResponse.json({error:'Sign in is required.'},{status:401});const body=await req.json() as Record<string,unknown>,action=str(body.action,50),s=await createClient();let data:any=null,error:any=null
+ if(action==='deal')({data,error}=await s.rpc('owner_upsert_business_deal',{p_id:uuid(body.id),p_business_id:str(body.business_id,40),p_title:str(body.title,160),p_details:nullable(body.details,2000),p_promo_code:nullable(body.promo_code,80),p_cta_label:nullable(body.cta_label,80),p_cta_url:nullable(body.cta_url,600),p_starts_at:toIso(body.starts_at),p_ends_at:toIso(body.ends_at)}))
+ else if(action==='availability')({data,error}=await s.rpc('owner_set_business_availability',{p_business_id:str(body.business_id,40),p_status:str(body.status,50),p_message:nullable(body.message,300),p_expires_at:toIso(body.expires_at)}))
+ else if(action==='catalog')({data,error}=await s.rpc('owner_upsert_catalog_item',{p_id:uuid(body.id),p_business_id:str(body.business_id,40),p_item_type:str(body.item_type,30),p_category_label:nullable(body.category_label,120),p_name:str(body.name,160),p_description:nullable(body.description,1200),p_price_label:nullable(body.price_label,100),p_item_url:nullable(body.item_url,600),p_sort_order:Number(body.sort_order||0)}))
+ else if(action==='portfolio')({data,error}=await s.rpc('owner_upsert_portfolio_project',{p_id:uuid(body.id),p_business_id:str(body.business_id,40),p_title:str(body.title,180),p_summary:nullable(body.summary,1800),p_project_type:nullable(body.project_type,120),p_city:nullable(body.city,100),p_completed_on:nullable(body.completed_on,10),p_before_media_id:uuid(body.before_media_id),p_after_media_id:uuid(body.after_media_id)}))
+ else if(action==='referral_code')({data,error}=await s.rpc('ensure_business_referral_code',{p_business_id:str(body.business_id,40)}))
+ else if(action==='apply_referral')({data,error}=await s.rpc('apply_business_referral_code',{p_referred_business_id:str(body.business_id,40),p_code:str(body.code,40)}))
+ else if(action==='answer_question')({data,error}=await s.rpc('owner_answer_local_pro_question',{p_question_id:str(body.question_id,40),p_answer:str(body.answer,2400)}))
+ else if(action==='appointment_response')({data,error}=await s.rpc('owner_update_appointment_request',{p_appointment_id:str(body.appointment_id,40),p_status:str(body.status,50),p_owner_response:nullable(body.owner_response,1200)}))
+ else if(action==='lead_outcome')({data,error}=await s.rpc('update_owner_lead_outcome',{p_recipient_id:str(body.recipient_id,40),p_status:str(body.status,40),p_owner_notes:nullable(body.owner_notes,2000),p_appointment_at:toIso(body.appointment_at),p_quote_amount_cents:body.quote_amount_cents===null||body.quote_amount_cents===''?null:Number(body.quote_amount_cents),p_outcome_value_cents:body.outcome_value_cents===null||body.outcome_value_cents===''?null:Number(body.outcome_value_cents),p_loss_reason:nullable(body.loss_reason,300)}))
+ else return NextResponse.json({error:'Unsupported owner action.'},{status:400})
+ if(error){const forbidden=/insufficient_privilege|authentication_required|requires_/i.test(error.message);return NextResponse.json({error:error.message},{status:forbidden?403:400})}
+ return NextResponse.json({ok:true,data},{headers:{'Cache-Control':'private, no-store'}})
+}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Unable to save owner action.'},{status:400})}}

@@ -1,0 +1,4 @@
+import{NextResponse}from'next/server'
+import{createClient}from'@/lib/supabase/server'
+import{getClaims}from'@/lib/auth'
+export async function POST(req:Request){try{const claims=await getClaims();if(!claims?.sub)return NextResponse.json({error:'Sign in is required.'},{status:401});const body=await req.json() as {offer_id?:string;message?:string};if(!body.offer_id)return NextResponse.json({error:'Offer is required.'},{status:400});const s=await createClient(),{data,error}=await s.rpc('request_marketplace_offer',{p_offer_id:String(body.offer_id),p_owner_message:String(body.message||'').trim().slice(0,600)||null});if(error)return NextResponse.json({error:error.message},{status:/insufficient_privilege/i.test(error.message)?403:400});return NextResponse.json({ok:true,request_id:data},{headers:{'Cache-Control':'private, no-store'}})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Unable to request lead.'},{status:400})}}
