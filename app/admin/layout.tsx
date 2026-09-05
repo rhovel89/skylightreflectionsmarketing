@@ -5,6 +5,7 @@ import './workflow-ui.css'
 import './specialized-ui.css'
 import './business-workspace.css'
 import './action-center.css'
+import './admin-productivity.css'
 import { requireStaff } from '@/lib/auth'
 import { AdminSidebar } from '@/components/AdminSidebar'
 
