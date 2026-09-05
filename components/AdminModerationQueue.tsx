@@ -1,24 +1,166 @@
 'use client'
 
-import { useMemo,useState } from 'react'
+import { useMemo, useState } from 'react'
 
-type Row=Record<string,any>
-type Kind='claims'|'edit-requests'|'submissions'|'reports'
-type Decision='approve'|'reject'|'resolve'|'dismiss'
-type QueueView='pending'|'reviewed'|'all'
-const isOpen=(row:Row)=>['pending','in_review','new'].includes(row.status)
-const label=(value:any)=>String(value||'').replaceAll('_',' ').replaceAll('-',' ').replace(/\b\w/g,c=>c.toUpperCase())
-const formatDate=(value:any)=>{if(!value)return'—';const d=new Date(String(value));return Number.isNaN(d.getTime())?String(value):d.toLocaleString()}
+type Row = Record<string, any>
+type Kind = 'claims' | 'edit-requests' | 'submissions' | 'reports'
+type Decision = 'approve' | 'reject' | 'resolve' | 'dismiss'
+type QueueView = 'pending' | 'reviewed' | 'all'
+type MessageTone = 'success' | 'warn'
 
-export function AdminModerationQueue({kind,rows}:{kind:Kind;rows:Row[]}){
-  const[data,setData]=useState(rows),[notes,setNotes]=useState<Record<string,string>>({}),[busy,setBusy]=useState<string|null>(null),[message,setMessage]=useState(''),[view,setView]=useState<QueueView>('pending'),[query,setQuery]=useState('')
-  const pending=useMemo(()=>data.filter(isOpen),[data]),reviewed=useMemo(()=>data.filter(x=>!isOpen(x)),[data]),normalized=query.trim().toLowerCase()
-  const visible=useMemo(()=>{const base=view==='pending'?pending:view==='reviewed'?reviewed:data;return normalized?base.filter(row=>JSON.stringify(row).toLowerCase().includes(normalized)):base},[data,pending,reviewed,view,normalized])
-  async function review(id:string,decision:Decision){setBusy(id+decision);setMessage('');const response=await fetch('/api/admin/moderation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind,id,decision,notes:notes[id]||''})});const body=await response.json().catch(()=>({}));if(!response.ok){const raw=String(body.error||'Review failed.');const friendly=raw.includes('claimant_account_required')?'Approval blocked: the claimant must use a signed-in account.':raw.includes('ownership_evidence_required')?'Approval blocked: ownership evidence is required before approving the claim.':raw.includes('possible_duplicate_business')?'Approval blocked: a possible duplicate business already exists. Review canonical listings before approving.':raw.includes('category_not_found')?'Approval blocked: the selected category no longer matches an active directory category.':raw.includes('location_not_found')?'Approval blocked: the submitted city/town no longer matches an active directory market.':raw;setMessage(friendly);setBusy(null);return}const nextStatus=decision==='approve'?'approved':decision==='reject'?'rejected':decision==='resolve'?'resolved':'dismissed';setData(current=>current.map(item=>String(item.id)===id?{...item,status:nextStatus,review_notes:notes[id]||item.review_notes,staff_notes:notes[id]||item.staff_notes,reviewed_at:new Date().toISOString()}:item));if(kind==='submissions'&&decision==='approve')setMessage(`Profile information approved. A pending canonical business was created for ownership review${body.promotedMedia?` and ${body.promotedMedia} staged media item${body.promotedMedia===1?' was':'s were'} promoted`:''}. It is not public yet.${body.mediaWarning?` Media warning: ${body.mediaWarning}`:''}`);else if(kind==='claims'&&decision==='approve')setMessage('Ownership approved and owner access connected. The listing is Claimed; final verification remains a separate gate.');else setMessage(decision==='approve'?'Approved through the protected workflow.':decision==='reject'?'Rejected and recorded in the audit trail.':decision==='resolve'?'Report resolved and recorded in the audit trail.':'Report dismissed and recorded in the audit trail.');setBusy(null)}
-  return <div className="moderation-shell"><div className="admin-workflow-toolbar"><div className="admin-segmented" role="group" aria-label="Moderation queue view"><button type="button" className={view==='pending'?'active':''} onClick={()=>setView('pending')}>Awaiting <span>{pending.length}</span></button><button type="button" className={view==='reviewed'?'active':''} onClick={()=>setView('reviewed')}>Reviewed <span>{reviewed.length}</span></button><button type="button" className={view==='all'?'active':''} onClick={()=>setView('all')}>All <span>{data.length}</span></button></div><label className="admin-filter-search admin-workflow-search"><span aria-hidden="true">⌕</span><input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find business, person, email, city or status…" aria-label="Search moderation queue"/></label></div><div className="admin-list-meta"><span className="kpi">{visible.length} shown · {pending.length} awaiting review</span><span className="small muted">Protected workflow actions cannot be bypassed through the generic table editor.</span></div>{message&&<div className={`notice ${message.startsWith('Approval blocked')||message.includes('warning')?'warn':'success'}`}>{message}</div>}<div className="moderation-list">{visible.map(row=><article className="admin-card moderation-card" key={String(row.id)}><div className="moderation-head"><div><div className="badges"><span className={`badge ${['approved','resolved'].includes(row.status)?'verified':['rejected','dismissed'].includes(row.status)?'neutral':'sponsored'}`}>{label(row.status)}</span>{kind==='claims'&&row.businesses?.claimed&&<span className="badge neutral">Business already claimed</span>}</div><h3>{kind==='submissions'?row.business_name:row.businesses?.name||'Business record'}</h3><p className="small muted">{kind==='claims'?`${row.claimant_name} · ${row.claimant_role||'Role not supplied'} · ${row.email}`:kind==='submissions'?`${row.category||'Category not supplied'} · ${row.city||'City not supplied'} · submitted ${formatDate(row.created_at)}`:kind==='reports'?`${label(row.report_type)} · reported ${formatDate(row.created_at)}`:`${label(row.request_type)} · submitted ${formatDate(row.created_at)}`}</p></div>{row.businesses?.slug&&row.businesses?.status==='published'&&<a className="btn btn-light" href={`/business/${row.businesses.slug}`} target="_blank" rel="noreferrer">View Public Profile</a>}</div>{kind==='claims'?<ClaimDetails row={row}/>:kind==='submissions'?<SubmissionDetails row={row}/>:kind==='reports'?<ReportDetails row={row}/>:<EditDetails row={row}/>}<label className="moderation-notes">Staff notes<textarea value={notes[String(row.id)]??String(row.review_notes??row.staff_notes??'')} onChange={e=>setNotes(current=>({...current,[String(row.id)]:e.target.value}))} placeholder="Document verification evidence, action taken, or reason for the decision."/></label>{isOpen(row)?kind==='reports'?<div className="moderation-actions"><button className="btn btn-primary" disabled={busy!==null} onClick={()=>review(String(row.id),'resolve')}>{busy===String(row.id)+'resolve'?'Resolving…':'Resolve Report'}</button><button className="btn btn-light" disabled={busy!==null} onClick={()=>review(String(row.id),'dismiss')}>{busy===String(row.id)+'dismiss'?'Dismissing…':'Dismiss'}</button></div>:<div className="moderation-actions"><button className="btn btn-primary" disabled={busy!==null} onClick={()=>review(String(row.id),'approve')}>{busy===String(row.id)+'approve'?'Approving…':kind==='submissions'?'Approve Profile → Invite Claim':kind==='claims'?'Approve Ownership':'Approve'}</button><button className="btn btn-danger" disabled={busy!==null} onClick={()=>review(String(row.id),'reject')}>{busy===String(row.id)+'reject'?'Rejecting…':'Reject'}</button></div>:<p className="small muted">Reviewed {formatDate(row.reviewed_at)}.</p>}</article>)}</div>{!visible.length&&<div className="empty">No moderation records match this view.</div>}</div>
+const isOpen = (row: Row) => ['pending', 'in_review', 'new'].includes(row.status)
+const label = (value: any) => String(value || '').replaceAll('_', ' ').replaceAll('-', ' ').replace(/\b\w/g, c => c.toUpperCase())
+const formatDate = (value: any) => {
+  if (!value) return '—'
+  const d = new Date(String(value))
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString()
 }
 
-function ClaimDetails({row:r}:{row:Row}){return <div><div className="moderation-details"><div><span>Claimant</span><strong>{r.claimant_name}</strong></div><div><span>Account Email</span><strong>{r.email}</strong></div><div><span>Phone</span><strong>{r.phone||'Not supplied'}</strong></div><div><span>Verification Method</span><strong>{label(r.verification_method)||'Legacy claim'}</strong></div></div><div className="change-preview"><div><span>Ownership evidence</span><strong style={{whiteSpace:'pre-wrap'}}>{r.verification_details||'No structured evidence was supplied on this legacy claim.'}</strong></div><div><span>Evidence URL</span><strong>{r.verification_url?<a href={r.verification_url} target="_blank" rel="noreferrer">Open verification source ↗</a>:'Not supplied'}</strong></div></div><p className="small muted full-row">Approval connects this signed-in account as an owner and marks the listing Claimed. It does not automatically mark it Verified or buy organic ranking. For a new pending profile, final source-backed verification is the publication gate.</p></div>}
-function SubmissionDetails({row:r}:{row:Row}){const media=r.business_submission_media??[];return <div><div className="moderation-details"><div><span>Phone</span><strong>{r.phone}</strong></div><div><span>Business Email</span><strong>{r.email}</strong></div><div><span>Operating Model</span><strong>{label(r.operating_model)||'Legacy submission'}</strong></div><div><span>Category</span><strong>{r.category||'Not supplied'}</strong></div><div><span>City / Market</span><strong>{r.city||'Not supplied'}</strong></div><div><span>Staged Media</span><strong>{media.length} item{media.length===1?'':'s'}</strong></div></div><div className="change-preview"><div><span>Website</span><strong>{r.website||'Not supplied'}</strong></div><div><span>Address</span><strong>{r.address_text||'No physical address submitted'}</strong></div><div><span>Service Areas</span><strong>{Array.isArray(r.service_areas)&&r.service_areas.length?r.service_areas.join(', '):'Not supplied'}</strong></div><div><span>Description</span><strong style={{whiteSpace:'pre-wrap'}}>{r.description||'Not supplied'}</strong></div></div><p className="small muted">Approval creates one canonical <strong>pending</strong> business profile and queues the claim invitation. It does not publish the listing. Physical-location data is created only when the submission says Storefront/Both and includes a legitimate address plus a recognized city/town. Service areas remain separate.</p></div>}
-function ReportDetails({row:r}:{row:Row}){return <div><div className="moderation-details"><div><span>Report Type</span><strong>{label(r.report_type)}</strong></div><div><span>Reporter</span><strong>{r.reporter_name||'Anonymous'}</strong></div><div><span>Email</span><strong>{r.reporter_email||'Not supplied'}</strong></div><div><span>Submitted</span><strong>{formatDate(r.created_at)}</strong></div></div><div className="change-preview"><div><span>Report Details</span><strong>{r.details}</strong></div><div><span>Workflow Rule</span><strong>Resolving records review completion only. It does not automatically close, merge, verify or change the public business.</strong></div></div></div>}
-function EditDetails({row:r}:{row:Row}){const changes=r.proposed_changes&&typeof r.proposed_changes==='object'?r.proposed_changes:{};return <div><div className="moderation-details"><div><span>Request type</span><strong>{label(r.request_type)}</strong></div><div><span>Submitted</span><strong>{formatDate(r.created_at)}</strong></div></div><div className="change-preview">{Object.entries(changes).map(([key,value])=><div key={key}><span>{label(key)}</span><strong style={{whiteSpace:'pre-wrap'}}>{value&&typeof value==='object'?JSON.stringify(value,null,2):String(value??'')}</strong></div>)}{!Object.keys(changes).length&&<p className="small muted">No proposed fields supplied.</p>}</div></div>}
+export function AdminModerationQueue({ kind, rows }: { kind: Kind; rows: Row[] }) {
+  const [data, setData] = useState(rows)
+  const [notes, setNotes] = useState<Record<string, string>>({})
+  const [busy, setBusy] = useState<string | null>(null)
+  const [message, setMessage] = useState('')
+  const [messageTone, setMessageTone] = useState<MessageTone>('success')
+  const [view, setView] = useState<QueueView>('pending')
+  const [query, setQuery] = useState('')
+
+  const pending = useMemo(() => data.filter(isOpen), [data])
+  const reviewed = useMemo(() => data.filter(x => !isOpen(x)), [data])
+  const normalized = query.trim().toLowerCase()
+  const visible = useMemo(() => {
+    const base = view === 'pending' ? pending : view === 'reviewed' ? reviewed : data
+    return normalized ? base.filter(row => JSON.stringify(row).toLowerCase().includes(normalized)) : base
+  }, [data, pending, reviewed, view, normalized])
+
+  async function review(id: string, decision: Decision) {
+    setBusy(id + decision)
+    setMessage('')
+    const response = await fetch('/api/admin/moderation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kind, id, decision, notes: notes[id] || '' }),
+    })
+    const body = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      const raw = String(body.error || 'Review failed.')
+      const friendly = raw.includes('claimant_account_required')
+        ? 'Approval blocked: the claimant must use a signed-in account.'
+        : raw.includes('ownership_evidence_required')
+          ? 'Approval blocked: ownership evidence is required before approving the claim.'
+          : raw.includes('possible_duplicate_business')
+            ? 'Approval blocked: a possible duplicate business already exists. Review canonical listings before approving.'
+            : raw.includes('category_not_found')
+              ? 'Approval blocked: the selected category no longer matches an active directory category.'
+              : raw.includes('location_not_found')
+                ? 'Approval blocked: the submitted city/town no longer matches an active directory market.'
+                : raw.includes('invalid_service_area_location') || raw.includes('invalid_service_area_id') || raw.includes('invalid_service_areas')
+                  ? 'Approval blocked: one or more requested service areas are invalid or no longer active.'
+                  : raw
+      setMessageTone('warn')
+      setMessage(friendly)
+      setBusy(null)
+      return
+    }
+
+    const nextStatus = decision === 'approve' ? 'approved' : decision === 'reject' ? 'rejected' : decision === 'resolve' ? 'resolved' : 'dismissed'
+    setData(current => current.map(item => String(item.id) === id ? {
+      ...item,
+      status: nextStatus,
+      review_notes: notes[id] || item.review_notes,
+      staff_notes: notes[id] || item.staff_notes,
+      reviewed_at: new Date().toISOString(),
+    } : item))
+
+    setMessageTone('success')
+    if (kind === 'submissions' && decision === 'approve') {
+      setMessage(`Profile information approved. A pending canonical business was created for ownership review${body.promotedMedia ? ` and ${body.promotedMedia} staged media item${body.promotedMedia === 1 ? ' was' : 's were'} promoted` : ''}. It is not public yet.${body.mediaWarning ? ` Media warning: ${body.mediaWarning}` : ''}`)
+    } else if (kind === 'claims' && decision === 'approve') {
+      setMessage('Ownership approved and owner access connected. The listing is Claimed; final verification remains a separate gate.')
+    } else if (kind === 'edit-requests' && decision === 'approve') {
+      setMessage('Owner-requested changes approved through the protected workflow.')
+    } else {
+      setMessage(decision === 'approve'
+        ? 'Approved through the protected workflow.'
+        : decision === 'reject'
+          ? 'Rejected and recorded in the audit trail.'
+          : decision === 'resolve'
+            ? 'Report resolved and recorded in the audit trail.'
+            : 'Report dismissed and recorded in the audit trail.')
+    }
+    setBusy(null)
+  }
+
+  return <div className="moderation-shell">
+    <div className="admin-workflow-toolbar">
+      <div className="admin-segmented" role="group" aria-label="Moderation queue view">
+        <button type="button" className={view === 'pending' ? 'active' : ''} onClick={() => setView('pending')}>Awaiting <span>{pending.length}</span></button>
+        <button type="button" className={view === 'reviewed' ? 'active' : ''} onClick={() => setView('reviewed')}>Reviewed <span>{reviewed.length}</span></button>
+        <button type="button" className={view === 'all' ? 'active' : ''} onClick={() => setView('all')}>All <span>{data.length}</span></button>
+      </div>
+      <label className="admin-filter-search admin-workflow-search"><span aria-hidden="true">⌕</span><input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Find business, person, email, city or status…" aria-label="Search moderation queue" /></label>
+    </div>
+
+    <div className="admin-list-meta"><span className="kpi">{visible.length} shown · {pending.length} awaiting review</span><span className="small muted">Protected workflow actions cannot be bypassed through the generic table editor.</span></div>
+    {message && <div className={`notice ${messageTone}`}>{message}</div>}
+
+    <div className="moderation-list">{visible.map(row => <article className="admin-card moderation-card" key={String(row.id)}>
+      <div className="moderation-head">
+        <div>
+          <div className="badges"><span className={`badge ${['approved', 'resolved'].includes(row.status) ? 'verified' : ['rejected', 'dismissed'].includes(row.status) ? 'neutral' : 'sponsored'}`}>{label(row.status)}</span>{kind === 'claims' && row.businesses?.claimed && <span className="badge neutral">Business already claimed</span>}</div>
+          <h3>{kind === 'submissions' ? row.business_name : row.businesses?.name || 'Business record'}</h3>
+          <p className="small muted">{kind === 'claims'
+            ? `${row.claimant_name} · ${row.claimant_role || 'Role not supplied'} · ${row.email}`
+            : kind === 'submissions'
+              ? `${row.category || 'Category not supplied'} · ${row.city || 'City not supplied'} · submitted ${formatDate(row.created_at)}`
+              : kind === 'reports'
+                ? `${label(row.report_type)} · reported ${formatDate(row.created_at)}`
+                : `${label(row.request_type)} · submitted ${formatDate(row.created_at)}`}</p>
+        </div>
+        {row.businesses?.slug && row.businesses?.status === 'published' && <a className="btn btn-light" href={`/business/${row.businesses.slug}`} target="_blank" rel="noreferrer">View Public Profile</a>}
+      </div>
+
+      {kind === 'claims' ? <ClaimDetails row={row} /> : kind === 'submissions' ? <SubmissionDetails row={row} /> : kind === 'reports' ? <ReportDetails row={row} /> : <EditDetails row={row} />}
+
+      <label className="moderation-notes">Staff notes<textarea value={notes[String(row.id)] ?? String(row.review_notes ?? row.staff_notes ?? '')} onChange={e => setNotes(current => ({ ...current, [String(row.id)]: e.target.value }))} placeholder="Document verification evidence, action taken, or reason for the decision." /></label>
+
+      {isOpen(row)
+        ? kind === 'reports'
+          ? <div className="moderation-actions"><button className="btn btn-primary" disabled={busy !== null} onClick={() => review(String(row.id), 'resolve')}>{busy === String(row.id) + 'resolve' ? 'Resolving…' : 'Resolve Report'}</button><button className="btn btn-light" disabled={busy !== null} onClick={() => review(String(row.id), 'dismiss')}>{busy === String(row.id) + 'dismiss' ? 'Dismissing…' : 'Dismiss'}</button></div>
+          : <div className="moderation-actions"><button className="btn btn-primary" disabled={busy !== null} onClick={() => review(String(row.id), 'approve')}>{busy === String(row.id) + 'approve' ? 'Approving…' : kind === 'submissions' ? 'Approve Profile → Invite Claim' : kind === 'claims' ? 'Approve Ownership' : 'Approve'}</button><button className="btn btn-danger" disabled={busy !== null} onClick={() => review(String(row.id), 'reject')}>{busy === String(row.id) + 'reject' ? 'Rejecting…' : 'Reject'}</button></div>
+        : <p className="small muted">Reviewed {formatDate(row.reviewed_at)}.</p>}
+    </article>)}</div>
+
+    {!visible.length && <div className="empty">No moderation records match this view.</div>}
+  </div>
+}
+
+function ClaimDetails({ row: r }: { row: Row }) {
+  return <div><div className="moderation-details"><div><span>Claimant</span><strong>{r.claimant_name}</strong></div><div><span>Account Email</span><strong>{r.email}</strong></div><div><span>Phone</span><strong>{r.phone || 'Not supplied'}</strong></div><div><span>Verification Method</span><strong>{label(r.verification_method) || 'Legacy claim'}</strong></div></div><div className="change-preview"><div><span>Ownership evidence</span><strong style={{ whiteSpace: 'pre-wrap' }}>{r.verification_details || 'No structured evidence was supplied on this legacy claim.'}</strong></div><div><span>Evidence URL</span><strong>{r.verification_url ? <a href={r.verification_url} target="_blank" rel="noreferrer">Open verification source ↗</a> : 'Not supplied'}</strong></div></div><p className="small muted full-row">Approval connects this signed-in account as an owner and marks the listing Claimed. It does not automatically mark it Verified or buy organic ranking. For a new pending profile, final source-backed verification is the publication gate.</p></div>
+}
+
+function SubmissionDetails({ row: r }: { row: Row }) {
+  const media = r.business_submission_media ?? []
+  return <div><div className="moderation-details"><div><span>Phone</span><strong>{r.phone}</strong></div><div><span>Business Email</span><strong>{r.email}</strong></div><div><span>Operating Model</span><strong>{label(r.operating_model) || 'Legacy submission'}</strong></div><div><span>Category</span><strong>{r.category || 'Not supplied'}</strong></div><div><span>City / Market</span><strong>{r.city || 'Not supplied'}</strong></div><div><span>Staged Media</span><strong>{media.length} item{media.length === 1 ? '' : 's'}</strong></div></div><div className="change-preview"><div><span>Website</span><strong>{r.website || 'Not supplied'}</strong></div><div><span>Address</span><strong>{r.address_text || 'No physical address submitted'}</strong></div><div><span>Service Areas</span><strong>{Array.isArray(r.service_areas) && r.service_areas.length ? r.service_areas.join(', ') : 'Not supplied'}</strong></div><div><span>Description</span><strong style={{ whiteSpace: 'pre-wrap' }}>{r.description || 'Not supplied'}</strong></div></div><p className="small muted">Approval creates one canonical <strong>pending</strong> business profile and queues the claim invitation. It does not publish the listing. Physical-location data is created only when the submission says Storefront/Both and includes a legitimate address plus a recognized city/town. Service areas remain separate.</p></div>
+}
+
+function ReportDetails({ row: r }: { row: Row }) {
+  return <div><div className="moderation-details"><div><span>Report Type</span><strong>{label(r.report_type)}</strong></div><div><span>Reporter</span><strong>{r.reporter_name || 'Anonymous'}</strong></div><div><span>Email</span><strong>{r.reporter_email || 'Not supplied'}</strong></div><div><span>Submitted</span><strong>{formatDate(r.created_at)}</strong></div></div><div className="change-preview"><div><span>Report Details</span><strong>{r.details}</strong></div><div><span>Workflow Rule</span><strong>Resolving records review completion only. It does not automatically close, merge, verify or change the public business.</strong></div></div></div>
+}
+
+function EditDetails({ row: r }: { row: Row }) {
+  const changes = r.proposed_changes && typeof r.proposed_changes === 'object' ? r.proposed_changes : {}
+  const ids = Array.isArray(changes.location_ids) ? changes.location_ids : []
+  const names = Array.isArray(changes.location_names) ? changes.location_names.filter((x: any) => typeof x === 'string' && x.trim()) : []
+
+  if (r.request_type === 'service_areas_update') {
+    return <div>
+      <div className="moderation-details"><div><span>Request type</span><strong>Service Areas Update</strong></div><div><span>Submitted</span><strong>{formatDate(r.created_at)}</strong></div><div><span>Total requested</span><strong>{names.length || ids.length}</strong></div></div>
+      <div className="change-preview"><div><span>Requested Service Areas</span><strong style={{ whiteSpace: 'pre-wrap' }}>{names.length ? names.join('\n') : `${ids.length} service areas requested. Human-readable names were not captured on this legacy request.`}</strong></div></div>
+      <p className="small muted">These are service areas only. Approval does not create physical branches or office addresses.</p>
+    </div>
+  }
+
+  return <div><div className="moderation-details"><div><span>Request type</span><strong>{label(r.request_type)}</strong></div><div><span>Submitted</span><strong>{formatDate(r.created_at)}</strong></div></div><div className="change-preview">{Object.entries(changes).map(([key, value]) => <div key={key}><span>{label(key)}</span><strong style={{ whiteSpace: 'pre-wrap' }}>{value && typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value ?? '')}</strong></div>)}{!Object.keys(changes).length && <p className="small muted">No proposed fields supplied.</p>}</div></div>
+}
