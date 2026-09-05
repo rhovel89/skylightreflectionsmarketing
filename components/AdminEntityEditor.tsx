@@ -85,9 +85,7 @@ export function AdminEntityEditor({
 
       {section === 'businesses' && (
         <div className="notice">
-          <strong>Super Admin lifecycle controls:</strong> Hide uses the existing <code>suspended</code> state,
-          Unpublish uses <code>draft</code>, and Archive retains history. Any non-published state automatically
-          removes active paid placements and public/SEO eligibility.
+          <strong>Business workspace:</strong> use <b>Manage Business</b> for the complete cross-system view. Super Admin lifecycle controls remain here: Hide uses the existing <code>suspended</code> state, Unpublish uses <code>draft</code>, and Archive retains history. Any non-published state automatically removes active paid placements and public/SEO eligibility.
         </div>
       )}
 
@@ -97,7 +95,7 @@ export function AdminEntityEditor({
             <tr>
               {columns.map((key) => <th key={key}>{friendlyLabel(key)}</th>)}
               {!cfg.readOnly && <th>Save</th>}
-              {section === 'businesses' && <th>Visibility / Featured</th>}
+              {section === 'businesses' && <th>Business Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -177,6 +175,7 @@ function EditableRow({
       {section === 'businesses' && (
         <td>
           <div className="admin-row-actions">
+            <Link className="btn btn-small btn-primary" href={`/admin/businesses/${String(row.id)}`}>Manage Business</Link>
             {state === 'published' && <>
               <Link className="btn btn-small btn-light" href={`/business/${String(row.slug)}`} target="_blank">View Public</Link>
               <button className="btn btn-small btn-light" onClick={() => onLifecycle('hide')}>Hide</button>
