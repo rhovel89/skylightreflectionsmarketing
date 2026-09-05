@@ -3,10 +3,8 @@ import { revalidatePath } from 'next/cache'
 import { getOwnerData } from '@/lib/owner'
 import { requireUser } from '@/lib/auth'
 import { createClient } from '@/lib/supabase/server'
-import { TENANT_ID } from '@/lib/constants'
+import { OwnerMediaUploadForm } from './OwnerMediaUploadForm'
 
-const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
-const MENU_TYPES = new Set([...IMAGE_TYPES, 'application/pdf'])
 const ACTIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing', 'past_due']
 
 type MediaAccess = {
@@ -56,96 +54,6 @@ async function isRestaurantBusiness(s: any, businessId: string) {
     .eq('categories.is_active', true)
     .limit(1)
   return Boolean(data?.length)
-}
-
-async function uploadMedia(fd: FormData) {
-  'use server'
-  const claims = await requireUser('/business-portal/media')
-  const uid = String(claims.sub)
-  const businessId = String(fd.get('business_id') || '')
-  const mediaType = String(fd.get('media_type') || 'gallery')
-  const alt = String(fd.get('alt_text') || '').trim()
-  const caption = String(fd.get('caption') || '').trim()
-  const file = fd.get('file')
-
-  if (!(file instanceof File) || !file.size) throw new Error('Choose a file to upload.')
-  if (!['logo', 'cover', 'gallery', 'menu'].includes(mediaType)) throw new Error('Invalid media type.')
-
-  const s = await createClient()
-  const { data: owner } = await s
-    .from('business_owners')
-    .select('business_id')
-    .eq('user_id', uid)
-    .eq('business_id', businessId)
-    .maybeSingle()
-  if (!owner) throw new Error('You are not authorized to upload media for this business.')
-
-  const access = await getMediaAccess(s, businessId)
-  const restaurant = await isRestaurantBusiness(s, businessId)
-
-  if (mediaType === 'gallery') {
-    if (access.galleryLimit < 1) throw new Error('Showcase photos require a Featured or Pro plan.')
-    const { count } = await s
-      .from('business_media')
-      .select('id', { count: 'exact', head: true })
-      .eq('business_id', businessId)
-      .eq('media_type', 'gallery')
-      .in('approval_status', ['pending', 'approved'])
-      .in('status', ['pending', 'active'])
-    if ((count ?? 0) >= access.galleryLimit) {
-      throw new Error(`${access.planName} allows up to ${access.galleryLimit} showcase photos. Remove an existing photo before uploading another.`)
-    }
-  }
-
-  if (mediaType === 'menu') {
-    if (!restaurant) throw new Error('Menu uploads are available only for restaurant listings.')
-    if (!access.menuUpload) throw new Error('Restaurant menu uploads require a Featured or Pro plan.')
-    if (!MENU_TYPES.has(file.type)) throw new Error('Menus must be a PDF, JPEG, PNG or WebP file.')
-    if (file.size > 12 * 1024 * 1024) throw new Error('Menu files must be 12 MB or smaller.')
-  } else {
-    if (!IMAGE_TYPES.has(file.type)) throw new Error('Use a JPEG, PNG or WebP image.')
-    if (file.size > 8 * 1024 * 1024) throw new Error('Images must be 8 MB or smaller.')
-  }
-
-  const ext = file.type === 'application/pdf'
-    ? 'pdf'
-    : file.type === 'image/png'
-      ? 'png'
-      : file.type === 'image/webp'
-        ? 'webp'
-        : 'jpg'
-  const path = `${businessId}/${crypto.randomUUID()}.${ext}`
-  const { error: uploadError } = await s.storage.from('business-media').upload(path, file, {
-    contentType: file.type,
-    upsert: false,
-  })
-  if (uploadError) throw new Error('Unable to upload file.')
-
-  const { error } = await s.from('business_media').insert({
-    tenant_id: TENANT_ID,
-    business_id: businessId,
-    storage_path: path,
-    media_type: mediaType,
-    mime_type: file.type,
-    original_filename: file.name || null,
-    alt_text: alt || null,
-    caption: caption || null,
-    sort_order: 0,
-    status: 'pending',
-    approval_status: 'pending',
-    submitted_by: uid,
-  })
-  if (error) {
-    await s.storage.from('business-media').remove([path])
-    if (String(error.message || '').toLowerCase().includes('row-level security')) {
-      throw new Error('This upload is not allowed by your current plan or media limit.')
-    }
-    throw new Error('Unable to submit media for review.')
-  }
-
-  revalidatePath('/business-portal/media')
-  const slug = String(fd.get('business_slug') || '')
-  if (slug) revalidatePath(`/business/${slug}`)
 }
 
 async function deleteMedia(fd: FormData) {
@@ -227,18 +135,12 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       </div>
     </div>
 
-    <form action={uploadMedia} className="form-card" encType="multipart/form-data">
-      <input type="hidden" name="business_id" value={b.id} />
-      <input type="hidden" name="business_slug" value={b.slug} />
-      <div className="form-grid">
-        <label>Media Type<select name="media_type" defaultValue={canGallery ? 'gallery' : 'logo'}><option value="logo">Logo</option><option value="cover">Cover Image</option>{canGallery && <option value="gallery">Showcase Photo</option>}{canMenu && <option value="menu">Restaurant Menu</option>}</select></label>
-        <label>File<input type="file" name="file" accept="image/jpeg,image/png,image/webp,application/pdf" required /></label>
-        <label>Alt Text<input name="alt_text" placeholder="Describe the image for accessibility" /></label>
-        <label>Caption<input name="caption" placeholder="Optional customer-facing caption" /></label>
-      </div>
-      <button className="btn btn-primary">Upload for Review</button>
-      <p className="small muted">Photos: JPEG, PNG or WebP · maximum 8 MB. Restaurant menus: PDF, JPEG, PNG or WebP · maximum 12 MB. Uploading never publishes automatically.</p>
-    </form>
+    <OwnerMediaUploadForm
+      businessId={b.id}
+      canGallery={canGallery}
+      canMenu={canMenu}
+      defaultType={canGallery ? 'gallery' : 'logo'}
+    />
 
     <div className="request-list" style={{ marginTop: 18 }}>
       {data.map((m: any) => <div className="card" key={m.id}>
