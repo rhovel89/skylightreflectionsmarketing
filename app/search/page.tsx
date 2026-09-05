@@ -72,15 +72,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   return <SiteShell>
     <main>
       <section className="pagehero"><div className="container">
-        <div className="eyebrow">Central Illinois Local Search</div>
-        <h1>Find Local Businesses</h1>
-        <p>Search published local profiles by category, city, business name, or common service phrases. Category choices automatically reflect the businesses currently available in the selected city or town.</p>
+        <div className="eyebrow">{claim?'Business Owner Claim Search':'Central Illinois Local Search'}</div>
+        <h1>{claim?'Find Your Business Listing':'Find Local Businesses'}</h1>
+        <p>{claim?'Search the existing directory before creating anything new. Opening the correct profile lets you submit a free ownership claim for staff review.':'Search published local profiles by category, city, business name, or common service phrases. Category choices automatically reflect the businesses currently available in the selected city or town.'}</p>
       </div></section>
       <section className="section"><div className="container">
-        {claim && <div className="card" style={{ marginBottom: 20 }}>
-          <div className="kpi">Claim a listing</div>
-          <h2>Find your business profile first</h2>
-          <p className="muted">Search by business name or city, open the correct profile, then use <strong>Claim This Listing</strong>. Claim requests are reviewed before owner access is granted, and claimed status does not automatically mean verified.</p>
+        {claim && <div className="claim-search-guide">
+          <div className="claim-search-guide-head"><div><div className="kpi">Free owner claim</div><h2>Use the existing listing when one already exists.</h2><p className="muted">This prevents duplicate business profiles and keeps source-backed public information connected to the correct business record.</p></div><Link className="btn btn-light" href="/list-your-business">Business not listed?</Link></div>
+          <div className="claim-search-steps"><div><span>1</span><strong>Search</strong><small>Use the business name and city to find the correct public profile.</small></div><div><span>2</span><strong>Open</strong><small>Select the matching profile. A claimed badge means an owner connection already exists.</small></div><div><span>3</span><strong>Claim</strong><small>Submit your role and contact information. Staff reviews ownership before portal access.</small></div></div>
+          <div className="claim-search-trust"><strong>Claiming is free.</strong><span>Claimed ≠ Verified · Payment is not required · A claim never buys organic rank.</span></div>
         </div>}
         <div className="search-panel"><SearchForm categories={cats} locations={locations} defaults={{ category, city, q }} availability={availability} /></div>
         {intent && catLabel && <div className="notice" style={{ marginTop: 16 }}><strong>Search intent matched:</strong> “{q?.trim()}” is being interpreted as <strong>{catLabel}</strong>. Results still use normal organic relevance and location rules; this mapping does not create or promote providers.</div>}
@@ -89,15 +89,16 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
             <div className="results-toolbar">
               <div>
                 <span className="kpi">{businesses.length} result{businesses.length === 1 ? '' : 's'}</span>
+                {claim&&businesses.length>0?<p className="small muted claim-results-helper">Open the correct business profile below to continue the ownership claim.</p>:null}
                 {filters.length > 0 && <div className="filter-pills">{filters.map(f => <span className="filter-pill" key={f}>{f}</span>)}</div>}
               </div>
               {filters.length > 0 && <Link className="btn btn-light" href={claim ? '/search?claim=1' : '/search'}>Clear filters</Link>}
             </div>
             {businesses.length
-              ? <div className="business-list">{businesses.map(b => <BusinessCard key={b.id} business={b} />)}</div>
+              ? <div className="business-list">{businesses.map(b => <BusinessCard key={b.id} business={b} claimMode={claim} />)}</div>
               : <div className="empty empty-rich">
-                  <h2>No matching businesses found</h2>
-                  <p>{cityLabel ? 'That service or category is not currently represented by a published listing in this market. Choose another available category or search by business name.' : 'Try removing one filter, choosing a nearby Central Illinois market, or searching by the business name.'}</p>
+                  <h2>{claim?'We could not find that business yet':'No matching businesses found'}</h2>
+                  <p>{claim?'Try the exact business name, a shorter version of the name, or the city. If the business truly is not listed, submit one business record for staff review instead of creating duplicates.':cityLabel ? 'That service or category is not currently represented by a published listing in this market. Choose another available category or search by business name.' : 'Try removing one filter, choosing a nearby Central Illinois market, or searching by the business name.'}</p>
                   {relatedCats.length > 0 && <div className="card" style={{ margin: '18px 0', textAlign: 'left' }}>
                     <div className="kpi">Related local options</div>
                     <h3>Related providers in {cityLabel}</h3>
@@ -107,7 +108,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
                         <strong>{cat.name}</strong><p className="small muted">{count} published local {count === 1 ? 'profile' : 'profiles'}</p>
                       </Link>)}</div>
                   </div>}
-                  <Link className="btn btn-primary" href={claim ? '/search?claim=1' : '/search'}>Browse all published businesses</Link>
+                  <div className="card-actions claim-empty-actions"><Link className="btn btn-primary" href={claim ? '/search?claim=1' : '/search'}>Browse all published businesses</Link>{claim&&<Link className="btn btn-light" href="/list-your-business">Submit a New Business for Review</Link>}</div>
                 </div>}
             <div className="section-head search-browse-head"><div>
               <h2>{cityLabel ? `Browse Categories in ${cityLabel}` : 'Browse Popular Categories'}</h2>
