@@ -22,8 +22,8 @@ export async function submitLead(_:ActionState, fd:FormData):Promise<ActionState
     const {error}=await s.rpc('submit_directory_lead',{p_tenant_id:TENANT_ID,p_business_id:business,p_service:service,p_city:city,p_consumer_name:name,p_phone:phone,p_email:email,p_message:message||null,p_timeline:timeline||null,p_consent_to_contact:true})
     if(error)return{ok:false,message:error.message}
     return business
-      ?{ok:true,message:'Your request was sent through the directory workflow for the business you selected. The business may contact you about this request using the information you provided.'}
-      :{ok:true,message:'Your request was received for local matching through the directory lead workflow.'}
+      ?{ok:true,message:'Your request was received by Central Illinois Local Pros for staff review. Because you selected a specific business, that business remains the intended match; your contact details are not delivered until staff reviews the request.'}
+      :{ok:true,message:'Your request was received by Central Illinois Local Pros for staff review and local matching. A business receives your contact details only after staff deliberately delivers the lead.'}
   } catch(e){return {ok:false,message:e instanceof Error?e.message:'Unable to submit request.'}}
 }
 
@@ -42,7 +42,7 @@ export async function submitLawnCareLead(_:ActionState, fd:FormData):Promise<Act
     const s=await createClient()
     const {error}=await s.rpc('submit_directory_lead',{p_tenant_id:TENANT_ID,p_business_id:null,p_service:'Lawn Care',p_city:city,p_consumer_name:name,p_phone:phone,p_email:email,p_message:message,p_timeline:timeline||null,p_consent_to_contact:true})
     if(error)return {ok:false,message:error.message}
-    return {ok:true,message:'Your lawn-care request was received for staff review and local matching. If it qualifies for the lead marketplace, businesses see only redacted project information until a legitimate purchase and delivery.'}
+    return {ok:true,message:'Your lawn-care request was received for staff review and local matching. A business receives your contact details only after staff deliberately delivers the lead.'}
   } catch(e){return {ok:false,message:e instanceof Error?e.message:'Unable to submit lawn-care request.'}}
 }
 
