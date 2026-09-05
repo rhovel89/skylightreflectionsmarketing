@@ -3,6 +3,7 @@ import './dashboard.css'
 import './section-ui.css'
 import './workflow-ui.css'
 import './specialized-ui.css'
+import './business-workspace.css'
 import { requireStaff } from '@/lib/auth'
 import { AdminSidebar } from '@/components/AdminSidebar'
 
