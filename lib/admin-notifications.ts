@@ -31,7 +31,7 @@ export async function getAdminNotifications(s: any, userId: string): Promise<Not
 
   const [submissionsResult, claimsResult, editsResult, reportsResult, leadsResult, qualityResult, subscriptionsResult, sponsorshipsResult, growthResult] = await Promise.all([
     s.from('business_submissions').select('id,business_name,category,city,status,created_at').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(30),
-    s.from('business_claims').select('id,business_id,claimant_name,status,created_at').in('status', openStatuses).order('created_at', { ascending: false }).limit(30),
+    s.from('business_claims').select('id,business_id,claimant_name,status,created_at,businesses!inner(id,tenant_id)').eq('businesses.tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(30),
     s.from('business_edit_requests').select('id,business_id,request_type,status,created_at').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(30),
     s.from('listing_reports').select('id,business_id,report_type,status,created_at').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(30),
     s.from('leads').select('id,business_id,assigned_business_id,service,city,status,created_at').eq('tenant_id', TENANT_ID).eq('status', 'new').order('created_at', { ascending: false }).limit(30),
@@ -85,7 +85,7 @@ export async function getAdminNotifications(s: any, userId: string): Promise<Not
   }
   for (const row of subscriptions) raw.push({ key: `billing:${row.id}`, kind: 'billing', title: `Billing attention · ${businessName(row.business_id)}`, detail: `${titleCase(row.status)} subscription requires staff review.`, href: row.business_id ? `/admin/businesses/${row.business_id}?tab=revenue` : '/admin/subscriptions', createdAt: iso(row.updated_at), tone: 'danger' })
   for (const row of sponsorships) raw.push({ key: `sponsor:${row.id}:${row.ends_on}`, kind: 'sponsor', title: `Sponsored placement expiring · ${businessName(row.business_id)}`, detail: `${titleCase(row.placement)} ends ${row.ends_on}.`, href: row.business_id ? `/admin/businesses/${row.business_id}?tab=revenue` : '/admin/sponsorships', createdAt: iso(row.updated_at || row.created_at), tone: 'warn' })
-  for (const row of growth) raw.push({ key: `growth:${row.id}:${row.updated_at}`, kind: 'growth', title: `Growth opportunity · ${businessName(row.business_id)}`, detail: `${titleCase(row.opportunity_type)} · score ${Number(row.score || 0)}${row.next_action ? ` · ${row.next_action}` : ''}`, href: row.business_id ? `/admin/businesses/${row.business_id}?tab=growth` : '/admin/growth-opportunities', createdAt: iso(row.updated_at), tone: 'growth' })
+  for (const row of growth) raw.push({ key: `growth:${row.id}`, kind: 'growth', title: `Growth opportunity · ${businessName(row.business_id)}`, detail: `${titleCase(row.opportunity_type)} · score ${Number(row.score || 0)}${row.next_action ? ` · ${row.next_action}` : ''}`, href: row.business_id ? `/admin/businesses/${row.business_id}?tab=growth` : '/admin/growth-opportunities', createdAt: iso(row.updated_at), tone: 'growth' })
 
   raw.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   const limited = raw.slice(0, 160)
