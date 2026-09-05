@@ -1,0 +1,6 @@
+import{NextResponse}from'next/server'
+import{createClient}from'@/lib/supabase/server'
+import{TENANT_ID}from'@/lib/constants'
+const str=(v:unknown,n:number)=>String(v??'').trim().slice(0,n)
+const num=(v:unknown)=>{const n=Number(v);return Number.isFinite(n)&&n>0?Math.round(n):null}
+export async function POST(req:Request){try{const body=await req.json() as Record<string,unknown>,s=await createClient();const{data,error}=await s.rpc('submit_skylight_eddm_interest',{p_tenant_id:TENANT_ID,p_mode:str(body.mode,30),p_business_name:str(body.business_name,160),p_contact_name:str(body.contact_name,120)||null,p_phone:str(body.phone,80)||null,p_email:str(body.email,240)||null,p_city:str(body.city,120)||null,p_state:str(body.state,20)||null,p_postal_code:str(body.postal_code,20)||null,p_area_description:str(body.area_description,600)||null,p_desired_piece_count:num(body.desired_piece_count),p_package_key:str(body.package_key,80)||null,p_smart_coupon:Boolean(body.smart_coupon),p_message:str(body.message,2400)||null,p_consent_to_contact:Boolean(body.consent_to_contact)});if(error)throw error;return NextResponse.json({ok:true,...((data??{}) as Record<string,unknown>)})}catch(e:any){return NextResponse.json({error:String(e?.message||'Unable to submit EDDM request.')},{status:400})}}
