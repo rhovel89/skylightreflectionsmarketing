@@ -6,9 +6,25 @@ import { requireUser } from '@/lib/auth'
 
 export type ActionState = { ok:boolean; message:string }
 const text=(fd:FormData,key:string)=>String(fd.get(key)??'').trim()
+const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function submitLead(_:ActionState, fd:FormData):Promise<ActionState>{
-  try { const s=await createClient(); const business=text(fd,'business_id')||null; const {error}=await s.rpc('submit_directory_lead',{p_tenant_id:TENANT_ID,p_business_id:business,p_service:text(fd,'service'),p_city:text(fd,'city'),p_consumer_name:text(fd,'name'),p_phone:text(fd,'phone'),p_email:text(fd,'email'),p_message:text(fd,'message')||null,p_timeline:text(fd,'timeline')||null,p_consent_to_contact:fd.get('consent')==='on'}); if(error) return {ok:false,message:error.message}; return {ok:true,message:'Your request was received and is being matched with local businesses.'} } catch(e){return {ok:false,message:e instanceof Error?e.message:'Unable to submit request.'}}
+  try {
+    const business=text(fd,'business_id').slice(0,40)||null
+    const service=text(fd,'service').slice(0,120),city=text(fd,'city').slice(0,100),name=text(fd,'name').slice(0,120),phone=text(fd,'phone').slice(0,40),email=text(fd,'email').slice(0,160),message=text(fd,'message').slice(0,1600),timeline=text(fd,'timeline').slice(0,80),consent=fd.get('consent')==='on'
+    if(!service||!city||!name||phone.length<7||!email.includes('@')||!consent)return{ok:false,message:'Please complete the required request fields and consent.'}
+    if(business&&!uuid.test(business))return{ok:false,message:'The selected business could not be validated. Please reopen the business profile and try again.'}
+    const s=await createClient()
+    if(business){
+      const{data:published,error:lookupError}=await s.from('businesses').select('id').eq('tenant_id',TENANT_ID).eq('status','published').eq('id',business).maybeSingle()
+      if(lookupError||!published)return{ok:false,message:'This business is not currently available for a direct directory request.'}
+    }
+    const {error}=await s.rpc('submit_directory_lead',{p_tenant_id:TENANT_ID,p_business_id:business,p_service:service,p_city:city,p_consumer_name:name,p_phone:phone,p_email:email,p_message:message||null,p_timeline:timeline||null,p_consent_to_contact:true})
+    if(error)return{ok:false,message:error.message}
+    return business
+      ?{ok:true,message:'Your request was sent through the directory workflow for the business you selected. The business may contact you about this request using the information you provided.'}
+      :{ok:true,message:'Your request was received for local matching through the directory lead workflow.'}
+  } catch(e){return {ok:false,message:e instanceof Error?e.message:'Unable to submit request.'}}
 }
 
 export async function submitLawnCareLead(_:ActionState, fd:FormData):Promise<ActionState>{
