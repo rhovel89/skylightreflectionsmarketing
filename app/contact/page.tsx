@@ -15,6 +15,7 @@ const text=(fd:FormData,key:string)=>String(fd.get(key)||'').trim()
 const validPlan=(x:string)=>(PLAN_INTERESTS as readonly string[]).includes(x)?x:null
 const validSource=(x:string)=>(SOURCE_CONTEXTS as readonly string[]).includes(x)?x:'contact'
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const ilikeLiteral=(value:string)=>value.replace(/([%_\\])/g,'\\$1')
 
 async function submitBusiness(fd:FormData){
   'use server'
@@ -23,6 +24,16 @@ async function submitBusiness(fd:FormData){
   if(business_name.length<2||phone.length<7||!category||!city||!consent)throw new Error('Please complete all required business-submission fields.')
   const[{data:validCategory},{data:validCity}]=await Promise.all([s.from('categories').select('id').eq('tenant_id',TENANT_ID).eq('is_active',true).eq('name',category).maybeSingle(),s.from('locations').select('id').eq('tenant_id',TENANT_ID).eq('is_active',true).eq('type','city').eq('name',city).maybeSingle()])
   if(!validCategory||!validCity)throw new Error('Please choose a valid directory category and city.')
+
+  const literalName=ilikeLiteral(business_name)
+  const[{data:publishedCandidates},{data:pendingCandidates}]=await Promise.all([
+    s.from('businesses').select('id,name,slug,business_locations(city,is_active)').eq('tenant_id',TENANT_ID).eq('status','published').ilike('name',literalName).limit(12),
+    s.from('business_submissions').select('id,business_name,city,status').eq('tenant_id',TENANT_ID).eq('status','pending').ilike('business_name',literalName).eq('city',city).limit(1),
+  ])
+  const existing=(publishedCandidates??[]).find((row:any)=>(row.business_locations??[]).some((location:any)=>location?.is_active!==false&&String(location?.city||'').toLowerCase()===city.toLowerCase()))
+  if(existing?.slug)redirect(`/business/${existing.slug}#claim-business`)
+  if((pendingCandidates??[]).length>0)redirect('/contact?submitted=business-pending#submit-business')
+
   const payload={tenant_id:TENANT_ID,business_name,category,city,phone,website:website||null,description:description||null,status:'pending',contact_name:contact_name||null,email:email||null,service_areas:text(fd,'service_areas').split(',').map(x=>x.trim()).filter(Boolean).slice(0,30),consent_to_contact:true,source:'public_site'}
   const{error}=await s.from('business_submissions').insert(payload)
   if(error)throw new Error(error.message)
@@ -63,6 +74,7 @@ export default async function Page({searchParams}:{searchParams:Promise<Record<s
     <section className="pagehero"><div className="container"><div className="eyebrow">Business & Marketing Support</div><h1>{reason==='list-business'?'Submit a Business for Review':reason==='visibility-plan'&&planName?`${planName} Plan Information`:'Contact & Business Submissions'}</h1><p>{reason==='list-business'?'Use this page only when the business is not already published in the directory. Existing listings should be claimed instead.':'Connect with the directory or request a Skylight Reflections Marketing visibility review.'}</p></div></section>
     <section className="section"><div className="container">
       {submitted==='business'&&<div className="card conversion-success-card" role="status" style={{marginBottom:20}}><div className="kpi">Submission received</div><h2>Your business was sent for staff review.</h2><p className="muted">It was not automatically published. Staff can review the submitted details, supporting information and directory fit before creating or updating a public profile.</p><div className="card-actions"><Link className="btn btn-primary" href="/search?claim=1">Check Existing Listings</Link><Link className="btn btn-light" href="/for-businesses">Business Options</Link></div></div>}
+      {submitted==='business-pending'&&<div className="card visibility-context-card" role="status" style={{marginBottom:20}}><div className="kpi">Duplicate submission prevented</div><h2>A matching business submission is already waiting for review.</h2><p className="muted">Another pending submission with this business name and city is already in the review queue, so a second pending record was not created. If the business is already published, use the claim workflow instead.</p><div className="card-actions"><Link className="btn btn-primary" href="/search?claim=1">Search Existing Listings</Link><Link className="btn btn-light" href="/for-businesses">Business Options</Link></div></div>}
       {submitted==='marketing'&&<div className="card conversion-success-card" role="status" style={{marginBottom:20}}><div className="kpi">Request received</div><h2>Your visibility request was submitted.</h2><p className="muted">Skylight Reflections Marketing can follow up using the contact information and consent you provided. This request does not affect organic directory ranking.</p><div className="card-actions"><Link className="btn btn-primary" href="/for-businesses">Review Business Options</Link><Link className="btn btn-light" href="/">Return to Directory</Link></div></div>}
       {reason==='list-business'&&!submitted&&<div className="claim-search-guide business-submit-guide"><div className="claim-search-guide-head"><div><div className="kpi">Before you create a submission</div><h2>Make sure the business is not already listed.</h2><p className="muted">The directory keeps one business profile connected to legitimate locations and service areas. If a profile already exists, claim it instead of creating a duplicate.</p></div><Link className="btn btn-primary" href="/search?claim=1">Search & Claim First</Link></div><div className="claim-search-steps"><div><span>1</span><strong>Search</strong><small>Look up the exact business name and city.</small></div><div><span>2</span><strong>Claim if found</strong><small>Use the existing profile and submit a free ownership claim.</small></div><div><span>3</span><strong>Submit if missing</strong><small>Only use the new-business form when no legitimate profile exists.</small></div></div></div>}
       {reason==='visibility-plan'&&!submitted&&<div className="card visibility-context-card" style={{marginBottom:20}}><div className="kpi">Directory visibility{planName?` · ${planName}`:''}</div><h2>{planName?`Request information about the ${planName} option.`:'Ask about a clearly labeled visibility plan.'}</h2><p className="muted">Paid business tools and sponsorship remain separate from organic directory relevance. Paying does not buy verification, organic rank, leads or editorial preference.</p>{(validCity||validCategory||contextBusiness)&&<p className="small"><strong>Request context:</strong> {[contextBusiness?.name,validCategory,validCity].filter(Boolean).join(' · ')}</p>}</div>}
@@ -80,7 +92,7 @@ export default async function Page({searchParams}:{searchParams:Promise<Record<s
           <label>Description <span className="optional-label">optional</span><textarea name="description" maxLength={1600} placeholder="Briefly describe what the business provides. Staff will review the submission before publication."/></label>
           <label className="check consent-check"><input type="checkbox" name="consent" required/> I agree to be contacted about this business submission.</label>
           <button className="btn btn-primary full">Submit New Business for Review</button>
-          <p className="small muted conversion-form-note">Submission does not equal publication, claim approval or verification. Staff review is required.</p>
+          <p className="small muted conversion-form-note">Submission does not equal publication, claim approval or verification. Staff review is required. If an exact-name business is already published in the selected city, the workflow routes you to that existing profile instead of creating a duplicate submission.</p>
         </form>
 
         <form id="marketing-review" action={marketing} className="form-card public-conversion-form contact-conversion-card">
