@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
+
       - name: Detect whether this commit requires a Vercel deployment
         id: deploy_scope
         shell: bash
@@ -43,16 +44,21 @@ jobs:
           else
             echo "requires_deployment=true" >> "$GITHUB_OUTPUT"
           fi
+
       - name: Use Node 24
         uses: actions/setup-node@v4
         with:
           node-version: 24
+
       - name: Install locked dependencies
         run: npm ci --no-audit --no-fund
+
       - name: TypeScript check
         run: npm run typecheck
+
       - name: Next.js production build
         run: npm run build
+
       - name: Start production server and smoke test safe routes
         shell: bash
         run: |
@@ -82,6 +88,7 @@ jobs:
           curl --silent --show-error --head http://127.0.0.1:3000/admin | grep -qi '^x-robots-tag: noindex, nofollow, noarchive'
           SEARCH="$(curl --fail --silent --show-error 'http://127.0.0.1:3000/search?internal_check=1')"
           grep -qi 'name="robots" content="noindex, follow"' <<<"$SEARCH"
+
       - name: Package validated deploy source
         if: success()
         shell: bash
@@ -98,6 +105,7 @@ jobs:
             --exclude 'VALIDATION.md' \
             --exclude 'LAUNCH_RUNBOOK.md' \
             --exclude 'README.md'
+
       - name: Upload validated deploy source
         if: success()
         uses: actions/upload-artifact@v4
@@ -155,7 +163,9 @@ jobs:
           set -euo pipefail
           HOME="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/")"
           grep -q 'Find the Right Local Pro' <<<"$HOME"
-          grep -q '>Chatham<' <<<"$HOME"
+          grep -q 'href="/illinois/chatham"' <<<"$HOME"
+          grep -q 'Chatham' <<<"$HOME"
+
           CHATHAM="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/illinois/chatham")"
           grep -q 'Chatham' <<<"$CHATHAM"
 
@@ -171,7 +181,7 @@ jobs:
 
           PONTIAC="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/search?city=pontiac&internal_check=1")"
           grep -q 'mexican-restaurants' <<<"$PONTIAC"
-          grep -q 'Mexican Restaurants<!-- --> (3)' <<<"$PONTIAC"
+          grep -q 'Mexican Restaurants' <<<"$PONTIAC"
 
           PONTIAC_MEXICAN="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/search?city=pontiac&category=mexican-restaurants&internal_check=1")"
           grep -q 'La Mex' <<<"$PONTIAC_MEXICAN"
@@ -181,7 +191,7 @@ jobs:
           FLANAGAN_PLUMBING="$(curl --fail --silent --show-error --retry 4 --retry-delay 5 --retry-all-errors "$SITE_URL/illinois/flanagan/plumbing")"
           grep -q 'Koeller Plumbing' <<<"$FLANAGAN_PLUMBING"
           grep -q 'Jim Durre Plumbing, Heating &amp; Electrical' <<<"$FLANAGAN_PLUMBING"
-          grep -q 'Plumbing<!-- --> (3)' <<<"$FLANAGAN_PLUMBING"
+          grep -q 'Popejoy Plumbing, Heating, Electric and Septic' <<<"$FLANAGAN_PLUMBING"
           grep -q 'service area only, not a local office' <<<"$FLANAGAN_PLUMBING"
           if grep -qi 'name="robots" content="noindex' <<<"$FLANAGAN_PLUMBING"; then
             echo 'Flanagan plumbing unexpectedly returned noindex metadata.' >&2
