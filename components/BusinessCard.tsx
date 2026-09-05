@@ -22,7 +22,7 @@ export function BusinessCard({business,claimMode=false}:{business:Business;claim
       <h3><Link href={profileHref}>{b.name}</Link></h3>
       <div className="business-card-meta">
         {rating>0&&reviewCount>0?<span><strong>{rating.toFixed(1)}</strong> · {reviewCount} sourced review{reviewCount===1?'':'s'}</span>:<span>Published local profile</span>}
-        {serviceAreaOnly?<span>Serves this market · no office represented here</span>:address?<span>{address}</span>:null}
+        {serviceAreaOnly?<span>Serves this market · service area only, not a local office</span>:address?<span>{address}</span>:null}
       </div>
       <p className="muted business-summary">{b.description||'View this local business profile for current contact details, services and listing information.'}</p>
       {claimMode&&<div className={`claim-card-note ${b.claimed?'already-claimed':''}`}>{b.claimed?'This listing already has a reviewed owner connection.':'Own or manage this business? Open the profile and submit the free claim form for staff review.'}</div>}
