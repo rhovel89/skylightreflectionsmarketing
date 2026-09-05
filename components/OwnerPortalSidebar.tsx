@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 type PortalItem={href:string;label:string;keywords?:string}
 type PortalGroup={id:string;label:string;description:string;items:PortalItem[]}
@@ -47,16 +47,18 @@ const isPathActive=(pathname:string,href:string)=>href==='/business-portal'?path
 export function OwnerPortalSidebar(){
  const pathname=usePathname()
  const[query,setQuery]=useState('')
+ const[unread,setUnread]=useState(0)
  const[openGroups,setOpenGroups]=useState<Record<string,boolean>>(()=>Object.fromEntries(groups.map(g=>[g.id,g.items.some(i=>isPathActive(pathname,i.href))||g.id==='listing'])))
  const normalized=query.trim().toLowerCase()
  const visible=useMemo(()=>normalized?groups.map(g=>({...g,items:g.items.filter(i=>`${i.label} ${i.keywords??''} ${g.label}`.toLowerCase().includes(normalized))})).filter(g=>g.items.length):groups,[normalized])
+ useEffect(()=>{let alive=true;const load=()=>fetch('/api/owner/notifications',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(body=>{if(alive&&body)setUnread(Number(body.unread_count||0))}).catch(()=>{});load();const timer=window.setInterval(load,60000);return()=>{alive=false;window.clearInterval(timer)}},[pathname])
  return <aside className="owner-portal-side"><div className="owner-portal-side-inner">
   <div className="owner-portal-brand"><div className="owner-portal-brand-mark">CLP</div><div><strong>Business Portal</strong><span>Private owner workspace</span></div></div>
   <div className="owner-portal-shortcuts">{shortcuts.map(i=><Link className={isPathActive(pathname,i.href)?'active':''} href={i.href} key={i.href}>{i.label}</Link>)}</div>
   <label className="owner-portal-search"><span aria-hidden="true">⌕</span><input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={`Find among ${totalTools} tools…`} aria-label="Search business portal"/>{query?<button type="button" onClick={()=>setQuery('')} aria-label="Clear portal search">×</button>:null}</label>
   <nav className="owner-portal-nav" aria-label="Business portal navigation">{visible.map(group=>{const expanded=normalized?true:Boolean(openGroups[group.id]);return <section className="owner-portal-nav-group" key={group.id}>
    <button type="button" className="owner-portal-nav-toggle" onClick={()=>setOpenGroups(v=>({...v,[group.id]:!v[group.id]}))} disabled={Boolean(normalized)} aria-expanded={expanded}><span><strong>{group.label}</strong><small>{group.description}</small></span><b aria-hidden="true">⌄</b></button>
-   {expanded?<div className="owner-portal-nav-items">{group.items.map(item=><Link className={isPathActive(pathname,item.href)?'active':''} href={item.href} key={item.href}><span>{item.label}</span><b aria-hidden="true">›</b></Link>)}</div>:null}
+   {expanded?<div className="owner-portal-nav-items">{group.items.map(item=><Link className={isPathActive(pathname,item.href)?'active':''} href={item.href} key={item.href}><span>{item.label}{item.href==='/business-portal/notifications'&&unread>0?<em className="owner-unread-badge">{unread>99?'99+':unread}</em>:null}</span><b aria-hidden="true">›</b></Link>)}</div>:null}
   </section>})}{!visible.length?<div className="owner-portal-nav-empty"><strong>No matching tools</strong><span>Try another search term.</span></div>:null}</nav>
   <div className="owner-portal-side-footer"><span>{totalTools} business tools</span><Link href="/">← View Public Site</Link><form action="/auth/signout" method="post"><button type="submit">Log Out</button></form></div>
  </div></aside>
