@@ -5,6 +5,7 @@ import { ADMIN_ENTITIES } from '@/lib/admin'
 import { AdminCreateForm } from '@/components/AdminCreateForm'
 import { AdminEntityEditor } from '@/components/AdminEntityEditor'
 import { BusinessVerificationPanel } from '@/components/BusinessVerificationPanel'
+import { AdminSavedViews } from '@/components/AdminSavedViews'
 
 type SearchValue = string | string[] | undefined
 const one = (value: SearchValue) => Array.isArray(value) ? value[0] ?? '' : value ?? ''
@@ -76,6 +77,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   }
   const exportParams = sharedParams()
   const exportHref = `/api/admin/business-export${exportParams.toString() ? `?${exportParams.toString()}` : ''}`
+  const savedViewParams = Object.fromEntries(sharedParams().entries())
 
   const quickViews = [
     ['all', 'All Businesses'], ['published', 'Published'], ['unclaimed', 'Unclaimed'], ['needs-verification', 'Needs Verification'], ['missing-source', 'Missing Source'], ['recent', 'Recently Added'],
@@ -102,6 +104,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       <Link className="stat" href="/admin/businesses?view=needs-verification"><span>Needs Verification</span><strong>{verificationCount.count ?? 0}</strong><small>Published but unverified</small></Link>
       <Link className="stat" href="/admin/businesses?view=missing-source"><span>Missing Source</span><strong>{sourceCount.count ?? 0}</strong><small>Needs provenance URL</small></Link>
     </div>
+
+    <AdminSavedViews scope="businesses" basePath="/admin/businesses" queryParams={savedViewParams} />
 
     <details className="admin-create-disclosure">
       <summary><span><strong>+ Add a Business</strong><small>Create a canonical listing with conservative trust defaults.</small></span><span>Open form</span></summary>
