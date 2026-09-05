@@ -47,7 +47,7 @@ export default async function Page() {
   const today = new Date().toISOString().slice(0, 10)
   const results = await Promise.all([
     s.from('businesses').select('*', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('status', 'published'),
-    s.from('business_claims').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    s.from('business_claims').select('id,businesses!inner(id,tenant_id)', { count: 'exact', head: true }).eq('businesses.tenant_id', TENANT_ID).eq('status', 'pending'),
     s.from('leads').select('*', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('status', 'new'),
     s.from('business_edit_requests').select('*', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('status', 'pending'),
     s.from('subscriptions').select('*', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).in('status', ['active', 'trialing']),
@@ -59,7 +59,7 @@ export default async function Page() {
       <div>
         <div className="kpi">Private Skylight Operations</div>
         <h1>Admin Workspace</h1>
-        <p className="muted">Run Central Illinois Local Pros from one protected workspace. Use the navigation search to reach any specialized tool without hunting through long menus.</p>
+        <p className="muted">Run Central Illinois Local Pros from one protected workspace. Use My Work Today for personal assignments, Notifications for new signals, or the navigation search to reach any specialized tool.</p>
       </div>
       <span className="badge neutral">V15.5</span>
     </div>
@@ -77,8 +77,10 @@ export default async function Page() {
       <div className="admin-card admin-dashboard-focus">
         <div className="kpi">Fastest Path</div>
         <h2>Start with what needs attention</h2>
-        <p className="muted">The most operationally important queues are available directly from the workspace without changing any underlying workflow.</p>
+        <p className="muted">Use the personal work queue and notification inbox first, then move into the specialized workflow only when an item needs action.</p>
         <div className="admin-focus-links">
+          <Link href="/admin/action-center">My Work Today</Link>
+          <Link href="/admin/notifications">Notifications</Link>
           <Link href="/admin/submissions">Approval Queue</Link>
           <Link href="/admin/data-quality?state=active&type=seo_inventory&priority=high">SEO Quick Wins</Link>
           <Link href="/admin/operations-command-center">Growth Operations</Link>
@@ -88,7 +90,7 @@ export default async function Page() {
       <div className="admin-card admin-dashboard-system">
         <div className="kpi">Protected System</div>
         <h2>Private by design</h2>
-        <p className="muted">SEO diagnostics, CRM scores, outreach data, private lead data, audit information and deployment operations remain staff-only and noindex.</p>
+        <p className="muted">Saved views, notification state, SEO diagnostics, CRM scores, outreach data, private lead data, audit information and deployment operations remain staff-only and noindex.</p>
       </div>
     </div>
 
