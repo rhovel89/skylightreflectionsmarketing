@@ -13,6 +13,18 @@ export async function requireUser(next = '/account') {
   if (!claims?.sub) redirect(`/login?next=${encodeURIComponent(next)}`)
   return claims
 }
+export async function getBusinessAccount(next='/for-businesses'){
+  const claims=await requireUser(next)
+  const supabase=await createClient()
+  const{data}=await supabase.from('profiles').select('username').eq('id',String(claims.sub)).maybeSingle()
+  const username=String(data?.username||'').trim()
+  return {claims,username,ready:Boolean(username)}
+}
+export async function requireBusinessAccount(next='/for-businesses'){
+  const account=await getBusinessAccount(next)
+  if(!account.ready)redirect(`/account/business-access?next=${encodeURIComponent(next)}`)
+  return {claims:account.claims,username:account.username}
+}
 export async function getRoles(userId?: string) {
   const claims = userId ? { sub: userId } : await getClaims()
   if (!claims?.sub) return [] as string[]
@@ -32,7 +44,6 @@ export async function requireAdmin(path = '/admin') {
   if (!roles.some((r) => ['admin','super_admin'].includes(r))) redirect('/admin?access=admin-required')
   return { claims, roles }
 }
-
 export async function requireSuperAdmin(path = '/admin/team') {
   const claims = await requireUser(path)
   const roles = await getRoles(String(claims.sub))
