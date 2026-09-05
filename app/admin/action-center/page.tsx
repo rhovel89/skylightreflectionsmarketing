@@ -5,6 +5,8 @@ import { TENANT_ID } from '@/lib/constants'
 export const dynamic = 'force-dynamic'
 
 type Row = Record<string, any>
+type SourceError = { source: string; message: string }
+
 const openStatuses = ['pending', 'in_review', 'new']
 const today = () => new Date().toISOString().slice(0, 10)
 const inDays = (days: number) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10)
@@ -23,16 +25,27 @@ export default async function Page() {
   const [submissionsResult, claimsResult, editsResult, reportsResult, leadsResult, qualityResult, subscriptionsResult, sponsorshipsResult, growthResult] = await Promise.all([
     s.from('business_submissions').select('id,business_name,category,city,status,created_at').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(100),
     s.from('business_claims').select('id,business_id,claimant_name,email,status,created_at,businesses!inner(id,name,tenant_id)').eq('businesses.tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(100),
-    s.from('business_edit_requests').select('id,business_id,request_type,status,created_at,businesses!inner(id,name,tenant_id)').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(100),
-    s.from('listing_reports').select('id,business_id,report_type,status,created_at,businesses(id,name,tenant_id)').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(100),
-    s.from('leads').select('id,business_id,assigned_business_id,service,location,status,created_at').eq('tenant_id', TENANT_ID).eq('status', 'new').order('created_at', { ascending: false }).limit(100),
+    s.from('business_edit_requests').select('id,business_id,request_type,status,created_at').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(100),
+    s.from('listing_reports').select('id,business_id,report_type,status,created_at').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(100),
+    s.from('leads').select('id,business_id,assigned_business_id,service,city,status,created_at').eq('tenant_id', TENANT_ID).eq('status', 'new').order('created_at', { ascending: false }).limit(100),
     s.from('data_quality_tasks').select('id,business_id,task_type,priority,status,title,details,due_at,source_snapshot,updated_at').eq('tenant_id', TENANT_ID).in('status', ['open', 'in_progress']).order('updated_at', { ascending: false }).limit(2500),
     s.from('subscriptions').select('id,business_id,status,current_period_end,updated_at').eq('tenant_id', TENANT_ID).in('status', ['past_due', 'incomplete', 'unpaid']).order('updated_at', { ascending: false }).limit(100),
     s.from('sponsorships').select('id,business_id,placement,ends_on,active,created_at').eq('tenant_id', TENANT_ID).eq('active', true).gte('ends_on', now).lte('ends_on', next30).order('ends_on', { ascending: true }).limit(100),
     s.from('growth_opportunities').select('id,business_id,opportunity_type,status,score,next_action,source_facts,updated_at').eq('tenant_id', TENANT_ID).in('status', ['open', 'in_progress']).order('score', { ascending: false }).limit(100),
   ])
 
-  const errors = [submissionsResult.error, claimsResult.error, editsResult.error, reportsResult.error, leadsResult.error, qualityResult.error, subscriptionsResult.error, sponsorshipsResult.error, growthResult.error].filter(Boolean)
+  const sourceErrors: SourceError[] = [
+    ['Approval Queue', submissionsResult.error],
+    ['Claims', claimsResult.error],
+    ['Edit Requests', editsResult.error],
+    ['Listing Reports', reportsResult.error],
+    ['New Leads', leadsResult.error],
+    ['Data Quality', qualityResult.error],
+    ['Subscriptions', subscriptionsResult.error],
+    ['Sponsorships', sponsorshipsResult.error],
+    ['Growth Opportunities', growthResult.error],
+  ].flatMap(([source, error]) => error ? [{ source: String(source), message: String((error as any).message || 'Query failed') }] : [])
+
   const submissions = (submissionsResult.data ?? []) as Row[]
   const claims = (claimsResult.data ?? []) as Row[]
   const edits = (editsResult.data ?? []) as Row[]
@@ -64,8 +77,11 @@ export default async function Page() {
     ...leads.flatMap((row) => [row.business_id, row.assigned_business_id]), ...quality.map((row) => row.business_id),
     ...billing.map((row) => row.business_id), ...sponsorships.map((row) => row.business_id), ...growth.map((row) => row.business_id),
   ].filter(Boolean).map(String))]
-  const businessesResult = businessIds.length ? await s.from('businesses').select('id,name,slug').eq('tenant_id', TENANT_ID).in('id', businessIds) : { data: [], error: null }
-  if (businessesResult.error) errors.push(businessesResult.error)
+
+  const businessesResult = businessIds.length
+    ? await s.from('businesses').select('id,name,slug').eq('tenant_id', TENANT_ID).in('id', businessIds)
+    : { data: [], error: null }
+  if (businessesResult.error) sourceErrors.push({ source: 'Business lookup', message: businessesResult.error.message })
   const businessById = new Map(((businessesResult.data ?? []) as Row[]).map((row) => [String(row.id), row]))
 
   return <>
@@ -78,7 +94,7 @@ export default async function Page() {
       <div className="admin-row-actions"><Link className="btn btn-primary" href="/admin/businesses">Manage Businesses</Link><Link className="btn btn-light" href="/admin/operations-command-center">Growth Operations</Link></div>
     </div>
 
-    {errors.length ? <div className="notice warn">One or more action-center inputs could not be loaded. Treat affected counts as incomplete until the source query recovers.</div> : null}
+    {sourceErrors.length ? <div className="notice warn"><strong>Some Action Center data is temporarily incomplete.</strong> Unavailable source{sourceErrors.length === 1 ? '' : 's'}: {sourceErrors.map((item) => item.source).join(', ')}. Other queues below are still usable.</div> : null}
 
     <div className="action-center-summary">
       <div className={immediateTotal ? 'attention' : 'clear'}><span>Needs Attention</span><strong>{immediateTotal}</strong><small>moderation + new leads + billing + overdue quality</small></div>
@@ -126,4 +142,7 @@ export default async function Page() {
 function ActionRow({ title, meta, detail, href, business }: { title: string; meta: string; detail: string; href: string; business?: string }) {
   return <Link className="action-center-row" href={href}><div><strong>{title}</strong>{business ? <span>{business}</span> : null}<small>{meta}</small><p>{detail}</p></div><b>›</b></Link>
 }
-function ClearState({ text }: { text: string }) { return <div className="action-center-clear"><strong>All clear</strong><span>{text}</span></div> }
+
+function ClearState({ text }: { text: string }) {
+  return <div className="action-center-clear"><strong>All clear</strong><span>{text}</span></div>
+}
