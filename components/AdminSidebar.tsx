@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DEFAULT_BRAND } from '@/lib/constants'
 
 type NavItem = { href: string; label: string; keywords?: string }
@@ -60,7 +60,8 @@ const groups: NavGroup[] = [
   },
   {
     id: 'growth', label: 'Growth & Sales', description: 'Acquisition research, outreach, CRM and marketing execution', items: [
-      { href: '/admin/action-center', label: 'My Work Today', keywords: 'action center priorities today notifications tasks' },
+      { href: '/admin/action-center', label: 'My Work Today', keywords: 'action center priorities today tasks' },
+      { href: '/admin/notifications', label: 'Notification Center', keywords: 'alerts unread notifications inbox' },
       { href: '/admin/operations-command-center', label: 'Growth Operations Command Center', keywords: 'operations priorities' },
       { href: '/admin/acquisition-research', label: 'Acquisition Research Workbench', keywords: 'owner contact provenance' },
       { href: '/admin/launch-growth', label: 'Launch + Growth Command Center', keywords: 'launch growth' },
@@ -97,12 +98,27 @@ const pathOnly = (href: string) => href.split('?')[0]
 export function AdminSidebar() {
   const pathname = usePathname()
   const [query, setQuery] = useState('')
+  const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const state: Record<string, boolean> = {}
     for (const group of groups) state[group.id] = group.items.some((item) => { const path = pathOnly(item.href); return !item.href.includes('?') && (pathname === path || pathname.startsWith(`${path}/`)) })
     if (!Object.values(state).some(Boolean)) state.directory = true
     return state
   })
+
+  useEffect(() => {
+    let active = true
+    const load = async () => {
+      const response = await fetch('/api/admin/notifications', { cache: 'no-store' }).catch(() => null)
+      if (!response?.ok) return
+      const body = await response.json().catch(() => ({}))
+      if (active && Number.isFinite(Number(body.unreadCount))) setUnreadNotifications(Number(body.unreadCount))
+    }
+    void load()
+    const timer = window.setInterval(load, 60000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [pathname])
+
   const normalizedQuery = query.trim().toLowerCase()
   const visibleGroups = useMemo(() => {
     if (!normalizedQuery) return groups
@@ -114,6 +130,7 @@ export function AdminSidebar() {
   return <aside className="admin-side"><div className="admin-side-inner">
     <div className="admin-brand-panel"><div className="admin-brand-mark" aria-hidden="true">CLP</div><div className="admin-brand-copy"><strong>{DEFAULT_BRAND.directory_name}</strong><span>Private Staff Console</span></div></div>
     <div className="admin-shortcuts" aria-label="Admin quick access">{shortcuts.map((item) => <a className={isActive(item.href) ? 'active' : ''} href={item.href} key={item.href}>{item.label}</a>)}</div>
+    <a className={`admin-notification-link ${isActive('/admin/notifications') ? 'active' : ''}`} href="/admin/notifications"><span><span aria-hidden="true">◉</span> Notifications</span><span className={`admin-notification-badge ${unreadNotifications === 0 ? 'zero' : ''}`}>{unreadNotifications === null ? '…' : unreadNotifications > 99 ? '99+' : unreadNotifications}</span></a>
     <label className="admin-nav-search"><span className="admin-nav-search-icon" aria-hidden="true">⌕</span><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Find among ${totalTools} admin tools…`} aria-label="Search admin navigation" />{query ? <button type="button" onClick={() => setQuery('')} aria-label="Clear navigation search">×</button> : null}</label>
     <nav className="admin-nav" aria-label="Admin navigation">{visibleGroups.map((group) => { const expanded = normalizedQuery ? true : Boolean(openGroups[group.id]); return <section className="admin-nav-group" key={group.id}><button type="button" className="admin-nav-group-toggle" onClick={() => toggleGroup(group.id)} aria-expanded={expanded} disabled={Boolean(normalizedQuery)}><span><strong>{group.label}</strong><small>{group.items.length} tools</small></span><span className={`admin-nav-chevron ${expanded ? 'open' : ''}`} aria-hidden="true">⌄</span></button>{expanded ? <div className="admin-nav-items">{group.items.map((item) => <a className={isActive(item.href) ? 'active' : ''} href={item.href} key={item.href}><span>{item.label}</span><span className="admin-nav-arrow" aria-hidden="true">›</span></a>)}</div> : null}</section> })}{visibleGroups.length === 0 ? <div className="admin-nav-empty"><strong>No matching tools</strong><span>Try a broader search term.</span></div> : null}</nav>
     <div className="admin-side-footer"><div className="admin-side-footer-meta"><span>{totalTools} tools available</span><span>Powered by {DEFAULT_BRAND.parent_brand_name}</span></div><a className="admin-public-link" href="/">← View Public Site</a><form action="/auth/signout" method="post"><button className="admin-logout" type="submit">Log Out</button></form></div>
