@@ -106,7 +106,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const today = new Date().toISOString().slice(0, 10)
   const activeSponsorships = sponsorships.filter((row) => row.active && (!row.starts_on || row.starts_on <= today) && (!row.ends_on || row.ends_on >= today))
   const activeSubscription = subscriptions.find((row) => activeStatuses.has(String(row.status || '')) && (!row.ends_at || new Date(String(row.ends_at)).getTime() > Date.now()))
-  const activePlan = activeSubscription ? planById.get(String(activeSubscription.plan_id || '')) : null
+  const activePlan = activeSubscription ? planById.get(String(activeSubscription.plan_id || '')) : undefined
   const pendingClaims = claims.filter((row) => ['pending', 'in_review', 'new'].includes(String(row.status))).length
   const openQuality = quality.filter((row) => ['open', 'in_progress'].includes(String(row.status))).length
   const openGrowth = growth.filter((row) => ['open', 'in_progress', 'snoozed'].includes(String(row.status))).length
