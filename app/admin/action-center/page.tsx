@@ -36,8 +36,8 @@ const formatDate = (value: unknown) => {
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, SearchValue>> }) {
   const sp = await searchParams
   const focus = ['mine', 'unassigned', 'due-today', 'overdue', 'high', 'all'].includes(one(sp.focus)) ? one(sp.focus) : 'mine'
-  const { claims } = await requireStaff('/admin/action-center')
-  const userId = String(claims.sub)
+  const { claims: staffClaims } = await requireStaff('/admin/action-center')
+  const userId = String(staffClaims.sub)
   const s = await createClient()
   const now = today()
   const next30 = inDays(30)
