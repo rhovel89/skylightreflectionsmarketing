@@ -11,8 +11,8 @@ export async function POST(req: Request) {
 
     const body = await req.json() as any
     const businessId = String(body.business_id || '')
-    const ids = Array.isArray(body.location_ids)
-      ? [...new Set(body.location_ids.map((x: any) => String(x)))].slice(0, 50)
+    const ids: string[] = Array.isArray(body.location_ids)
+      ? [...new Set<string>(body.location_ids.map((x: any) => String(x)))].slice(0, 50)
       : []
 
     if (!businessId) return NextResponse.json({ error: 'Business is required.' }, { status: 400 })
@@ -32,10 +32,10 @@ export async function POST(req: Request) {
     if (ids.length) {
       const { data: valid, error: validErr } = await s.from('locations').select('id,name,county,state').eq('tenant_id', TENANT_ID).eq('is_active', true).in('id', ids)
       const validRows = (valid ?? []) as any[]
-      const byId = new Map(validRows.map((x: any) => [String(x.id), x]))
+      const byId = new Map<string, any>(validRows.map((x: any) => [String(x.id), x]))
       if (validErr || byId.size !== ids.length) return NextResponse.json({ error: 'One or more selected service areas are not valid active directory markets.' }, { status: 400 })
       locationNames = ids.map((id) => {
-        const row: any = byId.get(id)
+        const row = byId.get(id)
         const place = String(row?.name || id)
         const state = String(row?.state || 'Illinois')
         const county = String(row?.county || '').trim()
