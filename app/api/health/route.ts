@@ -4,7 +4,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic'
 
-// Runtime sync marker: Local Commerce, Project Match, request-first lead marketplace, ROI, Local Alerts and commerce Growth intelligence are part of this production tree.
+// Runtime sync marker: Local Commerce runtime and production migration source are synchronized in this tree.
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
 
 export async function GET() {
