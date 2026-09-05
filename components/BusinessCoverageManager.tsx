@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react'
 import { updateBusinessCoverage } from '@/app/admin/business-workspace-actions'
 
-type Category = { id: string; name: string; vertical?: string | null }
-type Location = { id: string; name: string; county?: string | null; state?: string | null }
+type Category = Record<string, any>
+type Location = Record<string, any>
 
 export function BusinessCoverageManager({
   businessId,
@@ -29,12 +29,12 @@ export function BusinessCoverageManager({
 
   const shownCategories = useMemo(() => {
     const q = categoryQuery.trim().toLowerCase()
-    return categories.filter((category) => !q || `${category.name} ${category.vertical ?? ''}`.toLowerCase().includes(q))
+    return categories.filter((category) => !q || `${category.name ?? ''} ${category.vertical ?? ''}`.toLowerCase().includes(q))
   }, [categories, categoryQuery])
 
   const shownLocations = useMemo(() => {
     const q = locationQuery.trim().toLowerCase()
-    return locations.filter((location) => !q || `${location.name} ${location.county ?? ''} ${location.state ?? ''}`.toLowerCase().includes(q)).slice(0, 180)
+    return locations.filter((location) => !q || `${location.name ?? ''} ${location.county ?? ''} ${location.state ?? ''}`.toLowerCase().includes(q)).slice(0, 180)
   }, [locations, locationQuery])
 
   function toggleCategory(id: string) {
@@ -76,15 +76,17 @@ export function BusinessCoverageManager({
         </label>
         <div className="workspace-choice-grid">
           {shownCategories.map((category) => {
-            const checked = categoryIds.includes(category.id)
+            const id = String(category.id)
+            const name = String(category.name || 'Unnamed category')
+            const checked = categoryIds.includes(id)
             return (
-              <label className={`workspace-choice ${checked ? 'selected' : ''}`} key={category.id}>
-                <input type="checkbox" checked={checked} onChange={() => toggleCategory(category.id)} />
+              <label className={`workspace-choice ${checked ? 'selected' : ''}`} key={id}>
+                <input type="checkbox" checked={checked} onChange={() => toggleCategory(id)} />
                 <span>
-                  <strong>{category.name}</strong>
-                  <small>{category.vertical || 'Directory category'}</small>
+                  <strong>{name}</strong>
+                  <small>{String(category.vertical || 'Directory category')}</small>
                 </span>
-                {checked ? <input type="radio" name="primary_category_id" value={category.id} checked={primaryId === category.id} onChange={() => setPrimaryId(category.id)} aria-label={`Make ${category.name} primary`} /> : null}
+                {checked ? <input type="radio" name="primary_category_id" value={id} checked={primaryId === id} onChange={() => setPrimaryId(id)} aria-label={`Make ${name} primary`} /> : null}
               </label>
             )
           })}
@@ -107,13 +109,14 @@ export function BusinessCoverageManager({
         </label>
         <div className="workspace-choice-grid workspace-location-choices">
           {shownLocations.map((location) => {
-            const checked = serviceAreaIds.includes(location.id)
+            const id = String(location.id)
+            const checked = serviceAreaIds.includes(id)
             return (
-              <label className={`workspace-choice ${checked ? 'selected' : ''}`} key={location.id}>
-                <input type="checkbox" checked={checked} onChange={() => toggleServiceArea(location.id)} />
+              <label className={`workspace-choice ${checked ? 'selected' : ''}`} key={id}>
+                <input type="checkbox" checked={checked} onChange={() => toggleServiceArea(id)} />
                 <span>
-                  <strong>{location.name}</strong>
-                  <small>{[location.county, location.state].filter(Boolean).join(', ') || 'Active market'}</small>
+                  <strong>{String(location.name || 'Unnamed market')}</strong>
+                  <small>{[location.county, location.state].filter(Boolean).map(String).join(', ') || 'Active market'}</small>
                 </span>
               </label>
             )
