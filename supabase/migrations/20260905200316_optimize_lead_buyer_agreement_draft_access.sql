@@ -1,0 +1,2 @@
+drop policy if exists lead_buyer_agreement_drafts_admin_read on public.lead_buyer_agreement_drafts;
+create index if not exists lead_buyer_agreement_drafts_resulting_program_idx on public.lead_buyer_agreement_drafts(resulting_program_id) where resulting_program_id is not null;
