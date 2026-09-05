@@ -11,6 +11,8 @@ import { getSiteUrl } from '@/lib/site-url'
 
 export const dynamic='force-dynamic'
 export const metadata:Metadata={alternates:{canonical:getSiteUrl()}}
+const verticalIcons=['🏠','⚖️','🍽️','🛍️','🧰','📍']
+const countyLabel=(county?:string|null)=>{const value=String(county??'').trim();return value?(/\bcounty$/i.test(value)?value:`${value} County`):''}
 
 export default async function Home(){
   const[cfg,categories,businesses,locations,guides,featuredBusinesses,availability]=await Promise.all([
@@ -48,7 +50,7 @@ export default async function Home(){
 
     <section className="section home-path-section"><div className="container">
       <div className="section-head"><div><div className="kpi">Start with what you need</div><h2>Explore Central Illinois</h2><p className="muted">Choose a broad local-business path, then narrow by city and category.</p></div></div>
-      <div className="grid grid-4 home-vertical-grid">{VERTICALS.map((v,i)=><Link className="card category-card home-vertical-card" key={v.key} href={v.href}><div className="category-icon">{['🏠','⚖️','🍽️','🛍️'][i]}</div><div><h3>{v.label}</h3><p className="muted">Browse local {v.label.toLowerCase()} by city and category.</p></div><span>Explore {v.label} →</span></Link>)}</div>
+      <div className="grid grid-4 home-vertical-grid">{VERTICALS.map((v,i)=><Link className="card category-card home-vertical-card" key={v.key} href={v.href}><div className="category-icon">{verticalIcons[i]??'📍'}</div><div><h3>{v.label}</h3><p className="muted">Browse local {v.label.toLowerCase()} by city and category.</p></div><span>Explore {v.label} →</span></Link>)}</div>
     </div></section>
 
     <section className="section white"><div className="container">
@@ -64,7 +66,7 @@ export default async function Home(){
 
     <section className="section home-locations-section"><div className="container">
       <div className="section-head"><div><div className="kpi">Browse geographically</div><h2>Choose a Central Illinois Market</h2><p className="muted">Open a city or town to see currently published businesses, active categories and local guides.</p></div><Link href="/illinois">View all locations →</Link></div>
-      <div className="grid grid-4 home-location-grid">{locations.slice(0,12).map(l=><Link className="card category-card home-location-card" key={l.id} href={`/illinois/${l.slug}`}><strong>{l.name}, IL</strong><span>{l.county?`${l.county} County · `:''}Browse local directory →</span></Link>)}</div>
+      <div className="grid grid-4 home-location-grid">{locations.slice(0,12).map(l=><Link className="card category-card home-location-card" key={l.id} href={`/illinois/${l.slug}`}><strong>{l.name}, IL</strong><span>{countyLabel(l.county)?`${countyLabel(l.county)} · `:''}Browse local directory →</span></Link>)}</div>
     </div></section>
 
     {guides.length>0&&<section className="section white"><div className="container"><div className="section-head"><div><div className="kpi">Local knowledge</div><h2>Latest Local Guides</h2><p className="muted">Practical Central Illinois articles for homeowners, diners, shoppers and people comparing local services.</p></div><Link href="/guides">Browse all guides →</Link></div><div className="inline-guide-grid">{guides.map((g:any)=><Link className="inline-guide-card" key={g.id} href={`/guides/${g.slug}`}><span>{g.city?`${g.city}, IL`:g.type||'Local Guide'}</span><strong>{g.title}</strong><p>{g.summary}</p></Link>)}</div></div></section>}
