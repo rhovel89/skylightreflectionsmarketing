@@ -78,8 +78,8 @@ export default async function Page({ params }: { params: Promise<{ city: string 
   return <SiteShell>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\u003c') }} />
     <main>
-      <section className="pagehero"><div className="container">
-        <div className="crumb">Illinois › {loc.name}</div>
+      <section className="pagehero city-discovery-hero"><div className="container">
+        <div className="crumb"><Link href="/illinois">Illinois</Link> › {loc.name}</div>
         <h1>{seo?.h1 || `Local Businesses in ${loc.name}, Illinois`}</h1>
         <p>{seo?.intro || `Explore local services, attorneys, restaurants and stores connected to ${loc.name} through active physical locations or clearly labeled service areas.`}</p>
         <div className="market-stats">
@@ -87,47 +87,45 @@ export default async function Page({ params }: { params: Promise<{ city: string 
           <span><strong>{cityCats.length}</strong> active categories</span>
           {loc.county && <span><strong>{loc.county}</strong> County</span>}
         </div>
+        <div className="city-hero-actions"><a className="btn btn-primary" href="#browse-categories">Browse Categories</a><a className="btn btn-light" href="#businesses">View Businesses</a><Link className="btn btn-light" href={`/search?city=${encodeURIComponent(city)}`}>Search {loc.name}</Link></div>
       </div></section>
 
       <section className="section"><div className="container">
-        <div className="search-panel"><SearchForm categories={cats} locations={locations} defaults={{ city }} availability={availability} /></div>
+        <div className="city-trust-grid">
+          <div><span>Physical location</span><strong>Actual published office or storefront</strong><small>Addresses shown as locations come from an active business location record.</small></div>
+          <div><span>Service area</span><strong>Serves {loc.name}, not an office claim</strong><small>Service-area matches stay clearly labeled and are never represented as a local branch.</small></div>
+          <div><span>Sponsored</span><strong>Paid visibility stays labeled</strong><small>Featured advertising is separate from normal organic directory ordering.</small></div>
+          <div><span>Owner access</span><strong>Claims are staff reviewed</strong><small>Claimed and Verified are separate states; a claim does not require payment.</small></div>
+        </div>
+
+        <div className="search-panel city-search-panel"><div className="city-search-copy"><strong>Search within {loc.name}</strong><span>Choose a category or enter a business/service keyword.</span></div><SearchForm categories={cats} locations={locations} defaults={{ city }} availability={availability} /></div>
+
         <div className="featured-content-layout" style={{ marginTop: 24 }}>
           <div className="featured-content-main">
-            <div className="section-head"><div>
-              <div className="kpi">Explore {loc.name}</div>
-              <h2>Browse Local Categories</h2>
-              <p className="muted">Categories shown here currently have published provider inventory connected to this market.</p>
-            </div></div>
+            <section id="browse-categories" className="city-category-section">
+              <div className="section-head"><div><div className="kpi">Explore {loc.name}</div><h2>Browse Local Categories</h2><p className="muted">Only categories with currently published business inventory connected to this market are shown.</p></div><Link href={`/search?city=${encodeURIComponent(city)}`}>Search everything →</Link></div>
+              {cityCats.length
+                ? <div className="grid grid-4 city-category-grid">{cityCats.slice(0, 16).map(c => <Link className="card category-card city-category-card" key={c.id} href={`/illinois/${city}/${c.slug}`}><span className="city-category-count">{c.count}</span><strong>{c.name}</strong><p className="small muted">published business{c.count === 1 ? '' : 'es'}</p><b>Compare {c.name} →</b></Link>)}</div>
+                : <div className="empty empty-rich"><h3>Published category inventory is still being developed.</h3><p>Use search to look for a business name or browse another nearby market.</p><Link className="btn btn-light" href="/illinois">Browse Central Illinois</Link></div>}
+            </section>
 
-            {cityCats.length
-              ? <div className="grid grid-4">{cityCats.slice(0, 12).map(c => <Link className="card category-card" key={c.id} href={`/illinois/${city}/${c.slug}`}><strong>{c.name}</strong><p className="small muted">{c.count} published business{c.count === 1 ? '' : 'es'}</p></Link>)}</div>
-              : <div className="empty">Published category inventory is still being developed for this market.</div>}
-
-            {seo?.content && <div className="card local-copy"><div className="kpi">Local Guide</div><p className="muted">{seo.content}</p></div>}
+            {seo?.content && <div className="card local-copy city-local-copy"><div className="kpi">Local Guide</div><p className="muted">{seo.content}</p></div>}
 
             {cityGuides.length > 0 && <section className="inline-guide-section">
-              <div className="section-head compact-head"><div>
-                <div className="kpi">Local reading</div>
-                <h2>Guides for {loc.name}</h2>
-                <p className="muted">Practical articles connected to this market.</p>
-              </div><Link href={`/guides?city=${encodeURIComponent(loc.name)}`}>All {loc.name} guides →</Link></div>
+              <div className="section-head compact-head"><div><div className="kpi">Local reading</div><h2>Guides for {loc.name}</h2><p className="muted">Practical articles connected to this market.</p></div><Link href={`/guides?city=${encodeURIComponent(loc.name)}`}>All {loc.name} guides →</Link></div>
               <div className="inline-guide-grid">{cityGuides.map((g: any) => <Link className="inline-guide-card" key={g.id} href={`/guides/${g.slug}`}><span>{g.type === 'local_guide' ? 'City & Category Guide' : g.type || 'Local Guide'}</span><strong>{g.title}</strong><p>{g.summary}</p></Link>)}</div>
             </section>}
 
-            <div className="section-head business-heading"><div>
-              <h2>Businesses Serving {loc.name}</h2>
-              <p className="muted">Canonical business profiles connected to this market by an active physical location or a clearly labeled service area. Service areas are never represented as offices, and Featured advertising is displayed separately.</p>
-            </div><Link href={`/search?city=${encodeURIComponent(city)}`}>Search {loc.name} →</Link></div>
+            <section id="businesses" className="city-business-section">
+              <div className="section-head business-heading"><div><div className="kpi">Live directory inventory</div><h2>Businesses Serving {loc.name}</h2><p className="muted">Canonical profiles connected to this market by an active physical location or a clearly labeled service area. Service areas are never represented as offices; Featured advertising is shown separately.</p></div><Link className="btn btn-light" href={`/search?city=${encodeURIComponent(city)}`}>Search {loc.name}</Link></div>
+              {businesses.length
+                ? <div className="business-list">{businesses.map(b => <BusinessCard key={b.id} business={b} />)}</div>
+                : <div className="empty empty-rich"><h3>No published provider inventory is available yet.</h3><p>Inventory remains excluded until legitimate business records are reviewed and published.</p><Link className="btn btn-light" href="/illinois">Browse another market</Link></div>}
+            </section>
 
-            {businesses.length
-              ? <div className="business-list">{businesses.map(b => <BusinessCard key={b.id} business={b} />)}</div>
-              : <div className="empty">No published provider inventory is available for this market yet.</div>}
-
-            <div className="card local-copy" style={{ marginTop: 24 }}>
-              <div className="kpi">For {loc.name} Business Owners</div>
-              <h2>Interested in clearly labeled local visibility?</h2>
-              <p className="muted">Claiming or submitting a business remains free. Optional sponsorship can add clearly labeled paid visibility in the {loc.name} market, but it does not change organic directory ordering, verification or editorial relevance.</p>
-              <GrowthTrackedLink eventType="market_sponsorship_click" city={loc.name} plan="sponsorship" source="city-page" className="btn btn-light" href={sponsorHref}>Ask About {loc.name} Sponsorship</GrowthTrackedLink>
+            <div className="city-owner-panel">
+              <div><div className="kpi">For {loc.name} Business Owners</div><h2>Already listed? Claim it before creating anything new.</h2><p>Claiming an existing business remains free and staff reviewed. If the business is truly missing, submit one business record for review. Optional sponsorship can add clearly labeled paid visibility in {loc.name}, but it does not change organic directory ordering, verification or editorial relevance.</p></div>
+              <div className="city-owner-actions"><Link className="btn btn-primary" href={`/search?claim=1&city=${encodeURIComponent(city)}`}>Find & Claim My Business</Link><Link className="btn btn-light" href="/list-your-business">Submit Missing Business</Link><GrowthTrackedLink eventType="market_sponsorship_click" city={loc.name} plan="sponsorship" source="city-page" className="btn btn-light" href={sponsorHref}>Ask About {loc.name} Sponsorship</GrowthTrackedLink></div>
             </div>
           </div>
           <FeaturedBusinessSidebar businesses={featured as any[]} contextLabel={`${loc.name}, Illinois`} />
