@@ -1,5 +1,6 @@
 import './portal-shell.css'
 import './portal-notifications.css'
+import './portal-workflows.css'
 import { SiteShell } from '@/components/SiteShell'
 import { requireUser } from '@/lib/auth'
 import { OwnerPortalSidebar } from '@/components/OwnerPortalSidebar'
