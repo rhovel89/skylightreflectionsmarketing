@@ -23,7 +23,7 @@ export default async function Page() {
   const [opportunitiesResult, membersResult, recruitmentResult, activationResult] = await Promise.all([
     s
       .from('skylight_sales_opportunities')
-      .select('*,prospect:business_prospects(id,business_name,category,city,owner_contact_name,owner_contact_title,owner_contact_email,owner_contact_phone)')
+      .select('*,prospect:business_prospects(id,business_name,category,city,owner_contact_name,owner_contact_title,owner_contact_email,owner_contact_phone,owner_contact_source_url,owner_contact_checked_at)')
       .eq('tenant_id', TENANT_ID)
       .eq('active', true)
       .order('score', { ascending: false })
@@ -103,12 +103,13 @@ export default async function Page() {
     <div className="admin-page-head">
       <div>
         <div className="kpi">Skylight Reflections Marketing</div>
-        <h1>Sales Command Center 3.1</h1>
-        <p className="muted">Turn Local Pros first-party intelligence into human-controlled Skylight sales and Lead Buyer recruitment work. Historical demand and opportunity scoring never change public organic ranking, verification or Sponsored placement.</p>
+        <h1>Sales Command Center 3.2</h1>
+        <p className="muted">Move Local Pros first-party intelligence from deliberate contact research into human-controlled Skylight sales and Lead Buyer recruitment. Contact Ready requires sourced owner/decision-maker provenance; a generic business contact alone does not qualify. Sales state, demand history and opportunity scoring never change public organic ranking, verification or Sponsored placement.</p>
       </div>
       <span className="badge verified">Private Sales Engine</span>
     </div>
     {sourceErrors.length ? <div className="notice warn"><strong>Some sales intelligence is temporarily incomplete.</strong> Refresh after the underlying data source is available.</div> : null}
+    <div className="notice"><strong>3.2 workflow:</strong> Research is an intentional stage, not an error. Once a contact channel has documented source provenance and a checked timestamp, the opportunity can become Contact Ready. Private Sales alerts and My Work Today surface action-worthy opportunities, but no outreach is sent automatically.</div>
     <SkylightSalesWorkspace
       opportunities={opportunities}
       campaigns={campaignRows}
