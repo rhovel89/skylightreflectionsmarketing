@@ -10,6 +10,12 @@ type SearchValue = string | string[] | undefined
 const one = (value: SearchValue) => Array.isArray(value) ? value[0] ?? '' : value ?? ''
 const titleCase = (value: string) => value.replace(/[_-]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 const locationTypeLabel: Record<string,string> = { city: 'City', town: 'Town', village: 'Village', county: 'County', township: 'Township', community: 'Community' }
+const strictContactReady = (row: Record<string, unknown>) => Boolean(
+  (String(row.owner_contact_email ?? '').trim() || String(row.owner_contact_phone ?? '').trim())
+  && String(row.owner_contact_source_url ?? '').trim()
+  && row.owner_contact_checked_at,
+)
+const potentialContact = (row: Record<string, unknown>) => Boolean(String(row.owner_contact_email ?? '').trim() || String(row.owner_contact_phone ?? '').trim())
 
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, SearchValue>> }) {
   const sp = await searchParams
@@ -55,18 +61,22 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const statusOptions = unique('status')
   const filteredLocations = locationType ? locations.filter(l => l.type === locationType) : locations
   const hasFilters = Boolean(locationType || city || vertical || stage || priority || status)
+  const readyCount = rows.filter(strictContactReady).length
+  const provenanceIncomplete = rows.filter(row => potentialContact(row) && !strictContactReady(row)).length
 
   return <>
     <div className="admin-page-head">
       <div>
         <div className="kpi">Private Sales Intelligence</div>
         <h1>Skylight Sales CRM</h1>
-        <p className="muted">Filter researched prospects by market and pipeline state without changing canonical business listings. Open tasks remain planned work; sent timestamps should only reflect outreach that actually occurred.</p>
+        <p className="muted">Filter researched prospects by market and pipeline state without changing canonical business listings. Contact Ready is evidence-based: a generic business contact or a Published prospect status does not qualify by itself.</p>
       </div>
-      <span className="badge verified">Editable</span>
+      <div className="admin-row-actions"><Link className="btn btn-primary" href="/admin/acquisition-research">Research Workbench 3.3</Link><span className="badge verified">Editable</span></div>
     </div>
 
-    <div className="admin-card" style={{marginBottom:18}}>
+    <div className="notice"><strong>Sales 3.3 contact standard:</strong> Contact Ready requires a sourced owner/decision-maker email or phone, a source URL and a checked timestamp. This is a private sales workflow standard only and has no effect on public ranking, verification or Sponsored placement.</div>
+
+    <div className="admin-card" style={{marginBottom:18,marginTop:18}}>
       <div className="section-head" style={{marginBottom:12}}>
         <div><div className="kpi">Territory & Pipeline Filters</div><h2>Work a specific market</h2></div>
         {hasFilters && <Link href="/admin/prospects" className="btn btn-light">Clear Filters</Link>}
@@ -87,7 +97,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       <div className="stat">Matching Prospects<strong>{rows.length}</strong></div>
       <div className="stat">Cities / Towns in Filter<strong>{city ? 1 : locationType ? marketNamesForType.length : locations.length}</strong></div>
       <div className="stat">Hot / High Priority<strong>{rows.filter((r:any) => ['hot','high'].includes(String(r.priority))).length}</strong></div>
-      <div className="stat">Contact Ready<strong>{rows.filter((r:any) => ['contact_ready','published'].includes(String(r.status))).length}</strong></div>
+      <div className="stat">Strict Contact Ready<strong>{readyCount}</strong><small>{provenanceIncomplete} contact path{provenanceIncomplete===1?'':'s'} still need provenance</small></div>
     </div>
 
     <div className="admin-list-meta" style={{marginTop:18}}>
