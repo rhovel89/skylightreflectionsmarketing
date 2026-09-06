@@ -59,13 +59,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const tasks = (tasksResult.data ?? []) as Row[]
   const activities = (activitiesResult.data ?? []) as Row[]
 
-  const prospectById = new Map(prospects.map((row) => [String(row.id), row]))
+  const prospectById = new Map<string, Row>(prospects.map((row) => [String(row.id), row]))
   const taskByProspect = new Map<string, Row>()
   for (const task of tasks) if (!taskByProspect.has(String(task.prospect_id))) taskByProspect.set(String(task.prospect_id), task)
   const latestResearchByProspect = new Map<string, Row>()
   for (const activity of activities) if (!latestResearchByProspect.has(String(activity.prospect_id))) latestResearchByProspect.set(String(activity.prospect_id), activity)
 
-  const allRows = sales.flatMap((opportunity) => {
+  const allRows: Row[] = sales.flatMap<Row>((opportunity): Row[] => {
     const prospect = prospectById.get(String(opportunity.prospect_id))
     if (!prospect) return []
     const task = taskByProspect.get(String(prospect.id))
@@ -89,7 +89,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       recent_research_summary: activity?.summary ?? null,
       recent_research_at: activity?.created_at ?? null,
       recent_research_metadata: activity?.metadata ?? null,
-    }]
+    } as Row]
   })
 
   const researchRows = allRows.filter((row) => ['new', 'research'].includes(String(row.sales_stage)))
@@ -108,9 +108,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     if (vertical && row.vertical !== vertical) return false
     if (service && !(row.recommended_service_slugs || []).includes(service)) return false
     if (state === 'research' && !(['new', 'research'].includes(String(row.sales_stage)) && !contactable(row))) return false
-    if (state === 'provenance' && !( ['new', 'research'].includes(String(row.sales_stage)) && contactable(row) && !sourcedContact(row))) return false
+    if (state === 'provenance' && !(['new', 'research'].includes(String(row.sales_stage)) && contactable(row) && !sourcedContact(row))) return false
     if (state === 'ready' && !(row.sales_stage === 'contact_ready' && sourcedContact(row))) return false
-    if (state === 'high' && !( ['new', 'research'].includes(String(row.sales_stage)) && ['hot', 'high'].includes(String(row.sales_priority)))) return false
+    if (state === 'high' && !(['new', 'research'].includes(String(row.sales_stage)) && ['hot', 'high'].includes(String(row.sales_priority)))) return false
     if (state === 'task' && !row.task_id) return false
     return true
   })
