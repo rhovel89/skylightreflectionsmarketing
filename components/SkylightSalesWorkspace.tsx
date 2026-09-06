@@ -35,6 +35,11 @@ const stamp = (value: any) => {
   const date = new Date(String(value))
   return Number.isNaN(date.getTime()) ? String(value) : date.toLocaleString()
 }
+const ownerContactVerified = (prospect: Row) => Boolean(
+  (prospect.owner_contact_email || prospect.owner_contact_phone)
+  && prospect.owner_contact_source_url
+  && prospect.owner_contact_checked_at,
+)
 
 async function post(payload: any) {
   const response = await fetch('/api/admin/skylight', {
@@ -85,6 +90,9 @@ export function SkylightSalesWorkspace({ opportunities, campaigns, recruitmentRo
       && (!stage || opportunity.stage === stage)
   }), [opportunities, q, service, stage])
 
+  const strictContactReady = opportunities.filter((row) => row.stage === 'contact_ready').length
+  const researchNeeded = opportunities.filter((row) => ['new', 'research'].includes(String(row.stage))).length
+  const pipelineEngaged = opportunities.filter((row) => ['contacted', 'qualified', 'proposal'].includes(String(row.stage))).length
   const recruitmentContactReady = recruitmentRows.filter((row) => yes(row.source_facts?.contact_path_available)).length
   const recruitmentResearchNeeded = recruitmentRows.length - recruitmentContactReady
 
@@ -96,7 +104,7 @@ export function SkylightSalesWorkspace({ opportunities, campaigns, recruitmentRo
       if (payload.action === 'create_invoice_from_opportunity' && body.public_url) {
         setMsg(`Draft invoice ${body.data?.invoice_number || ''} created. Open Clients & Invoices to finish pricing and send it.`)
       } else if (payload.action === 'refresh_opportunities') {
-        setMsg('Sales and Lead Buyer recruitment intelligence refreshed.')
+        setMsg('Sales, contact-readiness, private alerts and Lead Buyer recruitment intelligence refreshed.')
       } else {
         setMsg('Saved.')
       }
@@ -123,19 +131,23 @@ export function SkylightSalesWorkspace({ opportunities, campaigns, recruitmentRo
     <div className="stat-grid">
       <div className="stat">Active Skylight Opportunities<strong>{opportunities.length}</strong></div>
       <div className="stat">Hot / High<strong>{opportunities.filter((row) => ['hot', 'high'].includes(String(row.priority))).length}</strong></div>
-      <div className="stat">Skylight Contact Ready<strong>{opportunities.filter((row) => ['contact_ready', 'contacted', 'qualified', 'proposal'].includes(String(row.stage))).length}</strong></div>
+      <div className="stat">Contact Ready<strong>{strictContactReady}</strong><small>sourced owner / decision-maker contact</small></div>
+      <div className="stat">Research Needed<strong>{researchNeeded}</strong><small>provenance incomplete</small></div>
+      <div className="stat">Pipeline Engaged<strong>{pipelineEngaged}</strong><small>contacted + qualified + proposal</small></div>
       <div className="stat">Lead Buyer Recruitment<strong>{recruitmentRows.length}</strong><small>historical-demand candidates</small></div>
       <div className="stat">Buyer Contact Ready<strong>{recruitmentContactReady}</strong></div>
       <div className="stat">Buyer Research Needed<strong>{recruitmentResearchNeeded}</strong></div>
       <div className="stat">Explicit Buyer Interest<strong>{activationRows.length}</strong><small>separate controlled activation flow</small></div>
     </div>
 
+    <div className="notice"><strong>Contact-readiness standard:</strong> Contact Ready requires an owner/decision-maker email or phone plus a documented source URL and checked timestamp. Generic listing contact details or an unverified name remain Research Needed. This standard controls private sales workflow only.</div>
+
     <section className="admin-card">
       <div className="section-head">
         <div>
           <div className="kpi">Campaign Engine</div>
           <h2>Evidence-backed sales campaigns</h2>
-          <p className="muted">Campaign membership is generated from first-party opportunity signals and current Lead Buyer demand coverage. Nothing is emailed, texted, enrolled or billed automatically.</p>
+          <p className="muted">Campaign membership is generated from first-party opportunity signals and current Lead Buyer demand coverage. Research and Ready remain distinct. Nothing is emailed, texted, enrolled or billed automatically.</p>
         </div>
         <button type="button" className="btn btn-primary" disabled={Boolean(busy)} onClick={() => action({ action: 'refresh_opportunities' }, 'refresh')}>
           {busy === 'refresh' ? 'Refreshing…' : 'Refresh Sales Intelligence'}
@@ -147,7 +159,7 @@ export function SkylightSalesWorkspace({ opportunities, campaigns, recruitmentRo
           <h3>{campaign.name}</h3>
           <p className="muted small">{campaign.description}</p>
           <strong>{number(campaign.member_count)} current prospects</strong>
-          <div className="small muted">{number(campaign.ready_count)} contact-ready / contacted / qualified</div>
+          <div className="small muted">{number(campaign.ready_count)} ready / contacted / replied / qualified / won memberships</div>
         </div>)}
       </div>
     </section>
@@ -155,9 +167,9 @@ export function SkylightSalesWorkspace({ opportunities, campaigns, recruitmentRo
     <section className="admin-card">
       <div className="section-head">
         <div>
-          <div className="kpi">Sales Command Center 3.1</div>
+          <div className="kpi">Sales Command Center 3.2</div>
           <h2>What should Skylight sell next?</h2>
-          <p className="muted">Filter the first-party marketing opportunity pool by business, market, service recommendation or sales stage.</p>
+          <p className="muted">Filter the first-party marketing opportunity pool by business, market, service recommendation or sales stage. Research is deliberate: do not move a prospect to outreach simply because a generic contact field exists.</p>
         </div>
       </div>
       <div className="grid grid-3" style={{ marginBottom: 14 }}>
@@ -169,17 +181,22 @@ export function SkylightSalesWorkspace({ opportunities, campaigns, recruitmentRo
       <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
         {filtered.slice(0, 250).map((opportunity) => {
           const prospect = relation(opportunity.prospect) ?? {}
+          const verifiedOwner = ownerContactVerified(prospect)
+          const potentialContact = Boolean(prospect.owner_contact_name || prospect.owner_contact_email || prospect.owner_contact_phone)
           return <div className="card" key={opportunity.id}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div>
                 <div className="kpi">Score {opportunity.score} · {opportunity.priority}</div>
                 <h3>{prospect.business_name || 'Business Opportunity'}</h3>
                 <div className="small muted">{[prospect.city, prospect.category].filter(Boolean).join(' · ')}</div>
-                {prospect.owner_contact_name ? <div className="small">Contact: {prospect.owner_contact_name}{prospect.owner_contact_title ? ` · ${prospect.owner_contact_title}` : ''}</div> : null}
-                {prospect.owner_contact_email ? <div className="small">{prospect.owner_contact_email}</div> : null}
-                {prospect.owner_contact_phone ? <div className="small">{prospect.owner_contact_phone}</div> : null}
+                {verifiedOwner ? <>
+                  {prospect.owner_contact_name ? <div className="small"><strong>Sourced contact:</strong> {prospect.owner_contact_name}{prospect.owner_contact_title ? ` · ${prospect.owner_contact_title}` : ''}</div> : null}
+                  {prospect.owner_contact_email ? <div className="small">{prospect.owner_contact_email}</div> : null}
+                  {prospect.owner_contact_phone ? <div className="small">{prospect.owner_contact_phone}</div> : null}
+                  <div className="small muted">Provenance checked {stamp(prospect.owner_contact_checked_at)}</div>
+                </> : potentialContact ? <div className="small muted"><strong>Potential contact recorded.</strong> Source provenance is incomplete, so this prospect remains research-only until verified.</div> : <div className="small muted">No sourced owner/decision-maker contact yet.</div>}
               </div>
-              <span className="badge verified">{titleCase(opportunity.stage)}</span>
+              <span className={`badge ${opportunity.stage === 'contact_ready' ? 'verified' : 'neutral'}`}>{titleCase(opportunity.stage)}</span>
             </div>
             <div style={{ marginTop: 10 }}><strong>Recommended:</strong> {(opportunity.recommended_service_slugs || []).map((value: string) => <span key={value} className="badge" style={{ marginLeft: 5 }}>{labels[value] || value}</span>)}</div>
             <div className="small muted" style={{ marginTop: 8 }}><strong>Evidence:</strong> {(opportunity.evidence_flags || []).join(' · ')}</div>
