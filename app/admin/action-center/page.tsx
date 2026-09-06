@@ -11,7 +11,7 @@ type SourceError = { source: string; message: string }
 type SearchValue = string | string[] | undefined
 type WorkItem = {
   id: string
-  source: 'quality' | 'growth'
+  source: 'quality' | 'growth' | 'sales'
   title: string
   detail: string
   meta: string
@@ -32,6 +32,13 @@ const formatDate = (value: unknown) => {
   const d = new Date(String(value))
   return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
+const salesScore = (priority: unknown, score: unknown) => Math.max(Number(score || 0), ({ hot: 100, high: 90, medium: 70, low: 50 } as Record<string, number>)[String(priority || '').toLowerCase()] || 50)
+const growthHref = (row: Row) => {
+  if (row.opportunity_type === 'lead_buyer_recruitment') return '/admin/skylight-sales#lead-buyer-recruitment'
+  if (row.opportunity_type === 'lead_buyer_activation') return '/admin/lead-buyers'
+  if (row.opportunity_type === 'skylight_marketing') return '/admin/skylight-sales'
+  return row.business_id ? `/admin/businesses/${row.business_id}?tab=growth` : '/admin/growth-opportunities'
+}
 
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, SearchValue>> }) {
   const sp = await searchParams
@@ -40,10 +47,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const userId = String(staffClaims.sub)
   const s = await createClient()
   const now = today()
+  const nowIso = new Date().toISOString()
   const next30 = inDays(30)
   const todayStart = `${now}T00:00:00.000Z`
 
-  const [submissionsResult, claimsResult, editsResult, reportsResult, leadsResult, qualityResult, subscriptionsResult, sponsorshipsResult, growthResult, qualityCompletedResult, growthCompletedResult] = await Promise.all([
+  const [submissionsResult, claimsResult, editsResult, reportsResult, leadsResult, qualityResult, subscriptionsResult, sponsorshipsResult, growthResult, salesResult, qualityCompletedResult, growthCompletedResult] = await Promise.all([
     s.from('business_submissions').select('id,business_name,category,city,status,created_at').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(100),
     s.from('business_claims').select('id,business_id,claimant_name,email,status,created_at,businesses!inner(id,name,tenant_id)').eq('businesses.tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(100),
     s.from('business_edit_requests').select('id,business_id,request_type,status,created_at').eq('tenant_id', TENANT_ID).in('status', openStatuses).order('created_at', { ascending: false }).limit(100),
@@ -53,6 +61,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     s.from('subscriptions').select('id,business_id,status,current_period_end,updated_at').eq('tenant_id', TENANT_ID).in('status', ['past_due', 'incomplete', 'unpaid']).order('updated_at', { ascending: false }).limit(100),
     s.from('sponsorships').select('id,business_id,placement,ends_on,active,created_at').eq('tenant_id', TENANT_ID).eq('active', true).gte('ends_on', now).lte('ends_on', next30).order('ends_on', { ascending: true }).limit(100),
     s.from('growth_opportunities').select('id,business_id,opportunity_type,status,score,next_action,due_at,assigned_user_id,source_facts,updated_at').eq('tenant_id', TENANT_ID).in('status', ['open', 'in_progress']).order('score', { ascending: false }).limit(2500),
+    s.from('skylight_sales_opportunities').select('id,business_id,prospect_id,stage,priority,score,estimated_value_cents,next_follow_up_at,assigned_user_id,updated_at').eq('tenant_id', TENANT_ID).eq('active', true).in('stage', ['contact_ready', 'contacted', 'qualified', 'proposal', 'nurture']).order('score', { ascending: false }).limit(500),
     s.from('data_quality_tasks').select('id,assigned_user_id,resolved_at').eq('tenant_id', TENANT_ID).eq('status', 'resolved').gte('resolved_at', todayStart).limit(1000),
     s.from('growth_opportunities').select('id,assigned_user_id,updated_at').eq('tenant_id', TENANT_ID).eq('status', 'resolved').gte('updated_at', todayStart).limit(1000),
   ])
@@ -60,7 +69,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const sourceErrors: SourceError[] = [
     ['Approval Queue', submissionsResult.error], ['Claims', claimsResult.error], ['Edit Requests', editsResult.error], ['Listing Reports', reportsResult.error],
     ['New Leads', leadsResult.error], ['Data Quality', qualityResult.error], ['Subscriptions', subscriptionsResult.error], ['Sponsorships', sponsorshipsResult.error],
-    ['Growth Opportunities', growthResult.error], ['Completed Quality', qualityCompletedResult.error], ['Completed Growth', growthCompletedResult.error],
+    ['Growth Opportunities', growthResult.error], ['Skylight Sales', salesResult.error], ['Completed Quality', qualityCompletedResult.error], ['Completed Growth', growthCompletedResult.error],
   ].flatMap(([source, error]) => error ? [{ source: String(source), message: String((error as any).message || 'Query failed') }] : [])
 
   const submissions = (submissionsResult.data ?? []) as Row[]
@@ -72,15 +81,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const billing = (subscriptionsResult.data ?? []) as Row[]
   const sponsorships = (sponsorshipsResult.data ?? []) as Row[]
   const growth = (growthResult.data ?? []) as Row[]
+  const sales = (salesResult.data ?? []) as Row[]
   const completedToday = [...((qualityCompletedResult.data ?? []) as Row[]), ...((growthCompletedResult.data ?? []) as Row[])]
   const completedByMe = completedToday.filter(row => String(row.assigned_user_id || '') === userId)
 
   const overdueQuality = quality.filter((row) => row.due_at && String(row.due_at).slice(0, 10) < now)
   const urgentQuality = quality.filter((row) => ['hot', 'high'].includes(String(row.priority)))
   const seoOneAway = quality.filter((row) => row.task_type === 'seo_inventory' && Number(row.source_snapshot?.current_providers || 0) === 2)
-  const highGrowth = growth.filter((row) => Number(row.score || 0) >= 70)
+  const highGrowth = growth.filter((row) => Number(row.score || 0) >= 70 && !['skylight_marketing', 'lead_buyer_recruitment', 'lead_buyer_activation'].includes(String(row.opportunity_type)))
+  const salesContactReady = sales.filter((row) => row.stage === 'contact_ready')
+  const salesFollowupsDue = sales.filter((row) => row.next_follow_up_at && String(row.next_follow_up_at) <= nowIso)
+  const salesProposals = sales.filter((row) => row.stage === 'proposal')
+  const salesDueIds = new Set([...salesContactReady, ...salesFollowupsDue, ...salesProposals].map((row) => String(row.id)))
+  const actionableSales = sales.filter((row) => salesDueIds.has(String(row.id)))
   const moderationTotal = submissions.length + claims.length + edits.length + reports.length
-  const immediateTotal = moderationTotal + leads.length + billing.length + overdueQuality.length
+  const immediateTotal = moderationTotal + leads.length + billing.length + overdueQuality.length + actionableSales.length
 
   const queueCards = [
     { label: 'Approval Queue', count: submissions.length, detail: 'New business submissions awaiting protected review.', href: '/admin/submissions', tone: submissions.length ? 'warn' : 'good' },
@@ -88,13 +103,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     { label: 'Edit Requests', count: edits.length, detail: 'Owner-requested profile changes awaiting review.', href: '/admin/edit-requests', tone: edits.length ? 'warn' : 'good' },
     { label: 'Listing Reports', count: reports.length, detail: 'Public listing issues waiting for staff disposition.', href: '/admin/reports', tone: reports.length ? 'warn' : 'good' },
     { label: 'New Leads', count: leads.length, detail: 'Fresh lead records that have not advanced from New.', href: '/admin/leads', tone: leads.length ? 'action' : 'good' },
+    { label: 'Skylight Sales', count: actionableSales.length, detail: 'Contact-ready, follow-up-due or proposal-stage sales work.', href: '/admin/skylight-sales', tone: actionableSales.length ? 'action' : 'good' },
     { label: 'Billing Attention', count: billing.length, detail: 'Past-due, incomplete or unpaid subscriptions.', href: '/admin/subscriptions', tone: billing.length ? 'danger' : 'good' },
   ]
 
   const businessIds = [...new Set([
     ...claims.map((row) => row.business_id), ...edits.map((row) => row.business_id), ...reports.map((row) => row.business_id),
     ...leads.flatMap((row) => [row.business_id, row.assigned_business_id]), ...quality.map((row) => row.business_id),
-    ...billing.map((row) => row.business_id), ...sponsorships.map((row) => row.business_id), ...growth.map((row) => row.business_id),
+    ...billing.map((row) => row.business_id), ...sponsorships.map((row) => row.business_id), ...growth.map((row) => row.business_id), ...sales.map((row) => row.business_id),
   ].filter(Boolean).map(String))]
 
   const businessesResult = businessIds.length
@@ -104,6 +120,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const businessById = new Map(((businessesResult.data ?? []) as Row[]).map((row) => [String(row.id), row]))
   const businessName = (id: unknown) => String(businessById.get(String(id || ''))?.name || 'Business')
 
+  const genericGrowth = growth.filter(row => row.opportunity_type !== 'skylight_marketing')
   const workItems: WorkItem[] = [
     ...quality.map(row => ({
       id: String(row.id), source: 'quality' as const,
@@ -115,13 +132,26 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       score: ({ hot: 100, high: 80, medium: 50, low: 20 } as Record<string,number>)[String(row.priority || '').toLowerCase()] || 30,
       isHigh: ['hot', 'high'].includes(String(row.priority || '').toLowerCase()),
     })),
-    ...growth.map(row => ({
+    ...genericGrowth.map(row => ({
       id: String(row.id), source: 'growth' as const,
       title: businessName(row.business_id),
       detail: String(row.next_action || 'Review the opportunity and source facts before taking action.'),
       meta: `${titleCase(row.opportunity_type)} · score ${Number(row.score || 0)} · ${row.due_at ? `due ${formatDate(row.due_at)}` : 'no due date'} · ${row.assigned_user_id ? 'assigned' : 'unassigned'}`,
-      href: row.business_id ? `/admin/businesses/${row.business_id}?tab=growth` : '/admin/growth-opportunities',
+      href: growthHref(row),
       assignedUserId: String(row.assigned_user_id || ''), dueAt: String(row.due_at || ''), score: Number(row.score || 0), isHigh: Number(row.score || 0) >= 90,
+    })),
+    ...actionableSales.map(row => ({
+      id: String(row.id), source: 'sales' as const,
+      title: businessName(row.business_id),
+      detail: row.stage === 'contact_ready'
+        ? 'A sourced owner/decision-maker contact is available. Review evidence and prepare human-approved outreach; nothing is sent automatically.'
+        : row.stage === 'proposal'
+          ? 'Proposal-stage opportunity needs a documented next step or follow-up review.'
+          : 'Private Skylight sales follow-up is due. Review history before human outreach.',
+      meta: `${titleCase(row.stage)} · ${titleCase(row.priority)} · score ${Number(row.score || 0)} · ${row.next_follow_up_at ? `follow-up ${formatDate(row.next_follow_up_at)}` : 'no follow-up date'} · ${row.assigned_user_id ? 'assigned' : 'unassigned'}`,
+      href: '/admin/skylight-sales',
+      assignedUserId: String(row.assigned_user_id || ''), dueAt: String(row.next_follow_up_at || ''),
+      score: salesScore(row.priority, row.score), isHigh: ['hot', 'high'].includes(String(row.priority)),
     })),
   ]
 
@@ -151,30 +181,31 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       <div>
         <div className="kpi">Private Staff Priorities</div>
         <h1>My Work Today</h1>
-        <p className="muted">One operating view for personal assignments, moderation, fresh leads, billing exceptions, listing integrity, SEO quick wins and high-value growth work. Counts are private workflow signals and never affect organic ranking.</p>
+        <p className="muted">One operating view for moderation, fresh leads, billing exceptions, listing integrity, SEO quick wins, Lead Buyer growth and action-worthy Skylight sales work. Private priorities never affect organic ranking.</p>
       </div>
-      <div className="admin-row-actions"><Link className="btn btn-primary" href="/admin/notifications">Notifications</Link><Link className="btn btn-light" href="/admin/businesses">Manage Businesses</Link><Link className="btn btn-light" href="/admin/operations-command-center">Growth Operations</Link></div>
+      <div className="admin-row-actions"><Link className="btn btn-primary" href="/admin/notifications">Notifications</Link><Link className="btn btn-light" href="/admin/skylight-sales">Skylight Sales</Link><Link className="btn btn-light" href="/admin/operations-command-center">Growth Operations</Link></div>
     </div>
 
     {sourceErrors.length ? <div className="notice warn"><strong>Some Action Center data is temporarily incomplete.</strong> Unavailable source{sourceErrors.length === 1 ? '' : 's'}: {sourceErrors.map((item) => item.source).join(', ')}. Other queues below are still usable.</div> : null}
 
     <div className="action-center-summary">
-      <div className={immediateTotal ? 'attention' : 'clear'}><span>Needs Attention</span><strong>{immediateTotal}</strong><small>moderation + new leads + billing + overdue quality</small></div>
-      <div><span>My Assigned Work</span><strong>{focusCounts.mine}</strong><small>{completedByMe.length} completed by you today</small></div>
-      <div><span>Unassigned Work</span><strong>{focusCounts.unassigned}</strong><small>quality + growth tasks available to claim</small></div>
-      <div><span>Overdue Work</span><strong>{focusCounts.overdue}</strong><small>assigned or unassigned internal tasks</small></div>
+      <div className={immediateTotal ? 'attention' : 'clear'}><span>Needs Attention</span><strong>{immediateTotal}</strong><small>moderation + leads + billing + quality + actionable sales</small></div>
+      <div><span>My Assigned Work</span><strong>{focusCounts.mine}</strong><small>{completedByMe.length} quality/growth tasks completed by you today</small></div>
+      <div><span>Unassigned Work</span><strong>{focusCounts.unassigned}</strong><small>quality + growth + actionable sales</small></div>
+      <div><span>Sales Contact Ready</span><strong>{salesContactReady.length}</strong><small>sourced owner / decision-maker contact</small></div>
+      <div><span>Sales Follow-Ups Due</span><strong>{salesFollowupsDue.length}</strong><small>human review required before outreach</small></div>
       <div><span>SEO One Away</span><strong>{seoOneAway.length}</strong><small>2 legitimate providers; one more needed</small></div>
       <div><span>Sponsors Expiring</span><strong>{sponsorships.length}</strong><small>active placements ending within 30 days</small></div>
     </div>
 
     <section className="admin-card personal-work-section">
-      <div className="section-head compact-head"><div><div className="kpi">Personal Work Queue</div><h2>Choose what you want to work next</h2><p className="muted">Assignments and due dates apply only to internal quality/growth workflow records. Claiming a task does not change any public listing, verification, SEO eligibility, billing or outreach state.</p></div><AdminTakeNextTask /></div>
+      <div className="section-head compact-head"><div><div className="kpi">Personal Work Queue</div><h2>Choose what you want to work next</h2><p className="muted">Sales rows appear only when contact-ready, follow-up-due or in Proposal. Take Next Task claims eligible quality/growth tasks; Sales assignments are managed in the Sales Command Center. No queue action changes public ranking, verification, billing or outreach state.</p></div><AdminTakeNextTask /></div>
       <nav className="personal-focus-tabs" aria-label="Personal work filters">{focusTabs.map(([key,label]) => <Link className={focus === key ? 'active' : ''} href={`/admin/action-center?focus=${key}`} key={key}><span>{label}</span><strong>{focusCounts[key]}</strong></Link>)}</nav>
       <div className="action-center-list personal-work-list">
         {focusedWork.slice(0,18).map(item => <ActionRow key={`${item.source}-${item.id}`} title={item.title} meta={`${titleCase(item.source)} · ${item.meta}`} detail={item.detail} href={item.href} />)}
-        {!focusedWork.length ? <ClearState text={focus === 'mine' ? 'Nothing is assigned to you right now. Use Take Next Task to claim the highest-priority unassigned item.' : 'No current work matches this focus.'} /> : null}
+        {!focusedWork.length ? <ClearState text={focus === 'mine' ? 'Nothing is assigned to you right now. Review unassigned work or use Take Next Task for eligible quality/growth work.' : 'No current work matches this focus.'} /> : null}
       </div>
-      <div className="personal-work-footer"><span>{focusedWork.length} matching work item{focusedWork.length===1?'':'s'} · showing {Math.min(18,focusedWork.length)}</span><span>{completedToday.length} total internal tasks completed today · {completedByMe.length} by you</span></div>
+      <div className="personal-work-footer"><span>{focusedWork.length} matching work item{focusedWork.length===1?'':'s'} · showing {Math.min(18,focusedWork.length)}</span><span>{completedToday.length} quality/growth tasks completed today · {completedByMe.length} by you</span></div>
     </section>
 
     <section className="action-center-section">
@@ -183,6 +214,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
     </section>
 
     <div className="action-center-columns">
+      <section className="admin-card action-center-panel">
+        <div className="section-head compact-head"><div><div className="kpi">Skylight Sales</div><h2>Contact-ready & due</h2></div><Link className="btn btn-small btn-primary" href="/admin/skylight-sales">Sales Center</Link></div>
+        <div className="action-center-list">{actionableSales.slice(0,12).map((row) => <ActionRow key={`sales-${row.id}`} title={businessName(row.business_id)} meta={`${titleCase(row.stage)} · ${titleCase(row.priority)} · score ${Number(row.score || 0)}`} detail={row.stage === 'contact_ready' ? 'Evidence-backed owner/decision-maker contact is ready for human-reviewed outreach preparation.' : row.stage === 'proposal' ? 'Proposal-stage opportunity needs a documented next action.' : 'Sales follow-up is due; review prior activity before contacting the prospect.'} href="/admin/skylight-sales" />)}{!actionableSales.length ? <ClearState text="No contact-ready, due or proposal-stage Skylight sales work right now." /> : null}</div>
+      </section>
+
       <section className="admin-card action-center-panel">
         <div className="section-head compact-head"><div><div className="kpi">Listing Integrity</div><h2>Quality work</h2></div><Link className="btn btn-small btn-light" href="/admin/data-quality">Full Queue</Link></div>
         <div className="action-center-list">{[...overdueQuality, ...urgentQuality.filter((row) => !overdueQuality.some((item) => item.id === row.id))].slice(0, 12).map((row) => <ActionRow key={row.id} title={row.title || titleCase(row.task_type)} meta={`${titleCase(row.priority)} · ${row.due_at ? `due ${formatDate(row.due_at)}` : 'no due date'}`} detail={row.details || 'Persistent listing-integrity task.'} href={row.business_id ? `/admin/businesses/${row.business_id}?tab=trust` : '/admin/data-quality'} business={businessById.get(String(row.business_id || ''))?.name} />)}{!overdueQuality.length && !urgentQuality.length ? <ClearState text="No overdue or high-priority quality tasks." /> : null}</div>
@@ -199,14 +235,14 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
       </section>
 
       <section className="admin-card action-center-panel">
-        <div className="section-head compact-head"><div><div className="kpi">Commercial Growth</div><h2>High-value opportunities</h2></div><Link className="btn btn-small btn-light" href="/admin/growth-opportunities">Growth Queue</Link></div>
-        <div className="action-center-list">{highGrowth.slice(0, 12).map((row) => <ActionRow key={row.id} title={String(businessById.get(String(row.business_id))?.name || titleCase(row.opportunity_type))} meta={`${titleCase(row.opportunity_type)} · score ${Number(row.score || 0)}`} detail={String(row.next_action || 'Review the opportunity and source facts before taking action.')} href={row.business_id ? `/admin/businesses/${row.business_id}?tab=growth` : '/admin/growth-opportunities'} />)}{!highGrowth.length ? <ClearState text="No open growth opportunities currently score 70 or higher." /> : null}</div>
+        <div className="section-head compact-head"><div><div className="kpi">Commercial Growth</div><h2>High-value non-sales opportunities</h2></div><Link className="btn btn-small btn-light" href="/admin/growth-opportunities">Growth Queue</Link></div>
+        <div className="action-center-list">{highGrowth.slice(0, 12).map((row) => <ActionRow key={row.id} title={String(businessById.get(String(row.business_id))?.name || titleCase(row.opportunity_type))} meta={`${titleCase(row.opportunity_type)} · score ${Number(row.score || 0)}`} detail={String(row.next_action || 'Review the opportunity and source facts before taking action.')} href={growthHref(row)} />)}{!highGrowth.length ? <ClearState text="No open non-sales growth opportunities currently score 70 or higher." /> : null}</div>
       </section>
     </div>
 
     <section className="admin-card action-center-footer-card">
-      <div><div className="kpi">Guardrails</div><h2>Fast does not mean loose</h2><p className="muted">The Action Center only prioritizes existing private work. It cannot approve a claim, create verification, manufacture a branch, alter the three-provider indexing threshold, turn a task into sent outreach, or make a paid placement organic.</p></div>
-      <div className="admin-row-actions"><Link className="btn btn-light" href="/admin/data-quality">Data Quality</Link><Link className="btn btn-light" href="/admin/acquisition-research">Acquisition Research</Link><Link className="btn btn-light" href="/admin/audit">Audit Log</Link></div>
+      <div><div className="kpi">Guardrails</div><h2>Fast does not mean loose</h2><p className="muted">The Action Center only prioritizes existing private work. It cannot approve a claim, create verification, manufacture a branch, alter SEO eligibility, send sales outreach, activate Lead Buyer billing, release consumer data, or make a paid placement organic.</p></div>
+      <div className="admin-row-actions"><Link className="btn btn-light" href="/admin/skylight-sales">Skylight Sales</Link><Link className="btn btn-light" href="/admin/data-quality">Data Quality</Link><Link className="btn btn-light" href="/admin/acquisition-research">Acquisition Research</Link><Link className="btn btn-light" href="/admin/audit">Audit Log</Link></div>
     </section>
   </>
 }
