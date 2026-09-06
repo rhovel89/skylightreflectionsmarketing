@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { TENANT_ID } from '@/lib/constants'
 import { requireAdmin } from '@/lib/auth'
@@ -103,13 +104,13 @@ export default async function Page() {
     <div className="admin-page-head">
       <div>
         <div className="kpi">Skylight Reflections Marketing</div>
-        <h1>Sales Command Center 3.2</h1>
+        <h1>Sales Command Center 3.3</h1>
         <p className="muted">Move Local Pros first-party intelligence from deliberate contact research into human-controlled Skylight sales and Lead Buyer recruitment. Contact Ready requires sourced owner/decision-maker provenance; a generic business contact alone does not qualify. Sales state, demand history and opportunity scoring never change public organic ranking, verification or Sponsored placement.</p>
       </div>
-      <span className="badge verified">Private Sales Engine</span>
+      <div className="admin-row-actions"><Link className="btn btn-primary" href="/admin/acquisition-research">Prospect Research 3.3</Link><span className="badge verified">Private Sales Engine</span></div>
     </div>
     {sourceErrors.length ? <div className="notice warn"><strong>Some sales intelligence is temporarily incomplete.</strong> Refresh after the underlying data source is available.</div> : null}
-    <div className="notice"><strong>3.2 workflow:</strong> Research is an intentional stage, not an error. Once a contact channel has documented source provenance and a checked timestamp, the opportunity can become Contact Ready. Private Sales alerts and My Work Today surface action-worthy opportunities, but no outreach is sent automatically.</div>
+    <div className="notice"><strong>3.3 workflow:</strong> Research is an intentional stage, not an error. Use the Prospect Research Workbench to document a real owner/decision-maker channel, provenance source and checked timestamp. Only then can the opportunity become Contact Ready. Outreach drafts remain human-reviewed and nothing is sent automatically.</div>
     <SkylightSalesWorkspace
       opportunities={opportunities}
       campaigns={campaignRows}
