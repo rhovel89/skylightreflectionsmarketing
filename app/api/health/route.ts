@@ -4,7 +4,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic'
 
-// Runtime sync marker: Lead Buyer revenue intelligence, agreement hardening and SLA automation are synchronized in this tree.
+// Runtime sync marker: customizable Skylight service intake, secure client asset collection, review workflow, and focused FK indexing are synchronized in this tree.
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
 
 export async function GET() {
