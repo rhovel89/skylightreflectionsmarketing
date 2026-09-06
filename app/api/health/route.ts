@@ -5,7 +5,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 export const dynamic = 'force-dynamic'
 
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
-const releaseTrain='sales-command-center-3.2-hardened'
+const releaseTrain='sales-command-center-3.3-prospect-research'
 
 export async function GET() {
   const started = Date.now()
