@@ -16,8 +16,8 @@
 
 /* Smart-form staging: preserve the original server actions while making long owner forms understandable. */
 html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-form-grid::before{content:"1 · Business basics, category and customer-facing details";grid-column:1/-1;display:block;margin-bottom:2px;color:#425fbd;font-size:9px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
-html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-card:nth-of-type(1)::before{content:"2 · Physical location";display:block;margin-bottom:8px;color:#425fbd;font-size:9px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
-html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-card:nth-of-type(2)::before{content:"3 · Source & provenance";display:block;margin-bottom:8px;color:#425fbd;font-size:9px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
+html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-form-grid+.admin-card::before{content:"2 · Physical location";display:block;margin-bottom:8px;color:#425fbd;font-size:9px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
+html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-form-grid+.admin-card+.admin-card::before{content:"3 · Source & provenance";display:block;margin-bottom:8px;color:#425fbd;font-size:9px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
 html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>button:last-child::before{content:"4 · ";font-weight:950}
 html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-card{border-color:#dfe5f1;background:#fcfdff}
 
