@@ -1,0 +1,7 @@
+create index if not exists business_visibility_google_connections_created_by_idx on public.business_visibility_google_connections(created_by);
+create index if not exists business_visibility_google_connections_updated_by_idx on public.business_visibility_google_connections(updated_by);
+create index if not exists business_visibility_google_import_batches_tenant_idx on public.business_visibility_google_import_batches(tenant_id);
+create index if not exists business_visibility_google_import_batches_created_by_idx on public.business_visibility_google_import_batches(created_by);
+create index if not exists business_visibility_gsc_metrics_created_by_idx on public.business_visibility_gsc_metrics(created_by);
+create index if not exists business_visibility_gbp_metrics_created_by_idx on public.business_visibility_gbp_metrics(created_by);
+create index if not exists business_visibility_gbp_keywords_created_by_idx on public.business_visibility_gbp_search_keywords(created_by);
