@@ -5,7 +5,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic='force-dynamic'
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
-const releaseTrain='admin-experience-1.3-deep-workbench-simplification'
+const releaseTrain='admin-experience-1.4-guided-actions-smart-forms'
 
 async function integrationFlags(){
   const flags:any={
@@ -40,6 +40,7 @@ export async function GET(){
       admin_contextual_workspace_navigation:true,admin_unified_visual_system:true,admin_business_visibility_flow_linked:true,admin_sales_duplicate_navigation_removed:true,admin_mobile_workspace_navigation:true,
       admin_workflow_routes_centralized:true,admin_owner_workflow_guide:true,admin_owner_focus_summaries:true,admin_duplicate_internal_navigation_removed:true,admin_visibility_headers_consistent:true,admin_breadcrumbs_workspace_aware:true,
       admin_focused_view_default:true,admin_full_view_preserves_all_controls:true,admin_view_preference_persistent:true,admin_dense_tables_focus_limited:true,admin_deep_workbench_progressive_disclosure:true,
+      admin_guided_owner_tasks:true,admin_guided_links_operational:true,admin_legacy_workbench_deep_links:true,admin_business_create_form_staged:true,admin_proposal_form_staged:true,admin_guidance_changes_business_logic:false,
       automatic_outreach:false,billing_authorization:false,public_ranking_effect:false,automatic_campaign_enrollment:false,
       reply_classification_advisory:true,response_send_requires_staff_approval:true,calendar_event_requires_staff_action:true,calendar_invite_requires_staff_confirmation:true,
       paid_revenue_attribution_only:true,database_action_automation:true,daily_metrics_snapshots:true,first_touch_campaign_attribution:true,forecast_close_dates_staff_entered:true,
