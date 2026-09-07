@@ -39,24 +39,10 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
       <Link className="btn btn-light" href={`/admin/businesses/${id}`}>← Business Workspace</Link>
       <span className="btn btn-primary" aria-current="page">Google & SEO Visibility 4.1</span>
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/monitoring`}>Monitoring & Competitors 4.0</Link>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/google`}>Google-Owned Data 4.2</Link>
     </div>
     {errors.length?<div className="notice warn">Some visibility records could not be loaded completely. Missing values are shown as “Not measured” rather than zero.</div>:null}
-    <BusinessVisibilityFreeModePanel
-      business={{id:String(business.id),name:String(business.name),website:business.website||null}}
-      audits={(auditsResult.data||[]) as Row[]}
-      rankings={(rankingsResult.data||[]) as Row[]}
-      importBatches={(importsResult.data||[]) as Row[]}
-      defaultLocation={location}
-    />
-    <BusinessVisibilityWorkbench
-      business={{id:String(business.id),name:String(business.name),website:business.website||null,rating:business.rating??null,review_count:business.review_count??null,source_name:business.source_name||null,source_url:business.source_url||null,source_checked_at:business.source_checked_at||null}}
-      audits={(auditsResult.data||[]) as Row[]}
-      targets={(targetsResult.data||[]) as Row[]}
-      rankings={(rankingsResult.data||[]) as Row[]}
-      suggestedKeywords={suggested}
-      defaultLocation={location}
-      brightLocalConfigured={Boolean(process.env.BRIGHTLOCAL_API_KEY)}
-      pageSpeedConfigured={true}
-    />
+    <BusinessVisibilityFreeModePanel business={{id:String(business.id),name:String(business.name),website:business.website||null}} audits={(auditsResult.data||[]) as Row[]} rankings={(rankingsResult.data||[]) as Row[]} importBatches={(importsResult.data||[]) as Row[]} defaultLocation={location}/>
+    <BusinessVisibilityWorkbench business={{id:String(business.id),name:String(business.name),website:business.website||null,rating:business.rating??null,review_count:business.review_count??null,source_name:business.source_name||null,source_url:business.source_url||null,source_checked_at:business.source_checked_at||null}} audits={(auditsResult.data||[]) as Row[]} targets={(targetsResult.data||[]) as Row[]} rankings={(rankingsResult.data||[]) as Row[]} suggestedKeywords={suggested} defaultLocation={location} brightLocalConfigured={Boolean(process.env.BRIGHTLOCAL_API_KEY)} pageSpeedConfigured={true}/>
   </div>
 }
