@@ -1,12 +1,13 @@
 'use client'
 
-import Link from 'next/link'
+import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 
 type Step={label:string;detail:string;href:string}
 type Guide={title:string;summary:string;steps:Step[]}
 
 function businessId(pathname:string){const match=pathname.match(/^\/admin\/businesses\/([^/]+)/);return match?.[1]||''}
+function byText(selector:string,text:string){return [...document.querySelectorAll<HTMLElement>(selector)].find(el=>el.textContent?.includes(text))||null}
 
 function guideFor(pathname:string):Guide|null{
   const id=businessId(pathname)
@@ -86,9 +87,41 @@ function guideFor(pathname:string):Guide|null{
 export function AdminGuidedActions(){
   const pathname=usePathname()
   const guide=guideFor(pathname)
+
+  useEffect(()=>{
+    const frame=requestAnimationFrame(()=>{
+      if(pathname==='/admin/businesses'){
+        document.querySelector<HTMLElement>('.admin-create-disclosure')?.setAttribute('id','add-business')
+        document.querySelector<HTMLElement>('.admin-list-meta')?.setAttribute('id','business-results')
+      }
+      if(pathname==='/admin/skylight-sales'){
+        const heading=byText('.admin-main h2','What should Skylight sell next?')
+        heading?.closest<HTMLElement>('section')?.setAttribute('id','sales-opportunities')
+      }
+      if(pathname==='/admin/revenue')document.querySelector<HTMLElement>('.admin-main .stat-grid')?.setAttribute('id','revenue-attention')
+      if(pathname==='/admin/seo')byText('.admin-main h3','SEO eligibility action queue')?.setAttribute('id','seo-action-queue')
+      if(pathname.endsWith('/visibility')){
+        const audit=byText('.admin-main h2','Current Website SEO & Technical Health')
+        const ranks=byText('.admin-main h2','Keyword Ranking Tracker')
+        audit?.closest<HTMLElement>('.workspace-block')?.setAttribute('id','website-audit')
+        ranks?.closest<HTMLElement>('.workspace-block')?.setAttribute('id','ranking-tracker')
+      }
+      if(pathname==='/admin/skylight-operations'){
+        const tab=new URLSearchParams(window.location.search).get('tab')
+        const labels:Record<string,string>={new:'New Proposal',proposals:'Proposals',projects:'Projects',overview:'Overview',recurring:'Recurring',automation:'Service Automation',packages:'Packages'}
+        if(tab&&labels[tab]){
+          const button=[...document.querySelectorAll<HTMLButtonElement>('.admin-main button')].find(el=>el.textContent?.trim()===labels[tab])
+          button?.click()
+          if(tab==='new')requestAnimationFrame(()=>byText('.admin-main h2','Create a custom service proposal')?.closest<HTMLElement>('section')?.setAttribute('id','proposal-builder'))
+        }
+      }
+    })
+    return()=>cancelAnimationFrame(frame)
+  },[pathname])
+
   if(!guide)return null
   return <div className="admin-guided-shell"><section className="admin-guided-actions" aria-label="Guided owner task">
     <div className="admin-guided-intro"><span>Guided Task</span><div><strong>{guide.title}</strong><p>{guide.summary}</p></div></div>
-    <ol>{guide.steps.map((step,index)=><li key={`${step.href}-${step.label}`}><Link href={step.href}><b>{index+1}</b><span><strong>{step.label}</strong><small>{step.detail}</small></span><i aria-hidden="true">→</i></Link></li>)}</ol>
+    <ol>{guide.steps.map((step,index)=><li key={`${step.href}-${step.label}`}><a href={step.href}><b>{index+1}</b><span><strong>{step.label}</strong><small>{step.detail}</small></span><i aria-hidden="true">→</i></a></li>)}</ol>
   </section></div>
 }
