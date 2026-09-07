@@ -28,12 +28,13 @@ export default async function Page(){
     s.from('business_visibility_reports').select('*').eq('tenant_id',TENANT_ID).in('business_id',businessIds).eq('report_type','client').eq('status','finalized').order('finalized_at',{ascending:false}).limit(5000),
     s.from('business_visibility_retention_reviews').select('*').eq('tenant_id',TENANT_ID).in('client_id',clientIds).limit(1500),
   ])
-  const errors=[businessesQ,snapshotsQ,executionsQ,schedulesQ,projectsQ,invoicesQ,recurringQ,reportsQ,reviewsQ].filter((q:any)=>q.error)
+  const errors:any[]=[businessesQ.error,snapshotsQ.error,executionsQ.error,schedulesQ.error,projectsQ.error,invoicesQ.error,recurringQ.error,reportsQ.error,reviewsQ.error].filter(Boolean)
   const businesses=(businessesQ.data||[]) as Row[],projects=(projectsQ.data||[]) as Row[],invoices=(invoicesQ.data||[]) as Row[]
   const projectIds=projects.map(r=>String(r.id)),invoiceIds=invoices.map(r=>String(r.id))
   const tasksQ=projectIds.length?await s.from('skylight_project_tasks').select('*').in('project_id',projectIds).order('due_date',{ascending:true}).limit(10000):{data:[] as Row[],error:null}
   const paymentsQ=invoiceIds.length?await s.from('skylight_invoice_payments').select('*').in('invoice_id',invoiceIds).order('paid_at',{ascending:false}).limit(10000):{data:[] as Row[],error:null}
-  if(tasksQ.error||paymentsQ.error)errors.push(tasksQ.error||paymentsQ.error)
+  if(tasksQ.error)errors.push(tasksQ.error)
+  if(paymentsQ.error)errors.push(paymentsQ.error)
   const businessMap=new Map(businesses.map(r=>[String(r.id),r])),reviewMap=new Map(((reviewsQ.data||[]) as Row[]).map(r=>[String(r.client_id),r]))
   const allSnapshots=(snapshotsQ.data||[]) as Row[],allExec=(executionsQ.data||[]) as Row[],allSchedules=(schedulesQ.data||[]) as Row[],allRecurring=(recurringQ.data||[]) as Row[],allReports=(reportsQ.data||[]) as Row[],allTasks=(tasksQ.data||[]) as Row[],allPayments=(paymentsQ.data||[]) as Row[]
   const rows=clients.flatMap(client=>{

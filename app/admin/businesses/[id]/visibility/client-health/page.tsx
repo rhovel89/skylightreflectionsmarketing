@@ -35,11 +35,12 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
     s.from('business_visibility_retention_reviews').select('*').eq('tenant_id',TENANT_ID).eq('client_id',client.id).maybeSingle(),
     s.from('business_visibility_retention_events').select('*').eq('tenant_id',TENANT_ID).eq('client_id',client.id).order('created_at',{ascending:false}).limit(250),
   ])
-  const errors=[snapshotsQ,executionsQ,scheduleQ,projectsQ,invoicesQ,recurringQ,reportsQ,healthHistoryQ,reviewQ,eventsQ].filter((q:any)=>q.error)
+  const errors:any[]=[snapshotsQ.error,executionsQ.error,scheduleQ.error,projectsQ.error,invoicesQ.error,recurringQ.error,reportsQ.error,healthHistoryQ.error,reviewQ.error,eventsQ.error].filter(Boolean)
   const projects=(projectsQ.data||[]) as Row[],invoices=(invoicesQ.data||[]) as Row[],projectIds=projects.map(r=>String(r.id)),invoiceIds=invoices.map(r=>String(r.id))
   const tasksQ=projectIds.length?await s.from('skylight_project_tasks').select('*').in('project_id',projectIds).order('due_date',{ascending:true}).limit(1500):{data:[] as Row[],error:null}
   const paymentsQ=invoiceIds.length?await s.from('skylight_invoice_payments').select('*').in('invoice_id',invoiceIds).order('paid_at',{ascending:false}).limit(1500):{data:[] as Row[],error:null}
-  if(tasksQ.error||paymentsQ.error)errors.push(tasksQ.error||paymentsQ.error)
+  if(tasksQ.error)errors.push(tasksQ.error)
+  if(paymentsQ.error)errors.push(paymentsQ.error)
   const health=buildVisibilityClientHealth({client,business:businessQ.data as Row,visibilitySnapshots:(snapshotsQ.data||[]) as Row[],executions:(executionsQ.data||[]) as Row[],reportSchedule:(scheduleQ.data||null) as Row|null,projects,projectTasks:(tasksQ.data||[]) as Row[],invoices,payments:(paymentsQ.data||[]) as Row[],recurringServices:(recurringQ.data||[]) as Row[],finalizedReports:(reportsQ.data||[]) as Row[]})
 
   return <div className="container" style={{padding:'24px 0 48px'}}>{nav}<div style={{marginBottom:14}}><Link className="btn btn-light" href="/admin/skylight-operations/visibility-retention">← All Visibility Clients</Link></div>{errors.length?<div className="notice warn" style={{marginBottom:14}}>Some supporting client records could not be loaded. 4.5 keeps missing data neutral and does not replace missing evidence with zero, inferred churn risk or invented ROI.</div>:null}<BusinessVisibilityClientHealthPanel business={{id:String(businessQ.data.id),name:String(businessQ.data.name)}} client={client} currentHealth={health} healthSnapshots={(healthHistoryQ.data||[]) as Row[]} review={(reviewQ.data||null) as Row|null} retentionEvents={(eventsQ.data||[]) as Row[]} currentUserId={String(claims.sub)}/></div>

@@ -76,7 +76,7 @@ export async function POST(req:Request){
       if(existing.error)throw existing.error
       const assigned=body.assign_to_me===true?userId:body.assign_to_me===false?null:(existing.data?.assigned_user_id||null),nextReview=body.next_review_date?day(body.next_review_date):null
       if(body.next_review_date&&!nextReview)throw new Error('Next review date must use YYYY-MM-DD.')
-      const payload={business_id:businessId,health_snapshot_id:healthSnapshotId||existing.data?.health_snapshot_id||null,review_status:reviewStatus,renewal_readiness:renewalReadiness,assigned_user_id:assigned,next_review_date:nextReview,notes:text(body.notes,6000)||null,updated_by:userId,updated_at:new Date().toISOString()}
+      const payload={health_snapshot_id:healthSnapshotId||existing.data?.health_snapshot_id||null,review_status:reviewStatus,renewal_readiness:renewalReadiness,assigned_user_id:assigned,next_review_date:nextReview,notes:text(body.notes,6000)||null,updated_by:userId,updated_at:new Date().toISOString()}
       let review:Row
       if(existing.data){const q=await s.from('business_visibility_retention_reviews').update(payload).eq('tenant_id',TENANT_ID).eq('id',existing.data.id).select('*').single();if(q.error)throw q.error;review=q.data as Row}
       else{const q=await s.from('business_visibility_retention_reviews').insert({tenant_id:TENANT_ID,business_id:businessId,client_id:clientId,...payload,created_by:userId}).select('*').single();if(q.error)throw q.error;review=q.data as Row}
