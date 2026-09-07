@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from '@/lib/auth'
@@ -37,20 +36,13 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
   const clientIds=[...new Set(clients.map(c=>String(c.id)).filter(Boolean))]
   const projectsQ=clientIds.length?await s.from('skylight_projects').select('id,client_id,project_number,name,status,due_date,updated_at').eq('tenant_id',TENANT_ID).in('client_id',clientIds).neq('status','cancelled').order('updated_at',{ascending:false}).limit(200):{data:[] as Row[],error:null}
   if(projectsQ.error)errors.push(projectsQ.error)
+  const business=businessQ.data as Row
 
-  return <div className="container" style={{padding:'24px 0 48px'}}>
-    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:16}}>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}`}>← Business Workspace</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility`}>Google & SEO Visibility 4.1</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/monitoring`}>Monitoring & Competitors 4.0</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/google`}>Google-Owned Data 4.2</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/reporting`}>Opportunity & Reporting 4.3</Link>
-      <span className="btn btn-primary" aria-current="page">Execution & Outcomes 4.4</span>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/client-health`}>Client Results & Retention 4.5</Link>
-    </div>
-    {errors.length?<div className="notice warn" style={{marginBottom:14}}>Some execution/supporting records could not be loaded completely. 4.4 will not substitute missing measurements or infer an outcome from incomplete data.</div>:null}
+  return <div className="admin-visibility-page">
+    <div className="admin-page-head"><div><div className="kpi">Business Visibility Intelligence 4.4</div><h1>{String(business.name)} · Execution & Outcomes</h1><p className="muted">Turn accepted recommendations into accountable work, preserve the before snapshot, and remeasure later. Completing the work never automatically claims an SEO improvement.</p></div><div className="admin-head-badge-stack"><span className="badge verified">Remeasurement Required</span><span className="badge neutral">No Causality Claim</span></div></div>
+    {errors.length?<div className="notice warn">Some execution/supporting records could not be loaded completely. 4.4 will not substitute missing measurements or infer an outcome from incomplete data.</div>:null}
     <BusinessVisibilityExecutionPanel
-      business={{id:String(businessQ.data.id),name:String(businessQ.data.name)}}
+      business={{id:String(business.id),name:String(business.name)}}
       currentUserId={String(claims.sub)}
       recommendations={(recommendationsQ.data||[]) as Row[]}
       executions={(executionsQ.data||[]) as Row[]}

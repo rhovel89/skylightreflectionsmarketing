@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { TENANT_ID } from '@/lib/constants'
@@ -20,19 +19,12 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
     s.from('business_visibility_google_import_batches').select('*').eq('tenant_id',TENANT_ID).eq('business_id',id).order('created_at',{ascending:false}).limit(50),
   ])
   const errors=[gscQ.error,gbpQ.error,keywordsQ.error,connectionsQ.error,importsQ.error].filter(Boolean)
-  return <div className="container" style={{padding:'24px 0 48px'}}>
-    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:16}}>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}`}>← Business Workspace</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility`}>Google & SEO Visibility 4.1</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/monitoring`}>Monitoring & Competitors 4.0</Link>
-      <span className="btn btn-primary" aria-current="page">Google-Owned Data 4.2</span>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/reporting`}>Opportunity & Reporting 4.3</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/execution`}>Execution & Outcomes 4.4</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/client-health`}>Client Results & Retention 4.5</Link>
-    </div>
-    {errors.length?<div className="notice warn" style={{marginBottom:14}}>Some Google-owned metrics could not be loaded. Missing values are shown as “Not measured” rather than zero.</div>:null}
+  const business=businessQ.data as Row
+  return <div className="admin-visibility-page">
+    <div className="admin-page-head"><div><div className="kpi">Business Visibility Intelligence 4.2</div><h1>{String(business.name)} · Google-Owned Data</h1><p className="muted">Use authorized Search Console and Google Business Profile data to understand clicks, impressions, CTR, average position, profile actions and search terms. CSV import remains available when API credentials are not configured.</p></div><div className="admin-head-badge-stack"><span className="badge verified">First-Party Data</span><span className="badge neutral">Import or API</span></div></div>
+    {errors.length?<div className="notice warn">Some Google-owned metrics could not be loaded. Missing values are shown as “Not measured” rather than zero.</div>:null}
     <BusinessVisibilityGooglePanel
-      business={{id:String(businessQ.data.id),name:String(businessQ.data.name),website:businessQ.data.website||null}}
+      business={{id:String(business.id),name:String(business.name),website:business.website||null}}
       gscMetrics={(gscQ.data||[]) as Row[]}
       gbpMetrics={(gbpQ.data||[]) as Row[]}
       gbpKeywords={(keywordsQ.data||[]) as Row[]}

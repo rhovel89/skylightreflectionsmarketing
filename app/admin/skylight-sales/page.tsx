@@ -32,11 +32,20 @@ export default async function Page() {
   const memberByGrowthId = new Map(members.filter((row) => row.growth_opportunity_id).map((row) => [String(row.growth_opportunity_id), row]))
   const recruitmentRows = recruitment.map((row) => ({...row,campaign_member: memberByGrowthId.get(String(row.id)) ?? null}))
   const sourceErrors = [campaignsResult.error,opportunitiesResult.error,membersResult.error,recruitmentResult.error,activationResult.error].filter(Boolean)
+  const stageCount=(stage:string)=>opportunities.filter(row=>String(row.stage||'')===stage).length
+  const contactReady=stageCount('contact_ready')
+  const researchNeeded=stageCount('research')
+  const qualified=opportunities.filter(row=>['qualified','proposal'].includes(String(row.stage||''))).length
 
   return <>
-    <div className="admin-page-head"><div><div className="kpi">Skylight Reflections Marketing · Private Sales Engine</div><h1>Sales Command Center 3.8</h1><p className="muted">Research, prioritize and manage Skylight prospects while Acquisition Engine 3.8 measures readiness and the eventual path from real first-touch outreach to collected revenue. Contact Ready still requires sourced owner/decision-maker provenance; sales intelligence never changes public organic ranking, verification or Sponsored placement.</p></div><div className="admin-row-actions"><Link className="btn btn-primary" href="/admin/skylight-sales/acquisition">Open Acquisition Engine 3.8</Link><Link className="btn btn-light" href="/admin/skylight-sales/daily">Daily Command 3.7</Link><Link className="btn btn-light" href="/admin/acquisition-research">Prospect Research 3.3</Link><span className="badge verified">Human-Controlled</span></div></div>
+    <div className="admin-page-head"><div><div className="kpi">Skylight Reflections Marketing · Private Sales Engine</div><h1>Sales Command Center 3.8</h1><p className="muted">Use this page for the big picture. The workspace bar and Owner Guide now keep daily work, research, inbox, outreach, acquisition and conversions in one clear flow.</p></div><span className="badge verified">Human-Controlled</span></div>
     {sourceErrors.length ? <div className="notice warn"><strong>Some sales intelligence is temporarily incomplete.</strong> Refresh after the underlying data source is available.</div> : null}
-    <div className="notice"><strong>Recommended workflow:</strong> use Acquisition Engine 3.8 to see where the real funnel is constrained and which segments have enough evidence to compare; use Daily Command 3.7 for today’s work; use Research 3.3 to expand Contact Ready inventory; and use Outreach 3.4 for human-reviewed drafts/sends. Conversion “winners,” CAC and ROAS remain unavailable until real samples support them.</div>
+    <div className="admin-focus-strip" aria-label="Sales owner snapshot">
+      <Link className={`admin-focus-card ${contactReady ? 'good' : ''}`} href="/admin/skylight-sales/daily"><span>Contact Ready</span><strong>{contactReady}</strong><small>Real opportunities ready for the next human-controlled action.</small></Link>
+      <Link className={`admin-focus-card ${researchNeeded ? 'attention' : ''}`} href="/admin/acquisition-research"><span>Needs Research</span><strong>{researchNeeded}</strong><small>Prospects that still need stronger contact or source evidence.</small></Link>
+      <Link className="admin-focus-card" href="/admin/skylight-sales/conversions"><span>Qualified / Proposal</span><strong>{qualified}</strong><small>Opportunities far enough along to watch conversion progress.</small></Link>
+      <Link className="admin-focus-card" href="/admin/skylight-sales/acquisition"><span>Campaigns</span><strong>{campaignRows.length}</strong><small>Configured acquisition campaigns and their measured funnel activity.</small></Link>
+    </div>
     <SkylightSalesWorkspace opportunities={opportunities} campaigns={campaignRows} recruitmentRows={recruitmentRows} activationRows={activations}/>
   </>
 }

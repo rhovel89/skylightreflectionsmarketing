@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from '@/lib/auth'
@@ -22,20 +21,13 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
     s.from('business_prospects').select('id').eq('tenant_id',TENANT_ID).eq('business_id',id).order('updated_at',{ascending:false}).limit(1).maybeSingle(),
   ])
   const errors=[snapshotsQ.error,recommendationsQ.error,reportsQ.error,evidenceQ.error,prospectQ.error].filter(Boolean)
+  const business=businessQ.data as Row
 
-  return <div className="container" style={{padding:'24px 0 48px'}}>
-    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:16}}>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}`}>← Business Workspace</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility`}>Google & SEO Visibility 4.1</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/monitoring`}>Monitoring & Competitors 4.0</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/google`}>Google-Owned Data 4.2</Link>
-      <span className="btn btn-primary" aria-current="page">Opportunity & Reporting 4.3</span>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/execution`}>Execution & Outcomes 4.4</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/client-health`}>Client Results & Retention 4.5</Link>
-    </div>
-    {errors.length?<div className="notice warn" style={{marginBottom:14}}>Some reporting records could not be loaded. Missing measurements are never converted to zero or treated as completed work.</div>:null}
+  return <div className="admin-visibility-page">
+    <div className="admin-page-head"><div><div className="kpi">Business Visibility Intelligence 4.3</div><h1>{String(business.name)} · Opportunity & Reporting</h1><p className="muted">Turn measured visibility gaps into transparent recommendations and snapshot-stable prospect/client reports. Missing evidence is excluded rather than scored as zero, and Sales evidence still requires explicit approval.</p></div><div className="admin-head-badge-stack"><span className="badge verified">Snapshot-Stable</span><span className="badge neutral">Human Approval</span></div></div>
+    {errors.length?<div className="notice warn">Some reporting records could not be loaded. Missing measurements are never converted to zero or treated as completed work.</div>:null}
     <BusinessVisibilityReportingPanel
-      business={{id:String(businessQ.data.id),name:String(businessQ.data.name)}}
+      business={{id:String(business.id),name:String(business.name)}}
       snapshots={(snapshotsQ.data||[]) as Row[]}
       recommendations={(recommendationsQ.data||[]) as Row[]}
       reports={(reportsQ.data||[]) as Row[]}

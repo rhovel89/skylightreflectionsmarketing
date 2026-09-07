@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { TENANT_ID } from '@/lib/constants'
@@ -34,16 +33,8 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
   const categoryNames=[...new Set([...categories.map(r=>String(r.name||'').trim()),String(prospect?.category||'').trim()].filter(Boolean))]
   const suggested=[...new Set(categoryNames.flatMap(name=>[name,`${name} near me`,location!=='Central Illinois'?`${name} ${location}`:'']).filter(Boolean))].slice(0,24)
 
-  return <div className="container" style={{padding:'24px 0 48px'}}>
-    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:16}}>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}`}>← Business Workspace</Link>
-      <span className="btn btn-primary" aria-current="page">Google & SEO Visibility 4.1</span>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/monitoring`}>Monitoring & Competitors 4.0</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/google`}>Google-Owned Data 4.2</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/reporting`}>Opportunity & Reporting 4.3</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/execution`}>Execution & Outcomes 4.4</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/client-health`}>Client Results & Retention 4.5</Link>
-    </div>
+  return <div className="admin-visibility-page">
+    <div className="admin-page-head"><div><div className="kpi">Business Visibility Intelligence 4.1</div><h1>{String(business.name)} · Google & SEO Visibility</h1><p className="muted">Start with the website audit, then add legitimate ranking measurements. Missing rank data stays “Not measured,” and none of this intelligence changes the public Local Pros organic order.</p></div><div className="admin-head-badge-stack"><span className="badge verified">Source-Backed</span><span className="badge neutral">BrightLocal Optional</span></div></div>
     {errors.length?<div className="notice warn">Some visibility records could not be loaded completely. Missing values are shown as “Not measured” rather than zero.</div>:null}
     <BusinessVisibilityFreeModePanel business={{id:String(business.id),name:String(business.name),website:business.website||null}} audits={(auditsResult.data||[]) as Row[]} rankings={(rankingsResult.data||[]) as Row[]} importBatches={(importsResult.data||[]) as Row[]} defaultLocation={location}/>
     <BusinessVisibilityWorkbench business={{id:String(business.id),name:String(business.name),website:business.website||null,rating:business.rating??null,review_count:business.review_count??null,source_name:business.source_name||null,source_url:business.source_url||null,source_checked_at:business.source_checked_at||null}} audits={(auditsResult.data||[]) as Row[]} targets={(targetsResult.data||[]) as Row[]} rankings={(rankingsResult.data||[]) as Row[]} suggestedKeywords={suggested} defaultLocation={location} brightLocalConfigured={Boolean(process.env.BRIGHTLOCAL_API_KEY)} pageSpeedConfigured={true}/>

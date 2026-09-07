@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from '@/lib/auth'
@@ -48,16 +47,8 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
   const results=[prospectResult,policyResult,auditsResult,targetsResult,rankingsResult,competitorsResult,competitorAuditsResult,competitorRankingsResult,alertsResult,evidenceResult]
   const errors=results.map((r:any)=>r.error).filter(Boolean)
 
-  return <div className="container" style={{padding:'24px 0 48px'}}>
-    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:16}}>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}`}>← Business Workspace</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility`}>Google & SEO Visibility 4.1</Link>
-      <span className="btn btn-primary" aria-current="page">Monitoring & Competitors 4.0</span>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/google`}>Google-Owned Data 4.2</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/reporting`}>Opportunity & Reporting 4.3</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/execution`}>Execution & Outcomes 4.4</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/client-health`}>Client Results & Retention 4.5</Link>
-    </div>
+  return <div className="admin-visibility-page">
+    <div className="admin-page-head"><div><div className="kpi">Business Visibility Intelligence 4.0</div><h1>{String(business.name)} · Monitoring & Competitors</h1><p className="muted">Watch website health, source-backed rankings, competitor movement and alerts over time. Competitor data stays separate from the business record, and missing measurements are never converted to zero.</p></div><div className="admin-head-badge-stack"><span className="badge verified">Source-Backed</span><span className="badge neutral">Human Reviewed</span></div></div>
     {errors.length?<div className="notice warn">Some monitoring records could not be loaded. Missing measurements are shown as “Not measured,” never as zero.</div>:null}
     <BusinessVisibilityMonitoringWorkbench
       business={{id:String(business.id),name:String(business.name),website:business.website||null,rating:business.rating??null,review_count:business.review_count??null}}

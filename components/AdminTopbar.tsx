@@ -3,12 +3,16 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { findAdminLocation } from '@/lib/admin-navigation'
+import { getAdminWorkspace, getAdminWorkspaceActiveHref } from '@/lib/admin-workflows'
 
 export function AdminTopbar() {
   const pathname = usePathname()
   const location = findAdminLocation(pathname)
-  const currentLabel = pathname === '/admin' ? 'Owner Control Center' : location?.item.label ?? 'Admin Workspace'
-  const groupLabel = pathname === '/admin' ? 'Home' : location?.group.label ?? 'Advanced Tool'
+  const workspace = getAdminWorkspace(pathname)
+  const activeHref = getAdminWorkspaceActiveHref(pathname, workspace)
+  const activeWorkspaceItem = workspace?.items.find((item) => item.href === activeHref)
+  const currentLabel = pathname === '/admin' ? 'Owner Control Center' : activeWorkspaceItem?.label ?? location?.item.label ?? 'Admin Workspace'
+  const groupLabel = pathname === '/admin' ? 'Home' : workspace?.label ?? location?.group.label ?? 'Advanced Tool'
 
   return (
     <div className="admin-context-bar">
