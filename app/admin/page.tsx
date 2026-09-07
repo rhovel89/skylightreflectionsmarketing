@@ -2,42 +2,77 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { TENANT_ID } from '@/lib/constants'
 
-const workspaceGroups = [
+const journeys = [
   {
-    title: 'Directory & Customers',
-    description: 'Manage the public directory and the business-owner workflows around it.',
-    items: [
-      ['/admin/businesses', 'Business Listings', 'Edit public profiles, status, verification and source information.'],
-      ['/admin/leads', 'Skylight Lead Marketplace', 'Review, qualify, price and offer eligible home-service leads.'],
-      ['/admin/claims', 'Claims Queue', 'Review business-owner claims before granting access.'],
+    eyebrow: 'Directory',
+    title: 'Manage businesses',
+    description: 'Edit listings, review submissions, claims, verification and business media.',
+    href: '/admin/businesses',
+    cta: 'Open Businesses',
+    links: [
+      ['/admin/submissions', 'Approval Queue'],
+      ['/admin/claims', 'Ownership Claims'],
+      ['/admin/business-media', 'Media & Menus'],
     ],
   },
   {
-    title: 'Markets & Content',
-    description: 'Control where the directory operates and what customers see publicly.',
-    items: [
-      ['/admin/locations', 'Cities & Markets', 'Add or edit cities, towns, counties and market hierarchy.'],
-      ['/admin/categories', 'Categories', 'Manage discovery and SEO categories across all verticals.'],
-      ['/admin/guides', 'Local Guides', 'Create, edit and publish practical local content.'],
+    eyebrow: 'Skylight Sales',
+    title: 'Find & win clients',
+    description: 'Research prospects, work opportunities, review outreach and move qualified businesses forward.',
+    href: '/admin/skylight-sales',
+    cta: 'Open Sales',
+    links: [
+      ['/admin/acquisition-research', 'Research'],
+      ['/admin/prospects', 'CRM'],
+      ['/admin/outreach', 'Outreach'],
     ],
   },
   {
-    title: 'Revenue & Growth',
-    description: 'Operate monetization, sales and customer acquisition from one area.',
-    items: [
-      ['/admin/revenue-stack', 'Revenue Stack', 'See subscriptions, Sponsored ads, paid leads and marketing services.'],
-      ['/admin/pricing', 'Pricing & Plans', 'Edit plan pricing and customer-facing package details.'],
-      ['/admin/revenue', 'Revenue Operations', 'Track plans, billing health, lead revenue and sponsorships.'],
-      ['/admin/prospects', 'Skylight Sales CRM', 'Filter and work prospects by market, stage and priority.'],
-      ['/admin/marketing', 'Marketing Control Center', 'Create, schedule and export branded public marketing.'],
+    eyebrow: 'Client Delivery',
+    title: 'Do client work',
+    description: 'Manage proposals, projects, intake, visibility work and service delivery from one path.',
+    href: '/admin/skylight-operations',
+    cta: 'Open Client Work',
+    links: [
+      ['/admin/skylight-intake', 'Client Intake'],
+      ['/admin/skylight-invoices', 'Invoices'],
+      ['/admin/skylight-services', 'Services'],
     ],
   },
   {
-    title: 'Site Management',
-    description: 'Manage the brand, public site structure and customer-facing navigation.',
-    items: [
-      ['/admin/site-builder', 'Brand & Site Content', 'Manage Skylight branding, public messaging and site settings.'],
-      ['/admin/navigation', 'Navigation', 'Edit public menus and footer navigation without code changes.'],
+    eyebrow: 'Revenue',
+    title: 'Manage money & pricing',
+    description: 'See monetization, edit pricing, manage invoices, lead buyers, subscriptions and Sponsored placement.',
+    href: '/admin/revenue-stack',
+    cta: 'Open Money',
+    links: [
+      ['/admin/pricing', 'Plans & Pricing'],
+      ['/admin/revenue', 'Revenue Ops'],
+      ['/admin/lead-buyers', 'Lead Buyers'],
+    ],
+  },
+  {
+    eyebrow: 'Organic Growth',
+    title: 'Grow traffic & coverage',
+    description: 'Work SEO, markets, categories, content, inventory expansion and search-demand opportunities.',
+    href: '/admin/seo',
+    cta: 'Open Growth & SEO',
+    links: [
+      ['/admin/locations', 'Markets'],
+      ['/admin/content-intelligence', 'Content Intelligence'],
+      ['/admin/inventory-expansion', 'Inventory Expansion'],
+    ],
+  },
+  {
+    eyebrow: 'Public Site',
+    title: 'Manage the website',
+    description: 'Edit brand content, navigation, Local Pros replication and launch readiness without touching code.',
+    href: '/admin/site-builder',
+    cta: 'Open Website',
+    links: [
+      ['/admin/navigation', 'Navigation'],
+      ['/admin/network-expansion', 'Replication'],
+      ['/admin/launch-readiness', 'Launch Readiness'],
     ],
   },
 ] as const
@@ -54,74 +89,95 @@ export default async function Page() {
     s.from('sponsorships').select('*', { count: 'exact', head: true }).eq('tenant_id', TENANT_ID).eq('placement', 'homepage_featured').eq('active', true).or(`starts_on.is.null,starts_on.lte.${today}`).or(`ends_on.is.null,ends_on.gte.${today}`),
   ])
 
+  const attention = [
+    { href: '/admin/claims', label: 'Pending claims', count: results[1].count ?? 0, action: 'Review claims' },
+    { href: '/admin/leads', label: 'New leads', count: results[2].count ?? 0, action: 'Open leads' },
+    { href: '/admin/edit-requests', label: 'Pending edits', count: results[3].count ?? 0, action: 'Review edits' },
+  ]
+
   return <>
-    <div className="admin-page-head">
+    <section className="admin-owner-hero">
       <div>
-        <div className="kpi">Private Skylight Operations</div>
-        <h1>Admin Workspace</h1>
-        <p className="muted">Run Central Illinois Local Pros from one protected workspace. Use My Work Today for personal assignments, Notifications for new signals, or the navigation search to reach any specialized tool.</p>
+        <div className="kpi">Owner Control Center</div>
+        <h1>What do you want to work on?</h1>
+        <p>Start with the job you are trying to accomplish. The system will take you into the deeper workflow only when you need it.</p>
       </div>
-      <span className="badge neutral">V15.5</span>
-    </div>
-
-    <div className="stat-grid admin-dashboard-stats">
-      <Link className="stat admin-stat-link" href="/admin/businesses">Published Businesses<strong>{results[0].count ?? 0}</strong><span>View listings →</span></Link>
-      <Link className="stat admin-stat-link" href="/admin/claims">Pending Claims<strong>{results[1].count ?? 0}</strong><span>Review claims →</span></Link>
-      <Link className="stat admin-stat-link" href="/admin/leads">New Leads<strong>{results[2].count ?? 0}</strong><span>Open leads →</span></Link>
-      <Link className="stat admin-stat-link" href="/admin/edit-requests">Pending Edits<strong>{results[3].count ?? 0}</strong><span>Review edits →</span></Link>
-      <Link className="stat admin-stat-link" href="/admin/subscriptions">Active Subscriptions<strong>{results[4].count ?? 0}</strong><span>Manage plans →</span></Link>
-      <Link className="stat admin-stat-link" href="/admin/sponsorships">Homepage Featured<strong>{results[5].count ?? 0}</strong><span>Manage placements →</span></Link>
-    </div>
-
-    <div className="admin-dashboard-priority">
-      <div className="admin-card admin-dashboard-focus">
-        <div className="kpi">Fastest Path</div>
-        <h2>Start with what needs attention</h2>
-        <p className="muted">Use the personal work queue and notification inbox first, then move into the specialized workflow only when an item needs action.</p>
-        <div className="admin-focus-links">
-          <Link href="/admin/action-center">My Work Today</Link>
-          <Link href="/admin/notifications">Notifications</Link>
-          <Link href="/admin/submissions">Approval Queue</Link>
-          <Link href="/admin/data-quality?state=active&type=seo_inventory&priority=high">SEO Quick Wins</Link>
-          <Link href="/admin/operations-command-center">Growth Operations</Link>
-          <Link href="/admin/acquisition-research">Acquisition Research</Link>
-        </div>
+      <div className="admin-owner-mode">
+        <strong>Built for you right now</strong>
+        <span>No staff required. Team and role tools are still preserved under <b>All Tools</b> for later.</span>
       </div>
-      <div className="admin-card admin-dashboard-system">
-        <div className="kpi">Protected System</div>
-        <h2>Private by design</h2>
-        <p className="muted">Saved views, notification state, SEO diagnostics, CRM scores, outreach data, private lead data, audit information and deployment operations remain staff-only and noindex.</p>
-      </div>
-    </div>
+    </section>
 
-    <div className="admin-workspace-heading">
+    <section className="admin-start-strip">
       <div>
-        <div className="kpi">Workspaces</div>
-        <h2>Manage by job, not by menu size</h2>
+        <span className="admin-start-number">1</span>
+        <span><strong>Check priorities</strong><small>See what actually needs attention first.</small></span>
       </div>
-      <p className="muted">Every shortcut that was on this dashboard is still here, now grouped by the work you are trying to accomplish.</p>
+      <Link href="/admin/action-center">Open Priorities →</Link>
+      <Link href="/admin/notifications">Notifications →</Link>
+    </section>
+
+    <div className="admin-section-title">
+      <div>
+        <div className="kpi">Start Here</div>
+        <h2>Choose a workflow</h2>
+      </div>
+      <p>These six paths cover the everyday work. Specialized tools stay searchable in the sidebar.</p>
     </div>
 
-    <div className="admin-workspace-grid">
-      {workspaceGroups.map((group) => (
-        <section className="admin-workspace-card" key={group.title}>
-          <div className="admin-workspace-card-head">
-            <h3>{group.title}</h3>
-            <p>{group.description}</p>
+    <div className="admin-journey-grid">
+      {journeys.map((journey) => (
+        <section className="admin-journey-card" key={journey.title}>
+          <div className="admin-journey-head">
+            <span>{journey.eyebrow}</span>
+            <h3>{journey.title}</h3>
+            <p>{journey.description}</p>
           </div>
-          <div className="admin-workspace-links">
-            {group.items.map(([href, title, desc]) => (
-              <Link href={href} key={href}>
-                <span>
-                  <strong>{title}</strong>
-                  <small>{desc}</small>
-                </span>
-                <b aria-hidden="true">›</b>
-              </Link>
-            ))}
+          <Link className="admin-journey-primary" href={journey.href}>{journey.cta} <b aria-hidden="true">→</b></Link>
+          <div className="admin-journey-links">
+            {journey.links.map(([href, label]) => <Link href={href} key={href}>{label}</Link>)}
           </div>
         </section>
       ))}
+    </div>
+
+    <div className="admin-section-title admin-section-title-spaced">
+      <div>
+        <div className="kpi">Needs Attention</div>
+        <h2>Actionable right now</h2>
+      </div>
+      <p>These are live counts from the system, not another menu.</p>
+    </div>
+
+    <div className="admin-attention-grid">
+      {attention.map((item) => (
+        <Link className={`admin-attention-card ${item.count > 0 ? 'has-work' : ''}`} href={item.href} key={item.href}>
+          <span>{item.label}</span>
+          <strong>{item.count}</strong>
+          <small>{item.count > 0 ? item.action : 'Nothing waiting'}</small>
+        </Link>
+      ))}
+    </div>
+
+    <div className="admin-section-title admin-section-title-spaced">
+      <div>
+        <div className="kpi">At A Glance</div>
+        <h2>Business snapshot</h2>
+      </div>
+    </div>
+
+    <div className="admin-dashboard-snapshot">
+      <Link href="/admin/businesses"><span>Published businesses</span><strong>{results[0].count ?? 0}</strong></Link>
+      <Link href="/admin/subscriptions"><span>Active subscriptions</span><strong>{results[4].count ?? 0}</strong></Link>
+      <Link href="/admin/sponsorships"><span>Homepage featured</span><strong>{results[5].count ?? 0}</strong></Link>
+    </div>
+
+    <div className="admin-all-tools-note">
+      <div>
+        <strong>Nothing was removed.</strong>
+        <span>Every advanced option, report, queue and management screen is still available from <b>All Tools</b> or the admin search.</span>
+      </div>
+      <Link href="/admin/launch-readiness">System & launch tools →</Link>
     </div>
   </>
 }

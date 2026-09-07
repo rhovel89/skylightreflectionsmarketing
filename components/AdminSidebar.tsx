@@ -1,23 +1,186 @@
 'use client'
 
-import{usePathname}from'next/navigation'
-import{useEffect,useMemo,useState}from'react'
-import{DEFAULT_BRAND}from'@/lib/constants'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { DEFAULT_BRAND } from '@/lib/constants'
+import {
+  ADMIN_NAV_GROUPS,
+  ADMIN_PRIMARY_NAV,
+  ADMIN_TOOL_COUNT,
+  adminPathOnly,
+  isAdminHrefActive,
+} from '@/lib/admin-navigation'
 
-type NavItem={href:string;label:string;keywords?:string}
-type NavGroup={id:string;label:string;description:string;items:NavItem[]}
-const shortcuts:NavItem[]=[{href:'/admin',label:'Overview'},{href:'/admin/action-center',label:'Today'},{href:'/admin/businesses',label:'Listings'},{href:'/admin/local-commerce',label:'Commerce'},{href:'/admin/lead-buyers',label:'Buyers'},{href:'/admin/skylight-sales',label:'Skylight'},{href:'/admin/operations-command-center',label:'Growth'}]
-const groups:NavGroup[]=[
- {id:'directory',label:'Directory Operations',description:'Listings, approvals, claims and customer-facing business data',items:[
-  {href:'/admin/businesses',label:'Businesses',keywords:'listings profiles management workspace'},{href:'/admin/business-media',label:'Business Media & Menus',keywords:'photos menu media'},{href:'/admin/submissions',label:'Profile Approval Queue',keywords:'submissions onboarding moderation profile approval'},{href:'/admin/claims',label:'Ownership Claims',keywords:'owners ownership evidence claims'},{href:'/admin/verification',label:'Verification & Publication',keywords:'verify publish final gate trust'},{href:'/admin/edit-requests',label:'Business Edit Requests',keywords:'changes updates'},{href:'/admin/media',label:'Owner Media Review',keywords:'photos uploads moderation'},{href:'/admin/reports',label:'Listing Reports',keywords:'reports issues'}]},
- {id:'seo-content',label:'SEO & Content',description:'Markets, categories, content quality and organic eligibility',items:[
-  {href:'/admin/locations',label:'Markets & Locations',keywords:'cities towns counties'},{href:'/admin/categories',label:'Category Manager',keywords:'taxonomy verticals'},{href:'/admin/branches',label:'Locations & Branches',keywords:'offices storefronts'},{href:'/admin/coverage',label:'Page Coverage Manager',keywords:'markets categories pages'},{href:'/admin/content-blocks',label:'Site Content Blocks',keywords:'copy content'},{href:'/admin/guides',label:'Content Hub / Guides',keywords:'articles local guides'},{href:'/admin/seo',label:'SEO Command Center',keywords:'organic indexing search'},{href:'/admin/data-quality',label:'Data Quality & Reverification',keywords:'provenance source review'},{href:'/admin/data-quality?state=active&type=seo_inventory&priority=high',label:'SEO 2-Provider Quick Wins',keywords:'inventory eligibility gap'},{href:'/admin/data-quality?state=resolved&type=seo_inventory',label:'SEO Eligibility Wins',keywords:'resolved inventory eligibility'},{href:'/admin/content-intelligence',label:'Content & Market Intelligence',keywords:'insights opportunity'},{href:'/admin/inventory-expansion',label:'Inventory Expansion',keywords:'providers research listings'},{href:'/admin/search',label:'Search Intelligence',keywords:'queries demand zero results'}]},
- {id:'revenue',label:'Revenue & Monetization',description:'Leads, commerce, plans, sponsorships and revenue operations',items:[
-  {href:'/admin/skylight-operations',label:'Skylight Proposals & Projects',keywords:'proposals contracts agreements electronic acceptance projects tasks milestones recurring services retainers client portal custom services'},{href:'/admin/skylight-invoices',label:'Skylight Service Invoices',keywords:'marketing service invoices clients payments web design seo social branding graphic lead generation eddm direct mail'},{href:'/admin/skylight-services',label:'Skylight Services & Pricing',keywords:'service catalog custom pricing website seo social media gbp branding graphic design lead generation eddm direct mail'},{href:'/admin/skylight-intake',label:'Skylight Intake & Client Assets',keywords:'onboarding questions questionnaire client files uploads asset requirements project intake custom services'},{href:'/admin/skylight-eddm',label:'EDDM & Community Mailers',keywords:'eddm direct mail coop co-op mailer postcard route town city market slots smart coupon advertising'},{href:'/admin/local-commerce',label:'Local Commerce Control Center',keywords:'deals recommendations local faves q&a catalog portfolio referrals marketplace approvals'},{href:'/admin/leads',label:'Skylight Lead Marketplace',keywords:'leads marketplace admin review intro lead'},{href:'/admin/lead-buyers',label:'Lead Buyer Revenue & Agreements',keywords:'buyer conversion crm intro interested follow up sla agreement draft consent activation pay per lead funnel revenue intelligence'},{href:'/admin/lead-billing',label:'Active Lead Billing',keywords:'lead billing active agreements collections invoices'},{href:'/admin/revenue-intelligence',label:'Revenue Intelligence',keywords:'revenue metrics insights'},{href:'/admin/lead-notifications',label:'Lead Email & SMS Alerts',keywords:'notifications alerts'},{href:'/admin/pricing',label:'Pricing & Plans',keywords:'packages pricing'},{href:'/admin/revenue-stack',label:'Revenue Stack',keywords:'monetization overview'},{href:'/admin/revenue',label:'Revenue Operations',keywords:'billing revenue'},{href:'/admin/subscriptions',label:'Subscription Manager',keywords:'plans recurring'},{href:'/admin/plan-grants',label:'Complimentary Plan Access',keywords:'trial free pro featured admin grant complimentary access'},{href:'/admin/sponsorships',label:'Featured / Sponsored Placement',keywords:'ads featured sponsored'},{href:'/admin/routing',label:'Lead Routing',keywords:'assignment delivery'}]},
- {id:'growth',label:'Growth & Sales',description:'Acquisition research, outreach, CRM and marketing execution',items:[
-  {href:'/admin/skylight-sales',label:'Skylight Sales Command Center',keywords:'skylight services sales opportunities campaigns website seo social branding lead generation invoice prospect eddm direct mail'},{href:'/admin/action-center',label:'My Work Today',keywords:'action center priorities today tasks'},{href:'/admin/notifications',label:'Notification Center',keywords:'alerts unread notifications inbox'},{href:'/admin/operations-command-center',label:'Growth Operations Command Center',keywords:'operations priorities'},{href:'/admin/acquisition-research',label:'Acquisition Research Workbench',keywords:'owner contact provenance'},{href:'/admin/launch-growth',label:'Launch + Growth Command Center',keywords:'launch growth'},{href:'/admin/growth-opportunities',label:'Growth Opportunity Queue',keywords:'opportunities priorities commerce activation'},{href:'/admin/growth',label:'Acquisition Funnel',keywords:'sales funnel acquisition'},{href:'/admin/prospects',label:'Skylight Sales CRM',keywords:'prospects sales crm'},{href:'/admin/outreach',label:'Outreach Task Workbench',keywords:'tasks calls email'},{href:'/admin/outreach-templates',label:'Outreach Template Library',keywords:'email sms templates'},{href:'/admin/marketing-leads',label:'Skylight Leads',keywords:'marketing prospects leads'},{href:'/admin/marketing',label:'Marketing Control Center',keywords:'campaigns social marketing'},{href:'/admin/email-drips',label:'Email Drip Campaigns',keywords:'business owner lifecycle sponsored seo google marketing email nurture'},{href:'/admin/analytics',label:'Listing Analytics',keywords:'traffic performance analytics'}]},
- {id:'site-network',label:'Site & Network',description:'Brand, public navigation, site settings and directory replication',items:[{href:'/admin/site-builder',label:'Site Builder / Brand & Content',keywords:'brand settings public site'},{href:'/admin/navigation',label:'Navigation Editor',keywords:'menus footer links'},{href:'/admin/network-expansion',label:'Local Pros Replication Center',keywords:'network expansion cities directories'}]},
- {id:'system',label:'System & Administration',description:'Readiness, imports, staff access and audit history',items:[{href:'/admin/launch-readiness',label:'Launch Readiness',keywords:'health launch checks'},{href:'/admin/bulk-import',label:'Bulk Import',keywords:'csv import businesses'},{href:'/admin/team',label:'Team / Roles',keywords:'staff permissions users'},{href:'/admin/audit',label:'Audit Log',keywords:'history changes activity'}]},
-]
-const totalTools=groups.reduce((sum,g)=>sum+g.items.length,0),pathOnly=(href:string)=>href.split('?')[0]
-export function AdminSidebar(){const pathname=usePathname(),[query,setQuery]=useState(''),[unreadNotifications,setUnreadNotifications]=useState<number|null>(null),[openGroups,setOpenGroups]=useState<Record<string,boolean>>(()=>{const state:Record<string,boolean>={};for(const g of groups)state[g.id]=g.items.some(i=>{const p=pathOnly(i.href);return !i.href.includes('?')&&(pathname===p||pathname.startsWith(`${p}/`))});if(!Object.values(state).some(Boolean))state.directory=true;return state});useEffect(()=>{let active=true;const load=async()=>{const response=await fetch('/api/admin/notifications',{cache:'no-store'}).catch(()=>null);if(!response?.ok)return;const body=await response.json().catch(()=>({}));if(active&&Number.isFinite(Number(body.unreadCount)))setUnreadNotifications(Number(body.unreadCount))};void load();const timer=window.setInterval(load,60000);return()=>{active=false;window.clearInterval(timer)}},[pathname]);const normalized=query.trim().toLowerCase(),visible=useMemo(()=>normalized?groups.map(g=>({...g,items:g.items.filter(i=>`${i.label} ${i.keywords??''} ${g.label}`.toLowerCase().includes(normalized))})).filter(g=>g.items.length):groups,[normalized]),isActive=(href:string)=>{if(href.includes('?'))return false;const p=pathOnly(href);return p==='/admin'?pathname==='/admin':pathname===p||pathname.startsWith(`${p}/`)};return <aside className="admin-side"><div className="admin-side-inner"><div className="admin-brand-panel"><div className="admin-brand-mark" aria-hidden="true">CLP</div><div className="admin-brand-copy"><strong>{DEFAULT_BRAND.directory_name}</strong><span>Private Staff Console</span></div></div><div className="admin-shortcuts" aria-label="Admin quick access">{shortcuts.map(i=><a className={isActive(i.href)?'active':''} href={i.href} key={i.href}>{i.label}</a>)}</div><a className={`admin-notification-link ${isActive('/admin/notifications')?'active':''}`} href="/admin/notifications"><span><span aria-hidden="true">◉</span> Notifications</span><span className={`admin-notification-badge ${unreadNotifications===0?'zero':''}`}>{unreadNotifications===null?'…':unreadNotifications>99?'99+':unreadNotifications}</span></a><label className="admin-nav-search"><span className="admin-nav-search-icon" aria-hidden="true">⌕</span><input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder={`Find among ${totalTools} admin tools…`} aria-label="Search admin navigation"/>{query?<button type="button" onClick={()=>setQuery('')} aria-label="Clear navigation search">×</button>:null}</label><nav className="admin-nav" aria-label="Admin navigation">{visible.map(g=>{const expanded=normalized?true:Boolean(openGroups[g.id]);return <section className="admin-nav-group" key={g.id}><button type="button" className="admin-nav-group-toggle" onClick={()=>setOpenGroups(v=>({...v,[g.id]:!v[g.id]}))} aria-expanded={expanded} disabled={Boolean(normalized)}><span><strong>{g.label}</strong><small>{g.items.length} tools</small></span><span className={`admin-nav-chevron ${expanded?'open':''}`} aria-hidden="true">⌄</span></button>{expanded?<div className="admin-nav-items">{g.items.map(i=><a className={isActive(i.href)?'active':''} href={i.href} key={i.href}><span>{i.label}</span><span className="admin-nav-arrow" aria-hidden="true">›</span></a>)}</div>:null}</section>})}{!visible.length?<div className="admin-nav-empty"><strong>No matching tools</strong><span>Try a broader search term.</span></div>:null}</nav><div className="admin-side-footer"><div className="admin-side-footer-meta"><span>{totalTools} tools available</span><span>Powered by {DEFAULT_BRAND.parent_brand_name}</span></div><a className="admin-public-link" href="/">← View Public Site</a><form action="/auth/signout" method="post"><button className="admin-logout" type="submit">Log Out</button></form></div></div></aside>}
+export function AdminSidebar() {
+  const pathname = usePathname()
+  const [query, setQuery] = useState('')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [showAllTools, setShowAllTools] = useState(false)
+  const [unreadNotifications, setUnreadNotifications] = useState<number | null>(null)
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const state: Record<string, boolean> = {}
+    for (const group of ADMIN_NAV_GROUPS) {
+      state[group.id] = group.items.some((item) => isAdminHrefActive(pathname, item.href))
+    }
+    return state
+  })
+
+  useEffect(() => {
+    const currentIsPrimary = ADMIN_PRIMARY_NAV.some((item) => isAdminHrefActive(pathname, item.href))
+    if (!currentIsPrimary && pathname !== '/admin') setShowAllTools(true)
+    setMenuOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    let active = true
+    const load = async () => {
+      const response = await fetch('/api/admin/notifications', { cache: 'no-store' }).catch(() => null)
+      if (!response?.ok) return
+      const body = await response.json().catch(() => ({}))
+      if (active && Number.isFinite(Number(body.unreadCount))) setUnreadNotifications(Number(body.unreadCount))
+    }
+    void load()
+    const timer = window.setInterval(load, 60000)
+    return () => {
+      active = false
+      window.clearInterval(timer)
+    }
+  }, [pathname])
+
+  const normalized = query.trim().toLowerCase()
+  const visibleGroups = useMemo(() => {
+    if (!normalized) return ADMIN_NAV_GROUPS
+    return ADMIN_NAV_GROUPS.map((group) => ({
+      ...group,
+      items: group.items.filter((item) =>
+        `${item.label} ${item.keywords ?? ''} ${group.label}`.toLowerCase().includes(normalized),
+      ),
+    })).filter((group) => group.items.length)
+  }, [normalized])
+
+  const searching = normalized.length > 0
+
+  return (
+    <aside className={`admin-side ${menuOpen ? 'menu-open' : ''}`}>
+      <div className="admin-side-inner">
+        <div className="admin-brand-panel">
+          <Link className="admin-brand-link" href="/admin">
+            <div className="admin-brand-mark" aria-hidden="true">CLP</div>
+            <div className="admin-brand-copy">
+              <strong>{DEFAULT_BRAND.directory_name}</strong>
+              <span>Owner Console</span>
+            </div>
+          </Link>
+          <button
+            className="admin-mobile-menu-toggle"
+            type="button"
+            onClick={() => setMenuOpen((value) => !value)}
+            aria-expanded={menuOpen}
+            aria-label="Toggle admin navigation"
+          >
+            {menuOpen ? '×' : '☰'}
+          </button>
+        </div>
+
+        <div className="admin-side-content">
+          <div className="admin-nav-label">Main</div>
+          <nav className="admin-primary-nav" aria-label="Primary admin navigation">
+            {ADMIN_PRIMARY_NAV.map((item) => (
+              <Link className={isAdminHrefActive(pathname, item.href) ? 'active' : ''} href={item.href} key={item.href}>
+                <span className="admin-primary-icon" aria-hidden="true">{item.icon}</span>
+                <span className="admin-primary-copy">
+                  <strong>{item.label}</strong>
+                  <small>{item.hint}</small>
+                </span>
+                <span className="admin-primary-arrow" aria-hidden="true">›</span>
+              </Link>
+            ))}
+          </nav>
+
+          <Link className={`admin-notification-link ${isAdminHrefActive(pathname, '/admin/notifications') ? 'active' : ''}`} href="/admin/notifications">
+            <span><span aria-hidden="true">●</span> Notifications</span>
+            <span className={`admin-notification-badge ${unreadNotifications === 0 ? 'zero' : ''}`}>
+              {unreadNotifications === null ? '…' : unreadNotifications > 99 ? '99+' : unreadNotifications}
+            </span>
+          </Link>
+
+          <div className="admin-nav-label admin-nav-label-tools">Find anything</div>
+          <label className="admin-nav-search">
+            <span className="admin-nav-search-icon" aria-hidden="true">⌕</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onFocus={() => setShowAllTools(true)}
+              placeholder="Search admin tools…"
+              aria-label="Search admin tools"
+            />
+            {query ? <button type="button" onClick={() => setQuery('')} aria-label="Clear navigation search">×</button> : null}
+          </label>
+
+          <button className={`admin-all-tools-toggle ${showAllTools || searching ? 'open' : ''}`} type="button" onClick={() => setShowAllTools((value) => !value)}>
+            <span>
+              <strong>All Tools</strong>
+              <small>{ADMIN_TOOL_COUNT} options preserved</small>
+            </span>
+            <span aria-hidden="true">{showAllTools || searching ? '−' : '+'}</span>
+          </button>
+
+          {showAllTools || searching ? (
+            <nav className="admin-nav" aria-label="All admin tools">
+              {visibleGroups.map((group) => {
+                const expanded = searching || Boolean(openGroups[group.id])
+                return (
+                  <section className="admin-nav-group" key={group.id}>
+                    <button
+                      type="button"
+                      className="admin-nav-group-toggle"
+                      onClick={() => setOpenGroups((value) => ({ ...value, [group.id]: !value[group.id] }))}
+                      aria-expanded={expanded}
+                      disabled={searching}
+                    >
+                      <span>
+                        <strong>{group.label}</strong>
+                        <small>{group.items.length}</small>
+                      </span>
+                      <span className={`admin-nav-chevron ${expanded ? 'open' : ''}`} aria-hidden="true">⌄</span>
+                    </button>
+                    {expanded ? (
+                      <div className="admin-nav-items">
+                        {group.items.map((item) => (
+                          <Link className={isAdminHrefActive(pathname, item.href) ? 'active' : ''} href={item.href} key={item.href}>
+                            <span>{item.label}</span>
+                            <span className="admin-nav-arrow" aria-hidden="true">›</span>
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
+                  </section>
+                )
+              })}
+              {!visibleGroups.length ? (
+                <div className="admin-nav-empty">
+                  <strong>No matching tools</strong>
+                  <span>Try a broader search term.</span>
+                </div>
+              ) : null}
+            </nav>
+          ) : null}
+
+          <div className="admin-side-footer">
+            <div className="admin-owner-note">
+              <strong>Owner mode</strong>
+              <span>Team tools are saved under All Tools for whenever you add staff later.</span>
+            </div>
+            <Link className="admin-public-link" href="/">← View Public Site</Link>
+            <form action="/auth/signout" method="post">
+              <button className="admin-logout" type="submit">Log Out</button>
+            </form>
+            <div className="admin-side-footer-meta">Powered by {DEFAULT_BRAND.parent_brand_name}</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  )
+}

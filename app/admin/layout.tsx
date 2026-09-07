@@ -8,6 +8,7 @@ import './action-center.css'
 import './admin-productivity.css'
 import { requireStaff } from '@/lib/auth'
 import { AdminSidebar } from '@/components/AdminSidebar'
+import { AdminTopbar } from '@/components/AdminTopbar'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { robots: { index: false, follow: false } }
@@ -18,7 +19,10 @@ export default async function Layout({ children }: { children: React.ReactNode }
   return (
     <div className="admin-shell">
       <AdminSidebar />
-      <main className="admin-main">{children}</main>
+      <div className="admin-content-shell">
+        <AdminTopbar />
+        <main className="admin-main">{children}</main>
+      </div>
     </div>
   )
 }
