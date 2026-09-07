@@ -1,0 +1,162 @@
+.admin-workspace-context{
+  position:sticky;
+  top:48px;
+  z-index:18;
+  border-bottom:1px solid #e3e8f0;
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(12px);
+}
+.admin-workspace-context-inner{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  min-height:51px;
+  padding:6px clamp(20px,3vw,42px);
+}
+.admin-workspace-context-label{
+  flex:0 0 auto;
+  display:grid;
+  gap:1px;
+  min-width:96px;
+  padding-right:13px;
+  border-right:1px solid #e5e9f0;
+}
+.admin-workspace-context-label span{
+  color:#929bad;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.9px;
+  text-transform:uppercase;
+}
+.admin-workspace-context-label strong{color:#26334a;font-size:10px;white-space:nowrap}
+.admin-workspace-context-tabs{
+  min-width:0;
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:4px;
+  overflow-x:auto;
+  padding:2px 0;
+  scrollbar-width:thin;
+}
+.admin-workspace-context-tabs a{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  min-height:31px;
+  padding:6px 9px;
+  border:1px solid transparent;
+  border-radius:8px;
+  color:#6b768a;
+  font-size:9px;
+  font-weight:850;
+  white-space:nowrap;
+  transition:.12s ease;
+}
+.admin-workspace-context-tabs a:hover{border-color:#e0e6f0;background:#f7f9fd;color:#3d54a4}
+.admin-workspace-context-tabs a.active{border-color:#cbd7fb;background:#eef2ff;color:#3453bd;box-shadow:0 2px 8px rgba(84,120,246,.08)}
+
+/* Shared page rhythm */
+.admin-main{padding-top:24px}
+.admin-main> :where(.admin-page-head,.business-workspace-head,.admin-card,.card,.notice,.stat-grid,.grid,.admin-table-wrap,section,form,details){scroll-margin-top:125px}
+.admin-main .admin-page-head,.admin-main .business-workspace-head{margin-bottom:16px}
+.admin-main .admin-page-head{min-height:112px;align-items:center}
+.admin-main .admin-page-head>div:first-child{min-width:0}
+.admin-main .admin-page-head h1{max-width:1050px}
+.admin-main .admin-page-head .muted{max-width:900px;line-height:1.55}
+
+/* Clear action hierarchy */
+.admin-main .btn-primary{border-color:#4c6fe9;background:linear-gradient(180deg,#5b7cf5,#4969db);color:#fff;box-shadow:0 5px 15px rgba(70,100,220,.18)}
+.admin-main .btn-primary:hover:not(:disabled){background:linear-gradient(180deg,#5274ef,#405fce);box-shadow:0 8px 18px rgba(70,100,220,.22)}
+.admin-main .btn-light{color:#46536a}
+.admin-main .btn-danger,.admin-main .danger.btn{border-color:#f0c8c8;background:#fff5f5;color:#a12f2f}
+.admin-main .admin-row-actions>.btn-primary:first-child{order:-1}
+.admin-main .admin-row-actions,.admin-main .business-workspace-head-actions{row-gap:8px}
+
+/* Cards and sections feel like one product */
+.admin-main .admin-card,.admin-main .card,.admin-main .workspace-block,.admin-main .moderation-card{
+  border-color:#e0e6ef;
+  border-radius:15px;
+  background:#fff;
+  box-shadow:0 5px 18px rgba(31,43,74,.035);
+}
+.admin-main .admin-card>h2:first-child,.admin-main .card>h2:first-child,.admin-main .workspace-block h2:first-child{margin-top:0}
+.admin-main .section-head,.admin-main .workspace-section-head,.admin-main .workspace-block-head,.admin-main .admin-settings-section-head{
+  padding-bottom:10px;
+  border-bottom:1px solid #eef1f5;
+}
+.admin-main .section-head:last-child,.admin-main .workspace-section-head:last-child{border-bottom:0}
+
+/* Forms */
+.admin-main form:not(.admin-inline-form){accent-color:#5478f6}
+.admin-main fieldset{min-width:0;margin:0;padding:0;border:0}
+.admin-main label{line-height:1.35}
+.admin-main input:not([type="checkbox"]):not([type="radio"]),.admin-main select,.admin-main textarea{font-size:11px}
+.admin-main input:disabled,.admin-main select:disabled,.admin-main textarea:disabled{background:#f3f5f8;color:#8993a4}
+.admin-main .admin-form-savebar,.admin-main .workspace-save-bar{border-color:#cbd6ea;box-shadow:0 10px 28px rgba(31,43,74,.11)}
+
+/* Tabs across old and new modules */
+.admin-main :where(.business-workspace-tabs,.personal-focus-tabs,.notification-filter-tabs,.admin-segmented){scrollbar-width:thin}
+.admin-main :where(.business-workspace-tabs,.personal-focus-tabs){overflow-x:auto;flex-wrap:nowrap}
+.admin-main :where(.business-workspace-tabs,.personal-focus-tabs) a{flex:0 0 auto;white-space:nowrap}
+.admin-main .business-workspace-tabs{position:sticky;top:107px;z-index:10;background:rgba(247,249,252,.96);backdrop-filter:blur(10px)}
+
+/* Tables become easier to scan */
+.admin-main .admin-table-wrap{margin-top:8px}
+.admin-main .admin-table thead th{height:38px;background:#f5f7fb;color:#5e6b80}
+.admin-main .admin-table tbody td{padding-top:11px;padding-bottom:11px}
+.admin-main .admin-table tbody tr:hover td{background:#f5f8ff}
+.admin-main .admin-table tbody td:first-child{font-weight:750;color:#2e394d}
+.admin-main table:not(.admin-table){width:100%;border-collapse:separate;border-spacing:0}
+
+/* Empty and warning states */
+.admin-main :where(.empty,.notification-empty,.workspace-clear-state,.admin-nav-empty){min-height:92px;display:grid;place-content:center}
+.admin-main .notice{margin-block:10px 14px}
+.admin-main .notice.warn{box-shadow:inset 0 0 0 1px rgba(212,154,36,.02)}
+
+/* Business workspace */
+.admin-main .business-workspace-head{position:relative;overflow:hidden}
+.admin-main .business-workspace-head:before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:linear-gradient(180deg,var(--cyan),var(--blue),var(--violet))}
+.admin-main .business-workspace-kpis>div{transition:transform .12s ease,border-color .12s ease}
+.admin-main .business-workspace-kpis>div:hover{transform:translateY(-1px);border-color:#cfd9eb}
+.admin-main .workspace-action-list>a{min-height:72px}
+.admin-main .workspace-action-list>a:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(31,43,74,.05)}
+
+/* Dense legacy/custom modules */
+.admin-main [class*="dashboard"] .admin-card,
+.admin-main [class*="workbench"] .admin-card,
+.admin-main [class*="command"] .admin-card,
+.admin-main [class*="retention"] .admin-card,
+.admin-main [class*="visibility"] .admin-card{overflow:hidden}
+.admin-main :where([class*="dashboard"],[class*="workbench"],[class*="command"],[class*="retention"],[class*="visibility"]) h2{line-height:1.2}
+.admin-main :where([class*="dashboard"],[class*="workbench"],[class*="command"],[class*="retention"],[class*="visibility"]) .muted{line-height:1.5}
+
+/* Keep long tool screens readable */
+.admin-main .grid-4{grid-template-columns:repeat(auto-fit,minmax(205px,1fr))}
+.admin-main .grid-3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.admin-main .grid-2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.admin-main .stat-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+
+/* Responsive */
+@media(max-width:1100px){
+  .admin-workspace-context-tabs{padding-bottom:4px}
+  .admin-workspace-context-label{min-width:80px}
+  .admin-main .business-workspace-tabs{top:107px}
+}
+@media(max-width:900px){
+  .admin-workspace-context{top:59px}
+  .admin-workspace-context-inner{padding:6px 15px;display:grid;gap:5px}
+  .admin-workspace-context-label{display:flex;align-items:center;gap:6px;min-width:0;padding:0;border-right:0}
+  .admin-workspace-context-label span{font-size:7px}
+  .admin-workspace-context-tabs{width:100%}
+  .admin-main .business-workspace-tabs{position:relative;top:auto}
+}
+@media(max-width:680px){
+  .admin-main{padding-top:18px}
+  .admin-main .admin-page-head,.admin-main .business-workspace-head{padding:17px 16px}
+  .admin-main .admin-page-head{min-height:0}
+  .admin-main .admin-row-actions,.admin-main .business-workspace-head-actions{width:100%}
+  .admin-main .admin-row-actions .btn,.admin-main .business-workspace-head-actions .btn{flex:1 1 auto;justify-content:center}
+  .admin-main .grid-2,.admin-main .grid-3,.admin-main .grid-4{grid-template-columns:1fr}
+  .admin-main .admin-table{min-width:760px}
+}

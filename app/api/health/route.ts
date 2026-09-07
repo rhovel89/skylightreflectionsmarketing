@@ -5,7 +5,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic='force-dynamic'
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
-const releaseTrain='admin-experience-1.0-owner-first-navigation'
+const releaseTrain='admin-experience-1.1-unified-workspaces'
 
 async function integrationFlags(){
   const flags:any={
@@ -37,6 +37,7 @@ export async function GET(){
     return NextResponse.json({
       ok:true,service:TENANT_SLUG,version:'15.5.0',release_train:releaseTrain,database:'ok',deployment_commit:deploymentCommit(),
       admin_owner_first_navigation:true,admin_all_tools_preserved:true,admin_specialized_tools_searchable:true,admin_team_tools_deemphasized_not_removed:true,
+      admin_contextual_workspace_navigation:true,admin_unified_visual_system:true,admin_business_visibility_flow_linked:true,admin_sales_duplicate_navigation_removed:true,admin_mobile_workspace_navigation:true,
       automatic_outreach:false,billing_authorization:false,public_ranking_effect:false,automatic_campaign_enrollment:false,
       reply_classification_advisory:true,response_send_requires_staff_approval:true,calendar_event_requires_staff_action:true,calendar_invite_requires_staff_confirmation:true,
       paid_revenue_attribution_only:true,database_action_automation:true,daily_metrics_snapshots:true,first_touch_campaign_attribution:true,forecast_close_dates_staff_entered:true,
