@@ -1,0 +1,37 @@
+.admin-view-switch{display:inline-flex;align-items:center;gap:2px;padding:2px;border:1px solid #dce3ed;border-radius:9px;background:#f5f7fb}
+.admin-view-switch button{min-height:27px;padding:5px 8px;border:0;border-radius:7px;background:transparent;color:#6b7688;font:inherit;font-size:8px;font-weight:900;cursor:pointer;white-space:nowrap}
+.admin-view-switch button:hover{color:#3e56a3;background:#fff}
+.admin-view-switch button.active{background:#fff;color:#3555b9;box-shadow:0 1px 5px rgba(31,43,74,.09)}
+.admin-view-switch .admin-view-help{display:inline-flex;align-items:center;padding:0 5px;color:#8a94a5;font-size:8px;font-weight:800;white-space:nowrap}
+
+/* Focused View is the owner-first default. Full View restores every control. */
+html[data-admin-view="focused"] .admin-main .admin-secondary-detail{display:none!important}
+
+/* Sales overview: keep the actual opportunity workflow first; secondary campaign/buyer detail remains in Full View. */
+html[data-admin-view="focused"][data-admin-path="/admin/skylight-sales"] .admin-main .stat-grid .stat:nth-child(n+5){display:none}
+html[data-admin-view="focused"][data-admin-path="/admin/skylight-sales"] .admin-main #lead-buyer-recruitment{display:none}
+html[data-admin-view="focused"][data-admin-path="/admin/skylight-sales"] .admin-main .stat-grid + .notice + section.admin-card{display:none}
+
+/* Client Work: keep Overview / New Proposal / Proposals / Projects visible. Advanced service setup stays one toggle away. */
+html[data-admin-view="focused"][data-admin-path="/admin/skylight-operations"] .admin-main .admin-card:first-of-type button:nth-child(n+5){display:none}
+
+/* Business Visibility: the current evidence stays visible; long provenance/history tables are secondary in focused mode. */
+html[data-admin-view="focused"][data-admin-path$="/visibility"] .admin-main .workspace-block:last-child{display:none}
+
+/* Revenue: keep the current money/attention summary prominent and reduce secondary catalog density. */
+html[data-admin-view="focused"][data-admin-path="/admin/revenue"] .admin-main .admin-quick-grid{display:none}
+html[data-admin-view="focused"][data-admin-path="/admin/revenue"] .admin-main .admin-quick-head{margin-top:14px}
+
+/* SEO: compact long editorial grids while preserving the current action queue and all records in Full View. */
+html[data-admin-view="focused"][data-admin-path="/admin/seo"] .admin-main .grid.grid-3{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+html[data-admin-view="focused"][data-admin-path="/admin/seo"] .admin-main .grid.grid-3 > .card:nth-child(n+7){display:none}
+
+/* Across dense workbenches, focused mode makes the visual hierarchy calmer without changing data/actions. */
+html[data-admin-view="focused"] .admin-main .stat-grid{gap:9px}
+html[data-admin-view="focused"] .admin-main .stat{min-height:84px}
+html[data-admin-view="focused"] .admin-main :where(.workspace-block,.admin-card,.card){scroll-margin-top:170px}
+html[data-admin-view="focused"] .admin-main .admin-table tbody tr:nth-child(n+26){display:none}
+html[data-admin-view="focused"] .admin-main .admin-table-wrap:has(tbody tr:nth-child(26))::after{content:"Focused View is showing the first 25 rows. Switch to Full View to see the complete table.";display:block;padding:10px 12px;border-top:1px solid #e8edf4;background:#f8faff;color:#738096;font-size:9px;font-weight:750}
+
+@media(max-width:900px){.admin-view-switch{max-width:100%}.admin-view-switch .admin-view-help{display:none}}
+@media(max-width:680px){.admin-view-switch{width:100%;justify-content:stretch}.admin-view-switch button{flex:1}.admin-view-switch .admin-view-help{display:none}}
