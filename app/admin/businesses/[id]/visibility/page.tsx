@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { TENANT_ID } from '@/lib/constants'
@@ -31,7 +32,12 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
   const categoryNames=[...new Set([...categories.map(r=>String(r.name||'').trim()),String(prospect?.category||'').trim()].filter(Boolean))]
   const suggested=[...new Set(categoryNames.flatMap(name=>[name,`${name} near me`,location!=='Central Illinois'?`${name} ${location}`:'']).filter(Boolean))].slice(0,24)
 
-  return <>
+  return <div className="container" style={{padding:'24px 0 48px'}}>
+    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:16}}>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}`}>← Business Workspace</Link>
+      <span className="btn btn-primary" aria-current="page">Google & SEO Visibility 3.9</span>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/monitoring`}>Monitoring & Competitors 4.0</Link>
+    </div>
     {errors.length?<div className="notice warn">Some visibility records could not be loaded completely. Missing values are shown as “Not measured” rather than zero.</div>:null}
     <BusinessVisibilityWorkbench
       business={{id:String(business.id),name:String(business.name),website:business.website||null,rating:business.rating??null,review_count:business.review_count??null,source_name:business.source_name||null,source_url:business.source_url||null,source_checked_at:business.source_checked_at||null}}
@@ -43,5 +49,5 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
       brightLocalConfigured={Boolean(process.env.BRIGHTLOCAL_API_KEY)}
       pageSpeedConfigured={Boolean(process.env.GOOGLE_PAGESPEED_API_KEY)}
     />
-  </>
+  </div>
 }

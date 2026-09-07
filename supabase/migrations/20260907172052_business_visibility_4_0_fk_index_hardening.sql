@@ -1,0 +1,15 @@
+create index if not exists idx_visibility_alerts_business_fk on public.business_visibility_alerts(business_id);
+create index if not exists idx_visibility_alerts_competitor_fk on public.business_visibility_alerts(competitor_id);
+create index if not exists idx_visibility_alerts_prospect_fk on public.business_visibility_alerts(prospect_id);
+create index if not exists idx_visibility_competitor_audits_business_fk on public.business_visibility_competitor_audits(business_id);
+create index if not exists idx_visibility_competitor_audits_competitor_fk on public.business_visibility_competitor_audits(competitor_id);
+create index if not exists idx_visibility_competitor_rankings_business_fk on public.business_visibility_competitor_rankings(business_id);
+create index if not exists idx_visibility_competitor_rankings_competitor_fk on public.business_visibility_competitor_rankings(competitor_id);
+create index if not exists idx_visibility_competitor_rankings_target_fk on public.business_visibility_competitor_rankings(target_id);
+create index if not exists idx_visibility_competitors_business_fk on public.business_visibility_competitors(business_id);
+create index if not exists idx_visibility_competitors_prospect_fk on public.business_visibility_competitors(prospect_id);
+create index if not exists idx_visibility_monitoring_business_fk on public.business_visibility_monitoring_policies(business_id);
+create index if not exists idx_visibility_monitoring_prospect_fk on public.business_visibility_monitoring_policies(prospect_id);
+create index if not exists idx_visibility_sales_evidence_business_fk on public.business_visibility_sales_evidence(business_id);
+create index if not exists idx_visibility_sales_evidence_opportunity_fk on public.business_visibility_sales_evidence(opportunity_id);
+create index if not exists idx_visibility_sales_evidence_prospect_fk on public.business_visibility_sales_evidence(prospect_id);
