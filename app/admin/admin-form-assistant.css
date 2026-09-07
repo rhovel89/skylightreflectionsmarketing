@@ -1,0 +1,23 @@
+.admin-review-enabled{position:relative}
+.admin-review-enabled::after{content:"Review step enabled · nothing saves until you confirm the summary";display:block;margin-top:12px;padding:8px 10px;border:1px dashed #cfd8eb;border-radius:9px;background:#fafcff;color:#6f7d92;font-size:9px;font-weight:800}
+.admin-review-enabled label[data-admin-requirement="required"],.admin-review-enabled label[data-admin-requirement="optional"]{position:relative}
+.admin-review-enabled label[data-admin-requirement="required"]::before,.admin-review-enabled label[data-admin-requirement="optional"]::before{display:inline-flex;align-items:center;margin:0 6px 4px 0;padding:2px 5px;border-radius:999px;font-size:7px;font-weight:950;letter-spacing:.35px;text-transform:uppercase;vertical-align:middle}
+.admin-review-enabled label[data-admin-requirement="required"]::before{content:"Required";background:#eef2ff;color:#405ab5}
+.admin-review-enabled label[data-admin-requirement="optional"]::before{content:"Optional";background:#f2f4f7;color:#7c8798}
+.admin-review-enabled label[data-admin-default]::after{content:attr(data-admin-default);display:block;margin:4px 0 0;color:#4d6ac5;font-size:8px;font-weight:850}
+.admin-field-assist{display:block;margin-top:4px;color:#7c8798;font-size:8px;line-height:1.4;font-weight:650}
+.admin-review-backdrop{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:20px;background:rgba(18,26,45,.56);backdrop-filter:blur(3px)}
+.admin-review-modal{width:min(760px,100%);max-height:min(86vh,860px);display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;border:1px solid #d7deeb;border-radius:16px;background:#fff;box-shadow:0 30px 90px rgba(22,31,55,.25);overflow:hidden}
+.admin-review-head{display:flex;justify-content:space-between;gap:18px;padding:18px 20px 14px;border-bottom:1px solid #edf0f5;background:linear-gradient(180deg,#fff,#fbfcff)}
+.admin-review-head>div>span{display:inline-block;margin-bottom:4px;color:#415db8;font-size:8px;font-weight:950;letter-spacing:.55px;text-transform:uppercase}
+.admin-review-head h2{margin:0;color:#243047;font-size:20px;line-height:1.25}
+.admin-review-head p{margin:5px 0 0;color:#7b8799;font-size:10px;line-height:1.5}
+.admin-review-close{width:32px;height:32px;border:1px solid #e0e5ee;border-radius:9px;background:#fff;color:#69758a;font-size:19px;cursor:pointer}
+.admin-review-note{margin:14px 18px 0;padding:9px 11px;border:1px solid #dce5fb;border-radius:9px;background:#f6f9ff;color:#53627a;font-size:9px;line-height:1.45}
+.admin-review-list{margin:12px 18px 0;border:1px solid #e4e8ef;border-radius:11px;overflow:auto;background:#fff}
+.admin-review-row{display:grid;grid-template-columns:minmax(140px,.8fr) minmax(0,1.5fr);gap:16px;padding:9px 11px;border-bottom:1px solid #edf0f4}
+.admin-review-row:last-child{border-bottom:0}
+.admin-review-row span{color:#7c8798;font-size:8px;font-weight:850;text-transform:uppercase;letter-spacing:.28px}
+.admin-review-row strong{color:#2c384e;font-size:9px;line-height:1.45;overflow-wrap:anywhere}
+.admin-review-actions{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px 18px;border-top:1px solid #edf0f4;background:#fbfcfe}
+@media(max-width:680px){.admin-review-backdrop{padding:10px}.admin-review-modal{max-height:92vh}.admin-review-head{padding:14px}.admin-review-row{grid-template-columns:1fr;gap:3px}.admin-review-actions{display:grid;grid-template-columns:1fr 1fr}.admin-review-actions .btn{width:100%}}
