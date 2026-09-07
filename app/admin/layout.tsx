@@ -10,12 +10,14 @@ import './admin-unified-ui.css'
 import './admin-workflow-guide.css'
 import './admin-focus-mode.css'
 import './admin-guided-actions.css'
+import './admin-form-assistant.css'
 import { requireStaff } from '@/lib/auth'
 import { AdminSidebar } from '@/components/AdminSidebar'
 import { AdminTopbar } from '@/components/AdminTopbar'
 import { AdminWorkspaceNav } from '@/components/AdminWorkspaceNav'
 import { AdminWorkflowGuide } from '@/components/AdminWorkflowGuide'
 import { AdminGuidedActions } from '@/components/AdminGuidedActions'
+import { AdminFormAssistant } from '@/components/AdminFormAssistant'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { robots: { index: false, follow: false } }
@@ -32,6 +34,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
         <AdminWorkflowGuide />
         <AdminGuidedActions />
         <main className="admin-main">{children}</main>
+        <AdminFormAssistant />
       </div>
     </div>
   )
