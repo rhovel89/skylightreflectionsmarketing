@@ -4,9 +4,8 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic = 'force-dynamic'
 
-// Sales 3.3 production retry marker after Vercel build-rate limit cleared.
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
-const releaseTrain='sales-command-center-3.3-prospect-research'
+const releaseTrain='sales-command-center-3.4-human-gated-outreach'
 
 export async function GET() {
   const started = Date.now()
@@ -14,7 +13,7 @@ export async function GET() {
     const s = await createClient()
     const { error } = await s.from('tenants').select('id').eq('id', TENANT_ID).maybeSingle()
     if (error) return NextResponse.json({ ok:false,service:TENANT_SLUG,version:'15.5.0',release_train:releaseTrain,database:'unavailable',deployment_commit:deploymentCommit() },{status:503,headers:{'Cache-Control':'no-store'}})
-    return NextResponse.json({ ok:true,service:TENANT_SLUG,version:'15.5.0',release_train:releaseTrain,database:'ok',deployment_commit:deploymentCommit(),response_ms:Date.now()-started },{status:200,headers:{'Cache-Control':'no-store'}})
+    return NextResponse.json({ ok:true,service:TENANT_SLUG,version:'15.5.0',release_train:releaseTrain,database:'ok',deployment_commit:deploymentCommit(),automatic_outreach:false,billing_authorization:false,public_ranking_effect:false,response_ms:Date.now()-started },{status:200,headers:{'Cache-Control':'no-store'}})
   } catch {
     return NextResponse.json({ ok:false,service:TENANT_SLUG,version:'15.5.0',release_train:releaseTrain,database:'unavailable',deployment_commit:deploymentCommit() },{status:503,headers:{'Cache-Control':'no-store'}})
   }

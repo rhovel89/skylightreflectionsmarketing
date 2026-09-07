@@ -1,0 +1,2 @@
+import Link from 'next/link'
+export default function SalesLayout({children}:{children:React.ReactNode}){return <><div className="admin-card" style={{marginBottom:18,padding:'12px 16px'}}><div className="admin-row-actions"><Link className="btn btn-light" href="/admin/skylight-sales">Sales Command Center</Link><Link className="btn btn-primary" href="/admin/skylight-sales/outreach">Outreach Workbench 3.4</Link><Link className="btn btn-light" href="/admin/acquisition-research">Prospect Research 3.3</Link></div></div>{children}</>}

@@ -1,0 +1,17 @@
+insert into public.skylight_sales_outreach_templates(tenant_id,name,service_slug,vertical,channel,sequence_stage,day_offset,subject_template,body_template,active,sort_order)
+select t.id,x.name,x.service_slug,null,'email',x.sequence_stage,x.day_offset,x.subject_template,x.body_template,true,x.sort_order
+from public.tenants t
+cross join (values
+('General First Touch',null::text,'first_touch',0,'Quick question about {{business_name}}','Hi {{contact_name_or_team}},\n\nI’m Ray with Skylight Reflections Marketing. Our research on {{business_name}} surfaced {{evidence_summary}}. Based on that public signal, {{service_name}} may be worth a closer look.\n\nIf improving that area is a priority, I’d be glad to share a few practical ideas and see whether a short conversation makes sense.\n\nNothing in this outreach changes your Central Illinois Local Pros organic ranking, verification, or placement.\n\nRay\nSkylight Reflections Marketing',10),
+('General Follow-Up 1',null::text,'follow_up_1',3,'Following up — {{business_name}}','Hi {{contact_name_or_team}},\n\nI wanted to follow up on my note about {{evidence_summary}} and the potential fit for {{service_name}}.\n\nIf this is something you’re already working on, I’m happy to compare notes. If it’s not a priority right now, no problem.\n\nRay\nSkylight Reflections Marketing',20),
+('General Follow-Up 2',null::text,'follow_up_2',7,'One more idea for {{business_name}}','Hi {{contact_name_or_team}},\n\nOne more quick follow-up. The reason I reached out was the public marketing signal we documented: {{evidence_summary}}. That is why {{service_name}} looked relevant—not because of a generic sales list.\n\nIf you want, I can outline what I would address first.\n\nRay\nSkylight Reflections Marketing',30),
+('General Last Check-In',null::text,'last_check_in',14,'Last check-in — {{business_name}}','Hi {{contact_name_or_team}},\n\nI’ll make this my last check-in for now. I reached out because {{evidence_summary}} suggested there may be an opportunity around {{service_name}}.\n\nIf you’d like to revisit it later, I’m easy to reach. Otherwise, I’ll leave it here.\n\nRay\nSkylight Reflections Marketing',40),
+('General Call Notes',null::text,'call',0,null::text,'Call {{contact_name_or_team}} at {{business_name}}. Reference only the documented signal: {{evidence_summary}}. Ask whether {{service_name}} is a current priority. Do not imply an audit was completed unless one actually was.',50)
+) as x(name,service_slug,sequence_stage,day_offset,subject_template,body_template,sort_order)
+where not exists(select 1 from public.skylight_sales_outreach_templates e where e.tenant_id=t.id and e.name=x.name);
+
+comment on table public.skylight_sales_outreach_templates is 'Sales 3.4 staff-editable outreach copy and follow-up sequence templates. Draft generation is human-controlled; templates never auto-send.';
+comment on table public.skylight_sales_outreach_drafts is 'Sales 3.4 human-reviewed outreach drafts with provenance snapshots and explicit approval/send state.';
+comment on table public.skylight_sales_outreach_events is 'Private Sales 3.4 append-only outreach history and outcome log.';
+comment on table public.skylight_sales_suppressions is 'Private channel/full-contact suppression source of truth for Skylight sales outreach.';
+comment on table public.skylight_sales_followups is 'Private Sales 3.4 follow-up task queue. Clock-based scheduling creates work only; it never sends outreach.';
