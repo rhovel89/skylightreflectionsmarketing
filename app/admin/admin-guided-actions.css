@@ -1,0 +1,35 @@
+.admin-guided-shell{padding:9px clamp(20px,3vw,42px) 0}
+.admin-guided-actions{max-width:1680px;margin:0 auto;padding:12px;border:1px solid #dfe6f0;border-radius:13px;background:#fff;box-shadow:0 4px 16px rgba(31,43,74,.025)}
+.admin-guided-intro{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+.admin-guided-intro>span{display:inline-flex;align-items:center;min-height:26px;padding:5px 8px;border-radius:8px;background:#eef2ff;color:#3c58b5;font-size:8px;font-weight:950;letter-spacing:.55px;text-transform:uppercase;white-space:nowrap}
+.admin-guided-intro strong{display:block;color:#243047;font-size:12px;line-height:1.3}
+.admin-guided-intro p{margin:2px 0 0;color:#7a8598;font-size:9px;line-height:1.4}
+.admin-guided-actions ol{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:0;padding:0;list-style:none;counter-reset:none}
+.admin-guided-actions li{min-width:0}
+.admin-guided-actions a{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:8px;min-height:54px;padding:8px 10px;border:1px solid #e3e8f1;border-radius:10px;background:#fafbfe;color:#344158;text-decoration:none;transition:border-color .12s ease,background .12s ease,transform .12s ease}
+.admin-guided-actions a:hover{border-color:#c8d4f4;background:#f6f8ff;transform:translateY(-1px)}
+.admin-guided-actions b{display:grid;place-items:center;width:24px;height:24px;border-radius:999px;background:#e8edff;color:#3d58b7;font-size:9px}
+.admin-guided-actions span{min-width:0}
+.admin-guided-actions strong{display:block;font-size:10px;line-height:1.25}
+.admin-guided-actions small{display:block;margin-top:2px;color:#7e899b;font-size:8px;line-height:1.3}
+.admin-guided-actions i{color:#91a0b8;font-size:13px;font-style:normal}
+
+/* Smart-form staging: preserve the original server actions while making long owner forms understandable. */
+html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-form-grid::before{content:"1 · Business basics, category and customer-facing details";grid-column:1/-1;display:block;margin-bottom:2px;color:#425fbd;font-size:9px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
+html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-card:nth-of-type(1)::before{content:"2 · Physical location";display:block;margin-bottom:8px;color:#425fbd;font-size:9px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
+html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-card:nth-of-type(2)::before{content:"3 · Source & provenance";display:block;margin-bottom:8px;color:#425fbd;font-size:9px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
+html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>button:last-child::before{content:"4 · ";font-weight:950}
+html[data-admin-path="/admin/businesses"] .admin-create-disclosure-body form>.admin-card{border-color:#dfe5f1;background:#fcfdff}
+
+/* Proposal builder staging without changing proposal data or server behavior. */
+html[data-admin-path="/admin/skylight-operations"] .admin-main form .admin-form-grid:first-of-type::before{content:"1 · Client, proposal timing and commercial terms";grid-column:1/-1;color:#425fbd;font-size:9px;font-weight:950;letter-spacing:.35px;text-transform:uppercase}
+html[data-admin-path="/admin/skylight-operations"] .admin-main form .section-head:has(+div) strong::before{content:"2 · ";color:#425fbd}
+
+/* Stable anchor targets for guided links even on legacy workbenches. */
+html[data-admin-path="/admin/businesses"] .admin-create-disclosure{scroll-margin-top:180px}
+html[data-admin-path="/admin/businesses"] .admin-list-meta{scroll-margin-top:180px}
+html[data-admin-path="/admin/skylight-sales"] .admin-main section.admin-card:nth-of-type(2){scroll-margin-top:180px}
+html[data-admin-path$="/visibility"] .admin-main .workspace-block{scroll-margin-top:180px}
+
+@media(max-width:1100px){.admin-guided-actions ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.admin-guided-shell{padding:8px 15px 0}.admin-guided-intro{display:grid}.admin-guided-actions ol{grid-template-columns:1fr}.admin-guided-actions a{min-height:50px}}
