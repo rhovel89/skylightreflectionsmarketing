@@ -16,7 +16,7 @@ const ref=(table:string,row:Row|undefined|null,label:string,urlField='source_url
 const uniqueRefs=(refs:(VisibilitySourceRef|null|undefined)[])=>{const out:VisibilitySourceRef[]=[];const seen=new Set<string>();for(const r of refs){if(!r)continue;const k=`${r.table}:${r.id}`;if(seen.has(k))continue;seen.add(k);out.push(r)}return out}
 const recFingerprint=(key:string,refs:VisibilitySourceRef[])=>hash({key,refs:refs.map(r=>[r.table,r.id,r.checked_at])})
 const rankingKey=(r:Row)=>[r.engine||'google',r.keyword,r.search_location,r.surface,r.device].map(x=>String(x||'').toLowerCase()).join('|')
-const rankingWeakness=(r:Row)=>r.not_found?100:(num(r.position)==null?null:num(r.position)!<=3?0:num(r.position)!<=10?35:num(r.position)!<=20?70:100)
+const rankingWeakness=(r:Row):number|null=>{if(r.not_found)return 100;const p=num(r.position);if(p==null)return null;return p<=3?0:p<=10?35:p<=20?70:100}
 const health=(r:Row|undefined|null)=>r?avg([num(r.technical_score),num(r.on_page_seo_score),num(r.performance_score)]):null
 const prettyBand=(b:string)=>b==='very_high'?'Very high':b==='not_measured'?'Not measured':b.charAt(0).toUpperCase()+b.slice(1)
 
@@ -55,7 +55,7 @@ function latestRankingSets(rows:Row[]){
   const groups=latestRowsByKey(rows,rankingKey)
   const current:Row[]=[],previous:Row[]=[]
   for(const a of groups.values()){if(a[0])current.push(a[0]);if(a[1])previous.push(a[1])}
-  const summarize=(a:Row[])=>{const found=a.filter(r=>!r.not_found&&num(r.position)!=null),weak=a.map(rankingWeakness).filter((x):x is number=>x!=null);return {tracked:a.length,found:found.length,not_found:a.filter(r=>r.not_found).length,top3:found.filter(r=>Number(r.position)<=3).length,top10:found.filter(r=>Number(r.position)<=10).length,average_position:found.length?round(found.reduce((s,r)=>s+Number(r.position),0)/found.length,1):null,opportunity_pct:weak.length?round(weak.reduce((s,v)=>s+v,0)/weak.length,1):null}}
+  const summarize=(a:Row[])=>{const found=a.filter(r=>!r.not_found&&num(r.position)!=null),weak=a.map(rankingWeakness).filter((x):x is number=>x!==null);return {tracked:a.length,found:found.length,not_found:a.filter(r=>r.not_found).length,top3:found.filter(r=>Number(r.position)<=3).length,top10:found.filter(r=>Number(r.position)<=10).length,average_position:found.length?round(found.reduce((s,r)=>s+Number(r.position),0)/found.length,1):null,opportunity_pct:weak.length?round(weak.reduce((s,v)=>s+v,0)/weak.length,1):null}}
   return {groups,current,previous,currentSummary:summarize(current),previousSummary:summarize(previous)}
 }
 
