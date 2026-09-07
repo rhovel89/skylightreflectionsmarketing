@@ -103,14 +103,14 @@ export default async function Page() {
   return <>
     <div className="admin-page-head">
       <div>
-        <div className="kpi">Skylight Reflections Marketing</div>
-        <h1>Sales Command Center 3.3</h1>
-        <p className="muted">Move Local Pros first-party intelligence from deliberate contact research into human-controlled Skylight sales and Lead Buyer recruitment. Contact Ready requires sourced owner/decision-maker provenance; a generic business contact alone does not qualify. Sales state, demand history and opportunity scoring never change public organic ranking, verification or Sponsored placement.</p>
+        <div className="kpi">Skylight Reflections Marketing · Private Sales Engine</div>
+        <h1>Sales Command Center 3.7</h1>
+        <p className="muted">Research, prioritize and manage Skylight prospects while the Daily Command layer tells staff what needs attention now. Contact Ready still requires sourced owner/decision-maker provenance; sales state, demand history and opportunity scoring never change public organic ranking, verification or Sponsored placement.</p>
       </div>
-      <div className="admin-row-actions"><Link className="btn btn-primary" href="/admin/acquisition-research">Prospect Research 3.3</Link><span className="badge verified">Private Sales Engine</span></div>
+      <div className="admin-row-actions"><Link className="btn btn-primary" href="/admin/skylight-sales/daily">Open Daily Command 3.7</Link><Link className="btn btn-light" href="/admin/acquisition-research">Prospect Research 3.3</Link><span className="badge verified">Human-Controlled</span></div>
     </div>
     {sourceErrors.length ? <div className="notice warn"><strong>Some sales intelligence is temporarily incomplete.</strong> Refresh after the underlying data source is available.</div> : null}
-    <div className="notice"><strong>3.3 workflow:</strong> Research is an intentional stage, not an error. Use the Prospect Research Workbench to document a real owner/decision-maker channel, provenance source and checked timestamp. Only then can the opportunity become Contact Ready. Outreach drafts remain human-reviewed and nothing is sent automatically.</div>
+    <div className="notice"><strong>Recommended starting point:</strong> use Daily Command 3.7 for replies, due follow-ups, meetings, proposals, invoice attention, forecast dates and revenue intelligence. This workspace remains the underlying opportunity/campaign engine. Research is intentional, Contact Ready remains provenance-gated, and nothing is sent automatically.</div>
     <SkylightSalesWorkspace
       opportunities={opportunities}
       campaigns={campaignRows}
