@@ -46,6 +46,7 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/google`}>Google-Owned Data 4.2</Link>
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/reporting`}>Opportunity & Reporting 4.3</Link>
       <span className="btn btn-primary" aria-current="page">Execution & Outcomes 4.4</span>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/client-health`}>Client Results & Retention 4.5</Link>
     </div>
     {errors.length?<div className="notice warn" style={{marginBottom:14}}>Some execution/supporting records could not be loaded completely. 4.4 will not substitute missing measurements or infer an outcome from incomplete data.</div>:null}
     <BusinessVisibilityExecutionPanel

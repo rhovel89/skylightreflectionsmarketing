@@ -31,6 +31,7 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/google`}>Google-Owned Data 4.2</Link>
       <span className="btn btn-primary" aria-current="page">Opportunity & Reporting 4.3</span>
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/execution`}>Execution & Outcomes 4.4</Link>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/client-health`}>Client Results & Retention 4.5</Link>
     </div>
     {errors.length?<div className="notice warn" style={{marginBottom:14}}>Some reporting records could not be loaded. Missing measurements are never converted to zero or treated as completed work.</div>:null}
     <BusinessVisibilityReportingPanel

@@ -42,6 +42,7 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/google`}>Google-Owned Data 4.2</Link>
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/reporting`}>Opportunity & Reporting 4.3</Link>
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/execution`}>Execution & Outcomes 4.4</Link>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/client-health`}>Client Results & Retention 4.5</Link>
     </div>
     {errors.length?<div className="notice warn">Some visibility records could not be loaded completely. Missing values are shown as “Not measured” rather than zero.</div>:null}
     <BusinessVisibilityFreeModePanel business={{id:String(business.id),name:String(business.name),website:business.website||null}} audits={(auditsResult.data||[]) as Row[]} rankings={(rankingsResult.data||[]) as Row[]} importBatches={(importsResult.data||[]) as Row[]} defaultLocation={location}/>

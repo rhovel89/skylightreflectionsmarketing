@@ -27,6 +27,8 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/monitoring`}>Monitoring & Competitors 4.0</Link>
       <span className="btn btn-primary" aria-current="page">Google-Owned Data 4.2</span>
       <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/reporting`}>Opportunity & Reporting 4.3</Link>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/execution`}>Execution & Outcomes 4.4</Link>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/client-health`}>Client Results & Retention 4.5</Link>
     </div>
     {errors.length?<div className="notice warn" style={{marginBottom:14}}>Some Google-owned metrics could not be loaded. Missing values are shown as “Not measured” rather than zero.</div>:null}
     <BusinessVisibilityGooglePanel
