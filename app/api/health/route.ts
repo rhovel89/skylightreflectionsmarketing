@@ -5,7 +5,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic='force-dynamic'
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
-const releaseTrain='business-visibility-intelligence-4.2-google-owned-data'
+const releaseTrain='business-visibility-intelligence-4.3-opportunity-client-reporting'
 
 async function integrationFlags(){
   const flags:any={
@@ -44,6 +44,7 @@ export async function GET(){
       visibility_monitoring_foundation:true,visibility_competitor_intelligence:true,visibility_alert_engine:true,visibility_sales_evidence_human_approved:true,visibility_monitoring_cron_route:true,visibility_google_rank_auto_sync:false,visibility_brightlocal_adapter_ready:false,visibility_competitor_data_separate:true,visibility_missing_rank_not_measured:true,visibility_public_ranking_effect:false,
       visibility_free_mode:true,visibility_bulk_rank_import:true,visibility_import_provenance:true,visibility_brightlocal_optional:true,google_pagespeed_no_key_mode:true,google_pagespeed_api_key_optional:true,google_rank_scraping:false,visibility_recommendations_evidence_based:true,
       google_owned_data_intelligence:true,google_search_console_import:true,google_business_profile_performance_import:true,google_business_profile_keyword_import:true,google_owned_data_deduplicated:true,google_owned_data_source_backed:true,google_search_console_api_adapter:true,google_business_profile_api_adapter:true,google_business_profile_api_requires_google_approval:true,google_owned_data_public_ranking_effect:false,google_owned_data_schema_hardened:true,google_oauth_tokens_database_stored:false,
+      visibility_opportunity_reporting:true,visibility_opportunity_score_evidence_only:true,visibility_opportunity_score_missing_data_normalized:true,visibility_opportunity_snapshots_immutable:true,visibility_prior_period_comparisons_source_backed:true,visibility_report_prospect_mode:true,visibility_report_client_mode:true,visibility_report_print_pdf_ready:true,visibility_reports_snapshot_stable:true,visibility_report_public_sharing:false,visibility_report_automatic_sending:false,visibility_sales_recommendation_human_approved:true,visibility_recommendation_automatic_outreach:false,
       ...integrations,response_ms:Date.now()-started
     },{status:200,headers:{'Cache-Control':'no-store'}})
   }catch{return NextResponse.json({ok:false,service:TENANT_SLUG,version:'15.5.0',release_train:releaseTrain,database:'unavailable',deployment_commit:deploymentCommit()},{status:503,headers:{'Cache-Control':'no-store'}})}

@@ -51,8 +51,10 @@ export default async function Page({params}:{params:Promise<{id:string}>}){
   return <div className="container" style={{padding:'24px 0 48px'}}>
     <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:16}}>
       <Link className="btn btn-light" href={`/admin/businesses/${id}`}>← Business Workspace</Link>
-      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility`}>Google & SEO Visibility 3.9</Link>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility`}>Google & SEO Visibility 4.1</Link>
       <span className="btn btn-primary" aria-current="page">Monitoring & Competitors 4.0</span>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/google`}>Google-Owned Data 4.2</Link>
+      <Link className="btn btn-light" href={`/admin/businesses/${id}/visibility/reporting`}>Opportunity & Reporting 4.3</Link>
     </div>
     {errors.length?<div className="notice warn">Some monitoring records could not be loaded. Missing measurements are shown as “Not measured,” never as zero.</div>:null}
     <BusinessVisibilityMonitoringWorkbench
