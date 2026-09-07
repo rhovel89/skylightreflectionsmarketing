@@ -5,7 +5,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic='force-dynamic'
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
-const releaseTrain='business-visibility-intelligence-4.0-monitoring-competitors'
+const releaseTrain='business-visibility-intelligence-4.1-free-mode'
 
 async function integrationFlags(){
   const flags:any={
@@ -46,6 +46,8 @@ export async function GET(){
       visibility_monitoring_foundation:true,visibility_competitor_intelligence:true,visibility_alert_engine:true,visibility_sales_evidence_human_approved:true,
       visibility_monitoring_cron_route:true,visibility_google_rank_auto_sync:false,visibility_brightlocal_adapter_ready:false,
       visibility_competitor_data_separate:true,visibility_missing_rank_not_measured:true,visibility_public_ranking_effect:false,
+      visibility_free_mode:true,visibility_bulk_rank_import:true,visibility_import_provenance:true,visibility_brightlocal_optional:true,
+      google_pagespeed_no_key_mode:true,google_pagespeed_api_key_optional:true,google_rank_scraping:false,visibility_recommendations_evidence_based:true,
       ...integrations,response_ms:Date.now()-started
     },{status:200,headers:{'Cache-Control':'no-store'}})
   }catch{
