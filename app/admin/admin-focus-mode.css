@@ -18,7 +18,8 @@ html[data-admin-view="focused"][data-admin-path="/admin/skylight-operations"] .a
 /* Business Visibility: the current evidence stays visible; long provenance/history tables are secondary in focused mode. */
 html[data-admin-view="focused"][data-admin-path$="/visibility"] .admin-main .workspace-block:last-child{display:none}
 
-/* Revenue: keep the current money/attention summary prominent and reduce secondary catalog density. */
+/* Revenue: keep current money/attention first; hide only the detail grids and their headings. */
+html[data-admin-view="focused"][data-admin-path="/admin/revenue"] .admin-main .admin-quick-head:has(+ .admin-quick-grid){display:none}
 html[data-admin-view="focused"][data-admin-path="/admin/revenue"] .admin-main .admin-quick-grid{display:none}
 html[data-admin-view="focused"][data-admin-path="/admin/revenue"] .admin-main .admin-quick-head{margin-top:14px}
 
