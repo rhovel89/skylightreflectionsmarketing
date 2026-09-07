@@ -58,11 +58,12 @@ async function refreshIntelligence(s:any,businessId:string,business:Row,userId:s
       snapshot=race.data
     }else{snapshot=insertQ.data;created=true}
   }
-  if(created&&snapshot){
-    const rows=intelligence.recommendations.map(r=>({tenant_id:TENANT_ID,business_id:businessId,prospect_id:sales.prospect?.id||null,opportunity_id:sales.opportunity?.id||null,snapshot_id:snapshot!.id,recommendation_key:r.recommendation_key,category:r.category,priority:r.priority,title:r.title,finding:r.finding,recommended_action:r.recommended_action,source_refs:r.source_refs,source_fingerprint:r.source_fingerprint,status:'open',created_by:userId,updated_by:userId}))
+  if(!snapshot)throw new Error('Unable to create or reuse the visibility snapshot.')
+  if(created){
+    const rows=intelligence.recommendations.map(r=>({tenant_id:TENANT_ID,business_id:businessId,prospect_id:sales.prospect?.id||null,opportunity_id:sales.opportunity?.id||null,snapshot_id:snapshot.id,recommendation_key:r.recommendation_key,category:r.category,priority:r.priority,title:r.title,finding:r.finding,recommended_action:r.recommended_action,source_refs:r.source_refs,source_fingerprint:r.source_fingerprint,status:'open',created_by:userId,updated_by:userId}))
     if(rows.length){const rq=await s.from('business_visibility_recommendations').upsert(rows,{onConflict:'tenant_id,business_id,recommendation_key,source_fingerprint',ignoreDuplicates:true});if(rq.error)throw rq.error}
   }
-  const countQ=await s.from('business_visibility_recommendations').select('id',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('business_id',businessId).eq('snapshot_id',snapshot!.id)
+  const countQ=await s.from('business_visibility_recommendations').select('id',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('business_id',businessId).eq('snapshot_id',snapshot.id)
   if(countQ.error)throw countQ.error
   return {snapshot,created,recommendation_count:countQ.count||0,intelligence}
 }
