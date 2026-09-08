@@ -74,6 +74,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: '/admin/leads', label: 'Skylight Lead Marketplace', keywords: 'leads marketplace admin review intro lead' },
       { href: '/admin/estate-planning-leads', label: 'Estate Planning Leads', keywords: 'estate planning trust wills attorney nationwide lead generation appointment qualified provider referral handoff sold leads' },
       { href: '/admin/estate-planning-providers', label: 'Estate Planning Provider Network', keywords: 'estate planning provider network law firm attorney state coverage verification evidence capacity referral eligibility handoff' },
+      { href: '/admin/estate-planning-performance', label: 'Estate Planning Funnel Intelligence', keywords: 'estate planning reporting conversion funnel provider outcomes state coverage gaps revenue performance' },
       { href: '/admin/lead-buyers', label: 'Lead Buyer Revenue & Agreements', keywords: 'buyer conversion crm intro interested follow up sla agreement draft consent activation pay per lead funnel revenue intelligence' },
       { href: '/admin/lead-billing', label: 'Active Lead Billing', keywords: 'lead billing active agreements collections invoices' },
       { href: '/admin/revenue-intelligence', label: 'Revenue Intelligence', keywords: 'revenue metrics insights' },
