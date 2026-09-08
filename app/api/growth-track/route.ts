@@ -5,11 +5,14 @@ import { TENANT_ID } from '@/lib/constants'
 const EVENTS = new Set([
   'for_businesses_view','claim_cta_click','list_business_cta_click','visibility_plan_click',
   'market_sponsorship_click','marketing_review_click','business_visibility_click',
+  'public_page_view','deal_banner_impression','deal_banner_click','project_match_start','project_match_complete',
+  'estate_form_start','estate_form_complete','estate_guide_consultation_click',
 ])
 const PLANS = new Set(['free','verified','featured','pro','sponsorship','marketing_review'])
 const SOURCES = new Set([
   'for-businesses','pricing-grid','market-page','city-page','business-profile','contact','navigation',
   'featured-sidebar','homepage-featured-section','homepage-featured-empty',
+  'public-site','sitewide-deal-banner','project-match','estate-planning','estate-guide',
 ])
 const text = (value: unknown, max: number) => typeof value === 'string' ? value.trim().slice(0, max) : ''
 
@@ -25,9 +28,10 @@ export async function POST(req: Request) {
     if (plan && !PLANS.has(plan)) return NextResponse.json({ error: 'Invalid plan.' }, { status: 400 })
     const source = text(body.source, 120)
     if (source && !SOURCES.has(source)) return NextResponse.json({ error: 'Invalid source.' }, { status: 400 })
+    const campaignId = text(body.campaign_id, 160)
 
     const s = await createClient()
-    const { error } = await s.rpc('track_growth_event', {
+    const { error } = await s.rpc('track_growth_event_v2', {
       p_tenant_id: TENANT_ID,
       p_event_type: eventType,
       p_page_path: pagePath || null,
@@ -36,6 +40,7 @@ export async function POST(req: Request) {
       p_category: text(body.category, 160) || null,
       p_plan: plan || null,
       p_source: source || null,
+      p_campaign_id: campaignId || null,
     })
     if (error) return NextResponse.json({ error: 'Event not accepted.' }, { status: 400 })
     return new NextResponse(null, { status: 204 })
