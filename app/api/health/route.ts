@@ -5,7 +5,7 @@ import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic='force-dynamic'
 const deploymentCommit=()=>process.env.VERCEL_GIT_COMMIT_SHA||null
-const releaseTrain='admin-experience-1.5-smart-defaults-review-screens'
+const releaseTrain='admin-experience-1.6-owner-home-estate-planning-funnel'
 
 async function integrationFlags(){
   const flags:any={
@@ -42,6 +42,8 @@ export async function GET(){
       admin_focused_view_default:true,admin_full_view_preserves_all_controls:true,admin_view_preference_persistent:true,admin_dense_tables_focus_limited:true,admin_deep_workbench_progressive_disclosure:true,
       admin_guided_owner_tasks:true,admin_guided_links_operational:true,admin_legacy_workbench_deep_links:true,admin_business_create_form_staged:true,admin_proposal_form_staged:true,admin_guidance_changes_business_logic:false,
       admin_review_before_critical_create:true,admin_review_scope_business_and_proposal:true,admin_required_optional_field_guidance:true,admin_existing_defaults_explained:true,admin_inline_field_explanations:true,admin_review_uses_existing_submit_logic:true,admin_review_automatic_sending:false,admin_review_changes_business_logic:false,
+      admin_owner_home_command_center:true,admin_owner_home_seven_quick_actions:true,admin_owner_home_live_attention:true,admin_owner_home_recent_changes:true,
+      estate_planning_nationwide_funnel:true,estate_planning_named_partner_consent:true,estate_planning_private_owner_queue:true,estate_planning_sales_tracking:true,estate_planning_automatic_routing:false,estate_planning_automatic_sale:false,estate_planning_automatic_billing:false,estate_planning_public_ranking_effect:false,
       automatic_outreach:false,billing_authorization:false,public_ranking_effect:false,automatic_campaign_enrollment:false,
       reply_classification_advisory:true,response_send_requires_staff_approval:true,calendar_event_requires_staff_action:true,calendar_invite_requires_staff_confirmation:true,
       paid_revenue_attribution_only:true,database_action_automation:true,daily_metrics_snapshots:true,first_touch_campaign_attribution:true,forecast_close_dates_staff_entered:true,
