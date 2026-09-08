@@ -38,8 +38,8 @@ export async function POST(req:Request){
     const update=await s.from('estate_planning_lead_sales').update(payload).eq('tenant_id',TENANT_ID).eq('lead_id',leadId).select('*').single()
     if(update.error)throw update.error
     const leadStatus=sale==='sold'?'completed':(['not_qualified','closed'].includes(follow)||['not_sold','invalid'].includes(sale))?'closed':follow==='new'?'new':'in_progress'
-    const leadUpdate=await s.from('leads').update({status:leadStatus}).eq('tenant_id',TENANT_ID).eq('id',leadId).eq('source','estate_legacy_pro_nationwide')
+    const leadUpdate=await s.from('leads').update({status:leadStatus}).eq('tenant_id',TENANT_ID).eq('id',leadId).eq('source','estate_planning_nationwide')
     if(leadUpdate.error)throw leadUpdate.error
-    return NextResponse.json({ok:true,message:'Estate-planning lead updated. No automatic email, lead delivery, invoice, charge, or buyer notification was performed.',automatic_delivery:false,automatic_billing:false,automatic_buyer_message:false})
+    return NextResponse.json({ok:true,message:'Estate-planning lead updated. No automatic email, lead delivery, invoice, charge, or referral-partner notification was performed.',automatic_delivery:false,automatic_billing:false,automatic_buyer_message:false})
   }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'Unable to update estate-planning lead.'},{status:400})}
 }
