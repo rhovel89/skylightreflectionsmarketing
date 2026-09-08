@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { SiteShell } from '@/components/SiteShell'
 import { SearchForm } from '@/components/SearchForm'
 import { BusinessCard } from '@/components/BusinessCard'
-import { HomepagePromoTicker } from '@/components/HomepagePromoTicker'
 import { GrowthTrackedLink } from '@/components/GrowthTracking'
 import { getBusinesses, getCategories, getPublicConfig, getLocations, getGuides, getHomepageFeaturedBusinesses } from '@/lib/data'
 import { getSearchAvailability } from '@/lib/search-availability'
@@ -25,7 +24,7 @@ export default async function Home(){
   const title=String(site.hero_title||'Find the Right Local Pro.')
   const titlePrefix=title.includes('Local Pro.')?title.replace('Local Pro.',''):title
 
-  return <SiteShell><HomepagePromoTicker/><main>
+  return <SiteShell><main>
     <section className="hero public-home-hero"><div className="container hero-inner">
       <div className="home-hero-grid">
         <div className="home-hero-copy">
@@ -63,12 +62,12 @@ export default async function Home(){
     <section className="section"><div className="container">
       <div className="section-head"><div><div className="kpi">From the live directory</div><h2>Browse Local Businesses</h2><p className="muted">A sample of currently published business profiles. Use search for a specific service or market.</p></div><Link className="btn btn-light" href="/search">Search All Businesses</Link></div>
       <div className="business-list">{businesses.map(b=><BusinessCard key={b.id} business={b}/>)}</div>
-    </div></section>
+    </section>
 
     <section className="section home-locations-section"><div className="container">
       <div className="section-head"><div><div className="kpi">Browse geographically</div><h2>Choose a Central Illinois Market</h2><p className="muted">Open a city or town to see currently published businesses, active categories and local guides.</p></div><Link href="/illinois">View all locations →</Link></div>
       <div className="grid grid-4 home-location-grid">{locations.slice(0,12).map(l=><Link className="card category-card home-location-card" key={l.id} href={`/illinois/${l.slug}`}><strong>{l.name}, IL</strong><span>{countyLabel(l.county)?`${countyLabel(l.county)} · `:''}Browse local directory →</span></Link>)}</div>
-    </div></section>
+    </section>
 
     {guides.length>0&&<section className="section white"><div className="container"><div className="section-head"><div><div className="kpi">Local knowledge</div><h2>Latest Local Guides</h2><p className="muted">Practical Central Illinois articles for homeowners, diners, shoppers and people comparing local services.</p></div><Link href="/guides">Browse all guides →</Link></div><div className="inline-guide-grid">{guides.map((g:any)=><Link className="inline-guide-card" key={g.id} href={`/guides/${g.slug}`}><span>{g.city?`${g.city}, IL`:g.type||'Local Guide'}</span><strong>{g.title}</strong><p>{g.summary}</p></Link>)}</div></div></section>}
 
