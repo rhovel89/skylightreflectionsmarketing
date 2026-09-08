@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { SiteShell } from '@/components/SiteShell'
 import { SearchForm } from '@/components/SearchForm'
 import { BusinessCard } from '@/components/BusinessCard'
+import { HomepagePromoTicker } from '@/components/HomepagePromoTicker'
 import { GrowthTrackedLink } from '@/components/GrowthTracking'
 import { getBusinesses, getCategories, getPublicConfig, getLocations, getGuides, getHomepageFeaturedBusinesses } from '@/lib/data'
 import { getSearchAvailability } from '@/lib/search-availability'
@@ -24,7 +25,7 @@ export default async function Home(){
   const title=String(site.hero_title||'Find the Right Local Pro.')
   const titlePrefix=title.includes('Local Pro.')?title.replace('Local Pro.',''):title
 
-  return <SiteShell><main>
+  return <SiteShell><HomepagePromoTicker/><main>
     <section className="hero public-home-hero"><div className="container hero-inner">
       <div className="home-hero-grid">
         <div className="home-hero-copy">
