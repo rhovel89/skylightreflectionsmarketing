@@ -4,10 +4,10 @@ import { SiteShell } from '@/components/SiteShell'
 import { EstatePlanningLeadForm } from '@/components/EstatePlanningLeadForm'
 
 export const metadata:Metadata={
-  title:'Estate Planning Attorney & Trust Consultation | Nationwide',
-  description:'Looking for estate planning, wills, living trusts, asset protection, business succession or probate guidance? Request a nationwide estate-planning consultation through Skylight Reflections Marketing.',
+  title:'Estate Planning Help & Consultation Request | Nationwide',
+  description:'Request nationwide estate-planning help for wills, living trusts, business succession, powers of attorney, probate concerns and related planning through Skylight Reflections Marketing.',
   alternates:{canonical:'/estate-planning'},
-  openGraph:{type:'website',url:'/estate-planning',title:'Estate Planning & Trust Consultation — Nationwide',description:'Request help with estate planning, wills, trusts, asset protection, business succession and related legacy planning.'},
+  openGraph:{type:'website',url:'/estate-planning',title:'Estate Planning Help & Consultation Request — Nationwide',description:'Start an estate-planning consultation request for wills, trusts, succession planning and related needs.'},
 }
 
 const faq=[
@@ -20,7 +20,7 @@ const faq=[
 
 export default function Page(){
   const schema=[
-    {'@context':'https://schema.org','@type':'WebPage',name:'Estate Planning & Trust Consultation — Nationwide',url:'https://central-il-local-pros.vercel.app/estate-planning',description:'A nationwide estate-planning consultation request and lead-generation page operated by Skylight Reflections Marketing.'},
+    {'@context':'https://schema.org','@type':'WebPage',name:'Estate Planning Help & Consultation Request — Nationwide',url:'https://central-il-local-pros.vercel.app/estate-planning',description:'A nationwide estate-planning consultation request and lead-generation page operated by Skylight Reflections Marketing.'},
     {'@context':'https://schema.org','@type':'FAQPage',mainEntity:faq.map(([q,a])=>({'@type':'Question',name:q,acceptedAnswer:{'@type':'Answer',text:a}}))},
   ]
   return <SiteShell><main>

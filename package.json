@@ -7,9 +7,11 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-estate-branding.mjs",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "check:estate-branding": "node scripts/check-estate-branding.mjs",
     "check": "npm run typecheck && npm run build"
   },
   "dependencies": {
