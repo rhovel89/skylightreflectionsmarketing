@@ -106,6 +106,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: '/admin/marketing-leads', label: 'Skylight Leads', keywords: 'marketing prospects leads' },
       { href: '/admin/marketing', label: 'Marketing Control Center', keywords: 'campaigns social marketing' },
       { href: '/admin/email-drips', label: 'Email Drip Campaigns', keywords: 'business owner lifecycle sponsored seo google marketing email nurture' },
+      { href: '/admin/performance', label: 'What’s Working', keywords: 'performance analytics conversions page views deal banner clicks forms leads claims submissions top pages searches' },
       { href: '/admin/analytics', label: 'Listing Analytics', keywords: 'traffic performance analytics' },
     ],
   },
