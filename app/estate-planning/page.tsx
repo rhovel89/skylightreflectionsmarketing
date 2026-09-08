@@ -5,7 +5,7 @@ import { EstatePlanningLeadForm } from '@/components/EstatePlanningLeadForm'
 
 export const metadata:Metadata={
   title:'Estate Planning Attorney & Trust Consultation | Nationwide',
-  description:'Looking for estate planning, wills, living trusts, asset protection, business succession or probate guidance? Request a nationwide consultation through Skylight Reflections Marketing for Estate Legacy Pro.',
+  description:'Looking for estate planning, wills, living trusts, asset protection, business succession or probate guidance? Request a nationwide estate-planning consultation through Skylight Reflections Marketing.',
   alternates:{canonical:'/estate-planning'},
   openGraph:{type:'website',url:'/estate-planning',title:'Estate Planning & Trust Consultation — Nationwide',description:'Request help with estate planning, wills, trusts, asset protection, business succession and related legacy planning.'},
 }
@@ -13,9 +13,9 @@ export const metadata:Metadata={
 const faq=[
   ['What can an estate-planning consultation cover?','Common topics include wills, revocable or living trusts, advanced trusts, powers of attorney, asset protection, business succession, tax and legacy planning, and probate or trust administration. The right approach depends on your situation and applicable law.'],
   ['Can I request a consultation if I already have a will or trust?','Yes. Many people request a review after major life, family, business, property or financial changes, or when an older plan may no longer match their goals.'],
-  ['Are consultation requests accepted nationwide?','Yes. Estate Legacy Pro accepts consultation inquiries nationwide. The legal services available for a particular matter depend on applicable law, attorney licensing, conflicts review and the firm accepting the engagement.'],
+  ['Are consultation requests accepted nationwide?','Yes. Consultation inquiries are accepted nationwide. The legal services available for a particular matter depend on applicable law, professional licensing, conflicts review and acceptance of the engagement by the participating provider.'],
   ['Does submitting this form create an attorney-client relationship?','No. Central Illinois Local Pros and Skylight Reflections Marketing are not law firms. Submitting this form is a lead-generation and consultation-request step only. An attorney-client relationship begins only after an attorney accepts the matter and the required engagement process is completed.'],
-  ['Who receives my information?','Your request first goes to the private Skylight Reflections Marketing owner queue. If you consent, Skylight may share the request and your contact information specifically with Estate Legacy Pro to discuss and schedule a consultation.'],
+  ['Who receives my information?','Your request first goes to the private Skylight Reflections Marketing owner queue. If you consent, Skylight may share the request and your contact information with a participating estate-planning service provider to discuss and schedule a consultation.'],
 ]
 
 export default function Page(){
@@ -29,14 +29,14 @@ export default function Page(){
     <section className="hero"><div className="container hero-grid"><div>
       <div className="eyebrow">Estate Planning & Trust · Nationwide</div>
       <h1>Protect what you built. Plan what happens next.</h1>
-      <p>If you are searching for an <strong>estate planning attorney</strong>, <strong>trust attorney</strong>, help with wills and trusts, asset protection, business succession, or legacy planning, start with a simple consultation request. Skylight Reflections Marketing will review your information and contact you to help schedule a consultation with Estate Legacy Pro.</p>
-      <div className="hero-actions"><a className="btn btn-primary" href="#estate-planning-form">Request a Consultation</a><a className="btn btn-light" href="https://estatelegacypro.com/" target="_blank" rel="noopener noreferrer">Learn About Estate Legacy Pro</a></div>
+      <p>If you are searching for an <strong>estate planning attorney</strong>, <strong>trust attorney</strong>, help with wills and trusts, asset protection, business succession, or legacy planning, start with a simple consultation request. Skylight Reflections Marketing will review your information and contact you to help coordinate next steps with a participating estate-planning professional.</p>
+      <div className="hero-actions"><a className="btn btn-primary" href="#estate-planning-form">Request a Consultation</a><Link className="btn btn-light" href="/legal-services">Browse Legal Services</Link></div>
       <div className="trust-row"><span>✓ Nationwide inquiries</span><span>✓ Private owner review</span><span>✓ No automatic lead routing</span></div>
     </div><div className="card"><div className="kpi">How it works</div>
       <div className="info-row"><span>1. Tell us what you need</span><strong>Estate plan, trust, will, succession or related planning</strong></div>
       <div className="info-row"><span>2. Skylight reviews the request</span><strong>Your information enters a private owner queue</strong></div>
       <div className="info-row"><span>3. We contact you</span><strong>We help confirm fit and appointment timing</strong></div>
-      <div className="info-row"><span>4. Consultation with Estate Legacy Pro</span><strong>Legal engagement is handled separately by the law firm</strong></div>
+      <div className="info-row"><span>4. Professional consultation</span><strong>Legal engagement is handled separately by the participating provider</strong></div>
     </div></div></section>
 
     <section className="section"><div className="container"><div className="section-head"><div><div className="kpi">Estate Planning Services</div><h2>Common reasons people request a consultation</h2><p className="muted">You do not need to know which document or strategy you need before speaking with a professional.</p></div></div>
@@ -56,6 +56,6 @@ export default function Page(){
 
     <section className="section"><div className="container"><div className="section-head"><div><div className="kpi">Estate Planning FAQ</div><h2>Questions before you get started</h2></div></div><div className="grid grid-2">{faq.map(([q,a])=><div className="card" key={q}><h3>{q}</h3><p className="muted">{a}</p></div>)}</div></div></section>
 
-    <section className="section"><div className="container"><div className="notice"><strong>Lead-generation and legal-services disclosure:</strong> Central Illinois Local Pros is operated by Skylight Reflections Marketing. Neither is a law firm, and neither provides legal advice. This page is a lead-generation and consultation-request service for Estate Legacy Pro. Submitting the form does not create an attorney-client relationship and does not guarantee representation, legal results, or a particular planning outcome. Legal services depend on applicable law, attorney licensing, conflicts review and acceptance of the engagement.</div><div style={{marginTop:14}}><Link href="/legal-services">Browse Central Illinois attorney listings →</Link></div></div></section>
+    <section className="section"><div className="container"><div className="notice"><strong>Lead-generation and legal-services disclosure:</strong> Central Illinois Local Pros is operated by Skylight Reflections Marketing. Neither is a law firm, and neither provides legal advice. This page is a nationwide lead-generation and consultation-request service. With your consent, your inquiry may be shared with a participating estate-planning service provider for consultation scheduling. Submitting the form does not create an attorney-client relationship and does not guarantee representation, legal results, or a particular planning outcome. Legal services depend on applicable law, professional licensing, conflicts review and acceptance of the engagement.</div><div style={{marginTop:14}}><Link href="/legal-services">Browse Central Illinois attorney listings →</Link></div></div></section>
   </main></SiteShell>
 }
