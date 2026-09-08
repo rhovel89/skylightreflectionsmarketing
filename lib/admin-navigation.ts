@@ -72,7 +72,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: '/admin/skylight-eddm', label: 'EDDM & Community Mailers', keywords: 'eddm direct mail coop co-op mailer postcard route town city market slots smart coupon advertising' },
       { href: '/admin/local-commerce', label: 'Local Commerce Control Center', keywords: 'deals recommendations local faves q&a catalog portfolio referrals marketplace approvals' },
       { href: '/admin/leads', label: 'Skylight Lead Marketplace', keywords: 'leads marketplace admin review intro lead' },
-      { href: '/admin/estate-planning-leads', label: 'Estate Planning Leads', keywords: 'estate legacy pro trust wills attorney nationwide lead generation appointment sold leads' },
+      { href: '/admin/estate-planning-leads', label: 'Estate Planning Leads', keywords: 'estate planning trust wills attorney nationwide lead generation appointment qualified provider referral sold leads' },
       { href: '/admin/lead-buyers', label: 'Lead Buyer Revenue & Agreements', keywords: 'buyer conversion crm intro interested follow up sla agreement draft consent activation pay per lead funnel revenue intelligence' },
       { href: '/admin/lead-billing', label: 'Active Lead Billing', keywords: 'lead billing active agreements collections invoices' },
       { href: '/admin/revenue-intelligence', label: 'Revenue Intelligence', keywords: 'revenue metrics insights' },
