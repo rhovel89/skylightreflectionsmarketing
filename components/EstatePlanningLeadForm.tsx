@@ -1,7 +1,8 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
+import { FormEvent, useRef, useState } from 'react'
 import { ESTATE_APPOINTMENT_CONSENT, ESTATE_CONTACT_CONSENT, ESTATE_SOURCE_PAGE } from '@/lib/estate-planning'
+import { trackGrowthEvent } from '@/components/GrowthTracking'
 
 const STATES = [
   ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['DC','District of Columbia'],['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],
@@ -11,9 +12,13 @@ type State = { kind:'idle'|'busy'|'ok'|'error'; message:string }
 
 export function EstatePlanningLeadForm(){
   const [state,setState]=useState<State>({kind:'idle',message:''})
+  const started=useRef(false)
+  const campaign=()=>{try{return new URLSearchParams(window.location.search).get('guide')||undefined}catch{return undefined}}
+  function markStart(){if(started.current)return;started.current=true;trackGrowthEvent('estate_form_start',{source:'estate-planning',campaignId:campaign()})}
 
   async function submit(e:FormEvent<HTMLFormElement>){
     e.preventDefault()
+    markStart()
     setState({kind:'busy',message:'Submitting your consultation request…'})
     const form=e.currentTarget
     const fd=new FormData(form)
@@ -50,6 +55,7 @@ export function EstatePlanningLeadForm(){
       const r=await fetch('/api/estate-planning-lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
       const body=await r.json().catch(()=>({}))
       if(!r.ok){setState({kind:'error',message:String(body.error||'Unable to submit your request.')});return}
+      trackGrowthEvent('estate_form_complete',{source:'estate-planning',campaignId:campaign(),city:payload.city||undefined,category:payload.primary_need||undefined})
       form.reset()
       setState({kind:'ok',message:'Request received. Opening your confirmation page…'})
       window.location.assign(`${ESTATE_SOURCE_PAGE}/thank-you`)
@@ -58,7 +64,7 @@ export function EstatePlanningLeadForm(){
     }
   }
 
-  return <form className="form-card public-conversion-form" onSubmit={submit}>
+  return <form className="form-card public-conversion-form" onSubmit={submit} onFocusCapture={markStart}>
     <div className="request-assurance"><span>Nationwide inquiries</span><span>Preliminary qualification</span><span>Appointment coordination</span></div>
     <label aria-hidden="true" style={{position:'absolute',left:'-10000px',width:1,height:1,overflow:'hidden'}}>Website<input name="website" tabIndex={-1} autoComplete="off"/></label>
 
