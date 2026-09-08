@@ -58,7 +58,7 @@ export default async function Page(){
     <div className="admin-section-title admin-section-title-spaced"><div><div className="kpi">Needs Attention</div><h2>Work these next</h2></div><p>Live owner queues. Zero means there is nothing waiting in that queue.</p></div>
     <div className="admin-attention-grid admin-attention-grid-five">{attention.map(item=><Link className={`admin-attention-card ${item.count>0?'has-work':''}`} href={item.href} key={item.href}><span>{item.label}</span><strong>{item.count}</strong><small>{item.count>0?item.action:'Nothing waiting'}</small></Link>)}</div>
 
-    <div className="admin-section-title admin-section-title-spaced"><div><div className="kpi">What Changed</div><h2>Last 7 days</h2></div><p>Simple movement indicators, not another analytics dashboard.</p></div>
+    <div className="admin-section-title admin-section-title-spaced"><div><div className="kpi">What Changed</div><h2>Last 7 days</h2></div><Link href="/admin/performance">Open What’s Working →</Link></div>
     <div className="admin-dashboard-snapshot"><Link href="/admin/estate-planning-leads"><span>Estate planning inquiries</span><strong>+{count(10)}</strong></Link><Link href="/admin/businesses"><span>Business records added</span><strong>+{count(11)}</strong></Link><Link href="/admin/skylight-operations?tab=proposals"><span>Proposals created</span><strong>+{count(12)}</strong></Link></div>
 
     <div className="admin-section-title admin-section-title-spaced"><div><div className="kpi">Workspaces</div><h2>Go deeper when you need to</h2></div><p>Every existing feature is still available. These six workspaces organize the rest of the system.</p></div>
