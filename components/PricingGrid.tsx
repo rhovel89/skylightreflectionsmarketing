@@ -3,9 +3,10 @@ import { GrowthTrackedLink } from '@/components/GrowthTracking'
 
 const dollars=(c:number|null|undefined)=>`$${Math.round((c??0)/100)}`
 const bestFor:Record<string,string>={free:'Businesses that want a basic public presence',verified:'Businesses that want the verification workflow and enhanced controls',featured:'Businesses that want stronger visual presence and labeled visibility options',pro:'Businesses that want the full conversion, Lead Inbox and reporting toolkit'}
+const PROMO_PAYMENT_URL='https://buy.stripe.com/3cI8wQ3Td7Wy7A347V7kc0d'
 
 export function PricingGrid({plans}:{plans:Plan[]}){
-  return <div className="pricing-grid conversion-pricing-grid">{plans.filter(p=>p.is_active).sort((a,b)=>(a.sort_order??0)-(b.sort_order??0)).map(p=>{
+  return <><div className="pricing-grid conversion-pricing-grid">{plans.filter(p=>p.is_active).sort((a,b)=>(a.sort_order??0)-(b.sort_order??0)).map(p=>{
     const free=p.slug==='free'||(p.monthly_price_cents??0)===0
     const plan=(['verified','featured','pro'].includes(p.slug)?p.slug:'free') as 'free'|'verified'|'featured'|'pro'
     const row=p as Plan&{stripe_monthly_payment_url?:string|null;stripe_annual_payment_url?:string|null}
@@ -33,5 +34,5 @@ export function PricingGrid({plans}:{plans:Plan[]}){
         : <div className="price-actions"><GrowthTrackedLink eventType="visibility_plan_click" plan={plan} source="pricing-grid-monthly" className="btn btn-primary full" href={monthlyHref}>Choose Monthly · {dollars(p.monthly_price_cents)}/mo</GrowthTrackedLink>{annual>0?<GrowthTrackedLink eventType="visibility_plan_click" plan={plan} source="pricing-grid-annual" className="btn btn-light full" href={annualHref}>Choose Annual · {dollars(annual)}/yr</GrowthTrackedLink>:null}</div>}
       {!free&&<p className="price-trust-note">Payment buys the listed business tools and/or clearly labeled visibility. It does not buy organic rank, automatic verification, guaranteed leads or editorial preference.</p>}
     </div>
-  })}</div>
+  })}</div><div className="card" style={{marginTop:18,border:'1px solid #c8d6ff',background:'linear-gradient(135deg,#fff,#f4f7ff)'}}><div className="kpi">Optional add-on · available with any package</div><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:18,flexWrap:'wrap'}}><div style={{maxWidth:760}}><h3 style={{marginBottom:6}}>Homepage Deal Banner · +$5/month</h3><p className="muted" style={{margin:0}}>Put one approved customer deal or promotion in the scrolling banner at the top of the main page. Your business name, offer and deal link rotate with other active promotions. Every placement is clearly labeled Sponsored and does not affect organic search rank or verification.</p></div><a className="btn btn-primary" href={PROMO_PAYMENT_URL} target="_blank" rel="noopener">Add Deal Banner · $5/mo</a></div></div></>
 }
