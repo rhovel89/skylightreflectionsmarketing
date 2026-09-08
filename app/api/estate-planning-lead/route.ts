@@ -51,7 +51,7 @@ export async function POST(req:Request){
       p_attribution:attribution,
     })
     if(error)return NextResponse.json({error:'Unable to submit your request. Please review the form and try again.'},{status:400,headers:{'Cache-Control':'no-store'}})
-    return NextResponse.json({ok:true,automatic_routing:false,automatic_sale:false,automatic_contact:false},{headers:{'Cache-Control':'no-store'}})
+    return NextResponse.json({ok:true,appointment_request_recorded:true,automatic_contact:false,automatic_calendar_booking:false},{headers:{'Cache-Control':'no-store'}})
   }catch{
     return NextResponse.json({error:'Unable to submit your request. Please review the form and try again.'},{status:400,headers:{'Cache-Control':'no-store'}})
   }
