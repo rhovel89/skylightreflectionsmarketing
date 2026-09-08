@@ -17,7 +17,7 @@ export default async function Page(){
   const q=await Promise.all([
     s.from('businesses').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('status','published'),
     s.from('business_claims').select('id,businesses!inner(id,tenant_id)',{count:'exact',head:true}).eq('businesses.tenant_id',TENANT_ID).eq('status','pending'),
-    s.from('leads').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('status','new').neq('source','estate_legacy_pro_nationwide'),
+    s.from('leads').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('status','new').neq('source','estate_planning_nationwide'),
     s.from('business_edit_requests').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('status','pending'),
     s.from('subscriptions').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).in('status',['active','trialing']),
     s.from('sponsorships').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('placement','homepage_featured').eq('active',true).or(`starts_on.is.null,starts_on.lte.${today}`).or(`ends_on.is.null,ends_on.gte.${today}`),
@@ -25,7 +25,7 @@ export default async function Page(){
     s.from('skylight_proposals').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).in('status',['draft','sent','viewed','accepted']),
     s.from('skylight_invoices').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).gt('balance_due_cents',0),
     s.from('business_visibility_alerts').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('status','open'),
-    s.from('leads').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('source','estate_legacy_pro_nationwide').gte('created_at',weekAgo),
+    s.from('leads').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).eq('source','estate_planning_nationwide').gte('created_at',weekAgo),
     s.from('businesses').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).gte('created_at',weekAgo),
     s.from('skylight_proposals').select('*',{count:'exact',head:true}).eq('tenant_id',TENANT_ID).gte('created_at',weekAgo),
   ])
