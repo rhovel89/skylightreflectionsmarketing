@@ -1,22 +1,26 @@
 'use client'
-import{FormEvent,useState}from'react'
+import{FormEvent,useRef,useState}from'react'
+import{trackGrowthEvent}from'@/components/GrowthTracking'
 
 type Props={businessId?:string;service?:string;city?:string;compact?:boolean}
 type State={kind:'idle'|'busy'|'ok'|'error';message:string;leadId?:string}
 
 export function ProjectMatchForm({businessId='',service='',city='',compact=false}:Props){
  const[state,setState]=useState<State>({kind:'idle',message:''})
+ const started=useRef(false)
+ function markStart(){if(started.current)return;started.current=true;trackGrowthEvent('project_match_start',{businessId:businessId||undefined,city:city||undefined,category:service||undefined,source:'project-match'})}
  async function submit(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();setState({kind:'busy',message:'Submitting your project for staff review…'})
+  e.preventDefault();markStart();setState({kind:'busy',message:'Submitting your project for staff review…'})
   const fd=new FormData(e.currentTarget)
   const payload={business_id:businessId||null,service:String(fd.get('service')||''),city:String(fd.get('city')||''),zip_code:String(fd.get('zip_code')||''),project_type:String(fd.get('project_type')||''),property_type:String(fd.get('property_type')||''),budget_range:String(fd.get('budget_range')||''),timeline:String(fd.get('timeline')||''),preferred_contact:String(fd.get('preferred_contact')||''),name:String(fd.get('name')||''),phone:String(fd.get('phone')||''),email:String(fd.get('email')||''),message:String(fd.get('message')||''),consent:fd.get('consent')==='on',answers:{project_size:String(fd.get('project_size')||''),financing_interested:fd.get('financing_interested')==='on',decision_stage:String(fd.get('decision_stage')||'')}}
   const r=await fetch('/api/project-match',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   const body=await r.json().catch(()=>({}))
   if(!r.ok){setState({kind:'error',message:String(body.error||'Unable to submit your project.')});return}
+  trackGrowthEvent('project_match_complete',{businessId:businessId||undefined,city:payload.city||undefined,category:payload.service||undefined,source:'project-match',campaignId:String(body.lead_id||'')||undefined})
   setState({kind:'ok',message:'Your project is in the private Admin review queue. No business receives your contact information until staff deliberately matches and delivers the request.',leadId:body.lead_id})
   e.currentTarget.reset()
  }
- return <form onSubmit={submit} className="form-card public-conversion-form">
+ return <form onSubmit={submit} onFocusCapture={markStart} className="form-card public-conversion-form">
   <div className="request-assurance"><span>Staff-reviewed matching</span><span>No payment required</span><span>No automatic lead routing</span></div>
   <div className="form-intro-row"><span className="form-step">1</span><div><strong>Tell us about the project</strong><small>Structured details help us match the right local professional instead of blasting your request everywhere.</small></div></div>
   <div className="form-grid">
