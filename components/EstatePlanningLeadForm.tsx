@@ -36,7 +36,7 @@ export function EstatePlanningLeadForm(){
     const r=await fetch('/api/estate-planning-lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
     const body=await r.json().catch(()=>({}))
     if(!r.ok){setState({kind:'error',message:String(body.error||'Unable to submit your request.')});return}
-    setState({kind:'ok',message:'Thank you. Your request is in our private owner queue. Skylight Reflections Marketing will contact you to help with next steps and consultation scheduling with Estate Legacy Pro. Your information is not automatically sent or sold when you submit this form.'})
+    setState({kind:'ok',message:'Thank you. Your request is in our private owner queue. Skylight Reflections Marketing will contact you to help with next steps and consultation scheduling. Your information is not automatically sent or sold when you submit this form.'})
     e.currentTarget.reset()
   }
 
@@ -72,7 +72,7 @@ export function EstatePlanningLeadForm(){
     </div>
 
     <label className="check consent-check"><input name="consent_to_contact" type="checkbox" required/> I agree that Central Illinois Local Pros / Skylight Reflections Marketing may contact me by phone, text, or email about this estate-planning consultation request. Message and data rates may apply.</label>
-    <label className="check consent-check"><input name="consent_to_share" type="checkbox" required/> I agree that Skylight Reflections Marketing may share this request and my contact information with <strong>Estate Legacy Pro</strong> for the purpose of discussing and scheduling an estate-planning consultation.</label>
+    <label className="check consent-check"><input name="consent_to_share" type="checkbox" required/> I agree that Skylight Reflections Marketing may share this request and my contact information with a <strong>participating estate-planning service provider</strong> for the purpose of discussing and scheduling an estate-planning consultation.</label>
 
     <div className="notice" style={{marginTop:12}}><strong>Important:</strong> Central Illinois Local Pros and Skylight Reflections Marketing are not law firms and do not provide legal advice. Submitting this form does not create an attorney-client relationship. Legal representation, if any, begins only after an attorney accepts the matter and the required engagement process is completed.</div>
     <button className="btn btn-primary full" disabled={state.kind==='busy'}>{state.kind==='busy'?'Submitting…':'Request My Estate Planning Consultation'}</button>
