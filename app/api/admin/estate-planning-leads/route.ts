@@ -26,7 +26,7 @@ export async function POST(req:Request){
     const appointmentRaw=text(body.appointment_at,40),appointment=appointmentRaw?new Date(appointmentRaw):null
     if(appointmentRaw&&(!appointment||Number.isNaN(appointment.getTime())))throw new Error('Appointment date/time is invalid.')
     const amountRaw=text(body.sale_amount,40),amount=amountRaw===''?null:Math.round(Number(amountRaw)*100)
-    if(amountRaw!==''&&(!Number.isFinite(amount)||amount!<0))throw new Error('Sale amount must be a valid non-negative number.')
+    if(amountRaw!==''&&(!Number.isFinite(amount)||amount===null||amount<0))throw new Error('Sale amount must be a valid non-negative number.')
     const now=new Date().toISOString()
     const contactTouched=['attempted_contact','contacted','appointment_scheduled','appointment_completed'].includes(follow)
     const payload:any={follow_up_status:follow,sale_status:sale,appointment_at:appointment?appointment.toISOString():null,sale_amount_cents:amount,owner_notes:text(body.owner_notes,4000)||null,updated_by:userId,updated_at:now}
