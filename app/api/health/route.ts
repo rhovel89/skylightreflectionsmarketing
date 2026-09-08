@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { TENANT_ID, TENANT_SLUG } from '@/lib/constants'
 
 export const dynamic='force-dynamic'
+// Production deployment retry: 2026-09-08. No behavior change.
 
 export async function GET(){
   try{
